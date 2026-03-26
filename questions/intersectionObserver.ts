@@ -1,3 +1,11 @@
+/**
+ * Interview Thinking Steps (Intersection Observer):
+ * 1) Define intersection mathematically using viewport and target bounds.
+ * 2) Compute visible segment: max(top), min(bottom), clamp at zero.
+ * 3) Derive ratio: visibleHeight / targetHeight.
+ * 4) Compare ratio to threshold and emit entries via callback.
+ * 5) Discuss complexity: O(number of observed targets) per check cycle.
+ */
 type ObserverCallback = (entries: ObserverEntry[]) => void;
 
 interface ObserverEntry {

@@ -1,3 +1,11 @@
+/**
+ * Interview Thinking Steps (groupBy):
+ * 1) Clarify expected output: object for property keys vs map for dynamic keys.
+ * 2) Preserve type safety with overloads for key name and callback selector.
+ * 3) Traverse once and accumulate buckets in O(n).
+ * 4) Convert map entries to object when selector is a property name.
+ * 5) Mention trade-offs: Map supports non-string keys and stable insertion order.
+ */
 const users = [
     { id: 1, team: 'A' },
     { id: 2, team: 'B' },

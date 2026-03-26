@@ -1,3 +1,11 @@
+/**
+ * Interview Thinking Steps (Lazy Loading Images):
+ * 1) State goal: defer image downloads until near viewport.
+ * 2) Use `data-src` for real URL and lightweight placeholder in `src`.
+ * 3) Observe each image and swap `src` when intersecting.
+ * 4) Unobserve after loading to avoid repeated work.
+ * 5) Tune `rootMargin` for preloading and smoother UX.
+ */
 const observer = new IntersectionObserver(
     (entries) => {
         for (const entry of entries) {

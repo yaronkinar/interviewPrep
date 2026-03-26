@@ -1,3 +1,11 @@
+/**
+ * Interview Thinking Steps (Memoization):
+ * 1) Clarify when caching is safe: function should be pure/deterministic.
+ * 2) Choose cache structure: `Map` for O(1) average lookup.
+ * 3) Build stable cache keys from arguments.
+ * 4) On call: return cached value if present; otherwise compute and store.
+ * 5) Discuss production concerns: key collisions, memory growth, TTL/LRU.
+ */
 export function memoize<T extends (...args:any[]) => any>(fn: T): T {
     const result = new Map();
     const getKey = (...args: any[]) => {

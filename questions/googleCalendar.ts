@@ -1,6 +1,14 @@
 /**
  * Google Calendar-like implementation
  * Features: Events, Recurring events, Reminders, Multiple calendars
+ *
+ * Interview Thinking Steps (Calendar System Design):
+ * 1) Clarify scope: CRUD, recurrence, conflict checks, and querying ranges.
+ * 2) Model entities first: Calendar, Event, TimeSlot, Reminder, Recurrence.
+ * 3) Choose storage: maps by id for O(1) access and simple in-memory demos.
+ * 4) Define overlap rule clearly: [start, end) style interval intersection.
+ * 5) Add recurrence generation with hard limits to avoid infinite loops.
+ * 6) Add extensions: persistence, indexing, timezone handling, sharing/ACL.
  */
 
 // --- Interfaces ---
