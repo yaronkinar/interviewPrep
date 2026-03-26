@@ -1,5 +1,9 @@
 /**
- * Interview Thinking Steps (Intersection Observer):
+ * Explanation:
+ * This file implements a simplified IntersectionObserver by computing overlap
+ * between target bounds and current viewport bounds.
+ *
+ * Interview Thinking Process:
  * 1) Define intersection mathematically using viewport and target bounds.
  * 2) Compute visible segment: max(top), min(bottom), clamp at zero.
  * 3) Derive ratio: visibleHeight / targetHeight.

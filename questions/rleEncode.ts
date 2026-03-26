@@ -1,3 +1,15 @@
+/**
+ * Explanation:
+ * Run-length encoding (RLE) compresses consecutive repeated characters by
+ * writing each character followed by its run count.
+ *
+ * Interview Thinking Process:
+ * 1) Handle empty input early.
+ * 2) Track previous character and a running count.
+ * 3) Iterate once; when character changes, flush previous run.
+ * 4) Append final run after loop (or iterate to `<= length` as done here).
+ * 5) Discuss complexity: O(n) time, O(n) output space.
+ */
 function rleEncode(str: string): string {
   if (str.length === 0) return ''
 

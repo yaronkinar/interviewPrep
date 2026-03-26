@@ -20,6 +20,17 @@ const DIFFICULTY_COLOR: Record<Difficulty, string> = {
   hard:   '#f87171',
 }
 
+function buildThinkingSteps(q: Question): string[] {
+  const firstTag = q.tags[0] ?? 'core concept'
+  return [
+    `Clarify requirements, expected input/output, and edge cases for this ${q.category} problem.`,
+    `Pick an approach using ${firstTag} and explain why it fits better than alternatives.`,
+    'Implement incrementally and narrate key decisions while coding.',
+    'State time and space complexity, and mention what drives each.',
+    'Propose follow-ups (optimizations, trade-offs, or production hardening).',
+  ]
+}
+
 function CompanyBadge({ name }: { name: string }) {
   const company = COMPANIES.find(c => c.id === name)
   return (
@@ -32,6 +43,7 @@ function CompanyBadge({ name }: { name: string }) {
 
 function QuestionCard({ q }: { q: Question }) {
   const [open, setOpen] = useState(false)
+  const [showThinking, setShowThinking] = useState(false)
   const [showExample, setShowExample] = useState(false)
   const canShowExample = hasQuestionExample(q.id)
 
@@ -53,6 +65,27 @@ function QuestionCard({ q }: { q: Question }) {
       <div className="q-tags">
         {q.tags.map(t => <span key={t} className="q-tag">#{t}</span>)}
       </div>
+
+      <div className="explanation" style={{ marginBottom: '0.75rem' }}>
+        <div className="explanation-title">// explanation</div>
+        <div className="step" style={{ marginTop: 6 }}>
+          <span>{q.description}</span>
+        </div>
+      </div>
+      <button className="code-toggle" onClick={() => setShowThinking((v) => !v)}>
+        🧠 {showThinking ? 'Hide' : 'Show'} interview thinking process
+      </button>
+      {showThinking && (
+        <div className="explanation" style={{ marginBottom: '0.75rem' }}>
+          <div className="explanation-title">// interview thinking process</div>
+          {buildThinkingSteps(q).map((step, i) => (
+            <div key={i} className="step">
+              <span className="step-num">{i + 1}</span>
+              <span>{step}</span>
+            </div>
+          ))}
+        </div>
+      )}
 
       <button className="code-toggle" onClick={() => setOpen(o => !o)}>
         💡 {open ? 'Hide' : 'Show'} answer

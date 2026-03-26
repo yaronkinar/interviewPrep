@@ -1,3 +1,15 @@
+/**
+ * Explanation:
+ * This file demonstrates and sanity-checks observer behavior for a custom
+ * `Subscribe` class: next values, multiple subscribers, unsubscribe, and error flow.
+ *
+ * Interview Thinking Process:
+ * 1) Start with a basic subscriber to prove event delivery.
+ * 2) Add multiple subscribers and verify fan-out.
+ * 3) Unsubscribe one listener and validate isolation.
+ * 4) Trigger error/complete flows and confirm callbacks fire correctly.
+ * 5) Keep examples executable and easy to reason about in discussion.
+ */
 import { Subscribe } from './subcribe';
 
 // Example 1: Basic usage with all callbacks

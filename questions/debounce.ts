@@ -1,5 +1,9 @@
 /**
- * Interview Thinking Steps (Debounce):
+ * Explanation:
+ * Debounce delays function execution until calls stop for a configured duration.
+ * This is useful for search inputs, resize handlers, and any bursty event stream.
+ *
+ * Interview Thinking Process:
  * 1) Clarify behavior: reset timer on each call, run once after quiet period.
  * 2) Decide API: preserve argument types and return a wrapped function.
  * 3) Keep state in closure: store timeout id across invocations.

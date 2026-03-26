@@ -1,4 +1,16 @@
 /**
+ * Explanation:
+ * This file exercises the meeting-room manager behavior with practical usage
+ * examples around add room, booking, capacity filtering, and retrieval.
+ *
+ * Interview Thinking Process:
+ * 1) Validate happy path: create rooms and add bookings.
+ * 2) Verify constraints: capacity and time-slot availability behavior.
+ * 3) Check read APIs: get available rooms and bookings list.
+ * 4) Include cancellation and overlap checks as follow-up tests.
+ * 5) Keep fixtures small and readable for interview narration.
+ */
+/**
  * Meeting room management: capacity and availability.
  * Rooms have a capacity; bookings are time-slot based.
  */

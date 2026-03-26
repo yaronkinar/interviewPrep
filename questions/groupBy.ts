@@ -1,5 +1,9 @@
 /**
- * Interview Thinking Steps (groupBy):
+ * Explanation:
+ * `groupBy` partitions array items into buckets based on either a property key
+ * or a selector function, returning object or map depending on selector type.
+ *
+ * Interview Thinking Process:
  * 1) Clarify expected output: object for property keys vs map for dynamic keys.
  * 2) Preserve type safety with overloads for key name and callback selector.
  * 3) Traverse once and accumulate buckets in O(n).

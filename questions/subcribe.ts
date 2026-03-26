@@ -1,3 +1,15 @@
+/**
+ * Explanation:
+ * This file demonstrates a basic Subject/Observer pattern implementation with
+ * subscribe, emit (`next`), and cleanup behavior.
+ *
+ * Interview Thinking Process:
+ * 1) Define core contract: subscribe returns unsubscribe function.
+ * 2) Store listeners in a `Set` for uniqueness and O(1) add/remove.
+ * 3) Broadcast values to all listeners with `next`.
+ * 4) Isolate listener failures so one bad handler does not break others.
+ * 5) Add lifecycle helpers like `clear` and mention complete/error evolution.
+ */
 type Unsubscribe = () => void;
 type Events = 'data' | 'error';
 export class Subject<T> {

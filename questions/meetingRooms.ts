@@ -2,7 +2,11 @@
  * Meeting room management: capacity and availability.
  * Rooms have a capacity; bookings are time-slot based.
  *
- * Interview Thinking Steps (Meeting Rooms):
+ * Explanation:
+ * This is a room-booking model with capacity filtering and overlap-based
+ * availability checks for creating and canceling bookings.
+ *
+ * Interview Thinking Process:
  * 1) Identify operations: add rooms, book, cancel, query availability.
  * 2) Model interval overlap first; this is the core correctness rule.
  * 3) Store bookings per room for localized checks.

@@ -1,5 +1,9 @@
 /**
- * Interview Thinking Steps (Memoization):
+ * Explanation:
+ * Memoization caches function results by input key so repeated calls with the
+ * same arguments return instantly without re-running expensive logic.
+ *
+ * Interview Thinking Process:
  * 1) Clarify when caching is safe: function should be pure/deterministic.
  * 2) Choose cache structure: `Map` for O(1) average lookup.
  * 3) Build stable cache keys from arguments.

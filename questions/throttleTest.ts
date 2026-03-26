@@ -1,3 +1,15 @@
+/**
+ * Explanation:
+ * This file tests throttle behavior deterministically by mocking `Date.now`,
+ * then compares leading throttle with a trailing variant.
+ *
+ * Interview Thinking Process:
+ * 1) Remove timing flakiness with deterministic clock mocking.
+ * 2) Verify core rule: at most one call per interval window.
+ * 3) Assert argument forwarding for executed calls.
+ * 4) Compare leading vs trailing semantics explicitly.
+ * 5) Keep assertions small and descriptive for debugging clarity.
+ */
 import { throttle } from './throttle'
 
 function assert(condition: boolean, message: string): void {

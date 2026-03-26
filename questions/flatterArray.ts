@@ -1,5 +1,9 @@
 /**
- * Interview Thinking Steps (Flatten Array):
+ * Explanation:
+ * Flatten converts a nested array into a single-level array while preserving order.
+ * Recursion is a clean DFS approach for unknown nesting depth.
+ *
+ * Interview Thinking Process:
  * 1) Confirm input shape: nested arrays of unknown depth.
  * 2) Pick approach: recursion (DFS) is simplest and expressive.
  * 3) Define base case: empty array returns empty result.

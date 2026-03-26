@@ -2,6 +2,8 @@ import UseFetchDemo from './UseFetchDemo'
 import UseDebounceDemo from './UseDebounceDemo'
 import UseCallbackDemo from './UseCallbackDemo'
 import UseRefDemo from './UseRefDemo'
+import LazyLoadThrottleDemo from './LazyLoadThrottleDemo'
+import EventLoopDemo from './EventLoopDemo'
 
 export default function ReactPage() {
   return (
@@ -12,6 +14,8 @@ export default function ReactPage() {
         <UseDebounceDemo />
         <UseCallbackDemo />
         <UseRefDemo />
+        <LazyLoadThrottleDemo />
+        <EventLoopDemo />
       </div>
     </>
   )

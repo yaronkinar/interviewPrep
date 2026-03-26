@@ -1,5 +1,9 @@
 /**
- * Interview Thinking Steps (Lazy Loading Images):
+ * Explanation:
+ * Lazy loading defers image fetches until they are near visibility, reducing
+ * initial page load cost and improving perceived performance.
+ *
+ * Interview Thinking Process:
  * 1) State goal: defer image downloads until near viewport.
  * 2) Use `data-src` for real URL and lightweight placeholder in `src`.
  * 3) Observe each image and swap `src` when intersecting.
