@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { CollapsibleCode, Explanation } from '../components/CodeBlock'
 
 interface GalleryItem {
@@ -62,11 +62,31 @@ export default function LazyLoadThrottleDemo() {
   )
 
   const refs = useRef<Record<number, HTMLDivElement | null>>({})
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null)
   const [loadedIds, setLoadedIds] = useState<Set<number>>(new Set())
+  const [isNarrowPhone, setIsNarrowPhone] = useState<boolean>(
+    typeof window !== 'undefined' ? window.innerWidth < 360 : false
+  )
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsNarrowPhone(window.innerWidth < 360)
+    }
+    handleResize()
+    window.addEventListener('resize', handleResize)
+    return () => {
+      window.removeEventListener('resize', handleResize)
+    }
+  }, [])
 
   useEffect(() => {
     const markVisibleCards = () => {
       const preloadOffset = 160
+      const container = scrollContainerRef.current
+      const viewportTop = container ? container.getBoundingClientRect().top : 0
+      const viewportBottom = container
+        ? container.getBoundingClientRect().bottom
+        : window.innerHeight
       let changed = false
 
       setLoadedIds((prev) => {
@@ -77,8 +97,8 @@ export default function LazyLoadThrottleDemo() {
           if (!el) continue
           const rect = el.getBoundingClientRect()
           const inPreloadZone =
-            rect.top <= window.innerHeight + preloadOffset &&
-            rect.bottom >= -preloadOffset
+            rect.top <= viewportBottom + preloadOffset &&
+            rect.bottom >= viewportTop - preloadOffset
           if (inPreloadZone) {
             next.add(item.id)
             changed = true
@@ -90,11 +110,12 @@ export default function LazyLoadThrottleDemo() {
 
     const throttledCheck = throttle(markVisibleCards, 150)
     markVisibleCards()
-    window.addEventListener('scroll', throttledCheck, { passive: true })
+    const container = scrollContainerRef.current
+    container?.addEventListener('scroll', throttledCheck, { passive: true })
     window.addEventListener('resize', throttledCheck)
 
     return () => {
-      window.removeEventListener('scroll', throttledCheck)
+      container?.removeEventListener('scroll', throttledCheck)
       window.removeEventListener('resize', throttledCheck)
     }
   }, [items])
@@ -107,11 +128,17 @@ export default function LazyLoadThrottleDemo() {
         expensive layout reads.
       </p>
 
-      <div className="demo-output" style={{ maxHeight: 300, overflow: 'auto' }}>
+      <div
+        ref={scrollContainerRef}
+        className="demo-output"
+        style={{ maxHeight: 300, overflow: 'auto', WebkitOverflowScrolling: 'touch' }}
+      >
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+            gridTemplateColumns: isNarrowPhone
+              ? 'minmax(0, 1fr)'
+              : 'repeat(auto-fit, minmax(140px, 1fr))',
             gap: 12,
           }}
         >
