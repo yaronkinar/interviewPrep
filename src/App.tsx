@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Analytics } from '@vercel/analytics/react'
 import Nav from './Nav'
 import JsPage from './js/index'
 import ReactPage from './react/index'
@@ -17,6 +18,7 @@ export default function App() {
         {page === 'react'     && <ReactPage />}
         {page === 'questions' && <QuestionsPage />}
       </main>
+      <Analytics />
     </>
   )
 }
