@@ -1,0 +1,627 @@
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+} from 'react'
+import type { MessageParam } from '@anthropic-ai/sdk/resources/messages'
+import {
+  QUESTIONS,
+  COMPANIES,
+  CATEGORIES,
+  type Question,
+  type Difficulty,
+  type Category,
+} from './data'
+import ApiKeySettings from './ApiKeySettings'
+import ChatMarkdown from './ChatMarkdown'
+import { formatApiError, streamChatMessage } from './anthropicClient'
+import { DEFAULT_ANTHROPIC_MODEL } from './anthropicConstants'
+import {
+  loadCustomQuestionsFromStorage,
+} from './customQuestions'
+import {
+  MOCK_TRAINING_OPTIONS,
+  type MockTrainingStyle,
+  buildMockSystemPrompt,
+  getMockAutoStartUserMessage,
+  mockStyleUsesAutoStart,
+} from './mockInterviewPrompts'
+import {
+  describeMockTimeBudget,
+  formatCountdown,
+  formatDurationLabel,
+  getMockTimeLimitSeconds,
+} from './mockInterviewTimer'
+import { buildMockCodeReviewStarter } from './mockCodeStarter'
+
+const VsCodeStyleEditor = lazy(() => import('./VsCodeStyleEditor'))
+
+function mockStyleUsesCodeEditor(s: MockTrainingStyle): boolean {
+  return s === 'code_review' || s === 'interviewer'
+}
+
+const DIFFICULTY_COLOR: Record<Difficulty, string> = {
+  easy: '#34d399',
+  medium: '#fbbf24',
+  hard: '#f87171',
+}
+
+interface ChatMessage {
+  role: 'user' | 'assistant'
+  content: string
+}
+
+interface MockInterviewSessionProps {
+  question: Question
+  style: MockTrainingStyle
+  includeRefAnswer: boolean
+  apiKey: string
+  model: string
+}
+
+function MockInterviewSession({
+  question,
+  style,
+  includeRefAnswer,
+  apiKey,
+  model,
+}: MockInterviewSessionProps) {
+  const [messages, setMessages] = useState<ChatMessage[]>([])
+  const [input, setInput] = useState('')
+  const [codeDraft, setCodeDraft] = useState(() =>
+    mockStyleUsesCodeEditor(style) ? buildMockCodeReviewStarter(question) : '',
+  )
+  const [streaming, setStreaming] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [sessionStartedAt, setSessionStartedAt] = useState<number | null>(null)
+  const [, setTimerTick] = useState(0)
+
+  const autoStartLockRef = useRef(false)
+  const streamGenerationRef = useRef(0)
+  const chatLogRef = useRef<HTMLDivElement>(null)
+
+  const timeLimitSec = useMemo(() => getMockTimeLimitSeconds(question), [question])
+
+  const canSend =
+    apiKey.trim().length > 0 &&
+    !loading &&
+    (mockStyleUsesCodeEditor(style)
+      ? codeDraft.trim().length > 0 || input.trim().length > 0
+      : input.trim().length > 0)
+
+  const composePlaceholder =
+    style === 'verbal_practice'
+      ? 'Type the answer you would say out loud in the interview, then send for feedback…'
+      : style === 'code_review'
+        ? 'Optional notes, questions, or context (sent together with the editor code)…'
+        : style === 'interviewer'
+          ? 'Verbal answer or extra context (optional — sent with the code above)…'
+          : 'Follow-up message…'
+
+  const clearThread = useCallback(() => {
+    streamGenerationRef.current += 1
+    setMessages([])
+    setStreaming('')
+    setError(null)
+    setSessionStartedAt(null)
+    setCodeDraft(mockStyleUsesCodeEditor(style) ? buildMockCodeReviewStarter(question) : '')
+    setInput('')
+    autoStartLockRef.current = false
+  }, [style, question])
+
+  useEffect(() => {
+    if (messages.length === 0) {
+      setSessionStartedAt(null)
+      return
+    }
+    setSessionStartedAt((prev) => prev ?? Date.now())
+  }, [messages.length])
+
+  useEffect(() => {
+    if (sessionStartedAt == null) return
+    const id = window.setInterval(() => setTimerTick((t) => t + 1), 1000)
+    return () => clearInterval(id)
+  }, [sessionStartedAt])
+
+  const elapsedSec =
+    sessionStartedAt == null ? 0 : Math.max(0, Math.floor((Date.now() - sessionStartedAt) / 1000))
+  const remainingSec = Math.max(0, timeLimitSec - elapsedSec)
+  const timeUp = sessionStartedAt != null && remainingSec <= 0
+  const timerUrgent = sessionStartedAt != null && remainingSec > 0 && remainingSec <= 120
+
+  const runStreamTurn = useCallback(
+    async (thread: ChatMessage[]) => {
+      const gen = streamGenerationRef.current
+      const system = buildMockSystemPrompt(question, style, includeRefAnswer)
+      const apiMessages: MessageParam[] = thread.map((m) => ({
+        role: m.role,
+        content: m.content,
+      }))
+      let acc = ''
+      await streamChatMessage({
+        apiKey: apiKey.trim(),
+        model: model.trim(),
+        system,
+        messages: apiMessages,
+        onTextDelta: (d) => {
+          acc += d
+          setStreaming(acc)
+        },
+      })
+      if (gen !== streamGenerationRef.current) return
+      setMessages((prev) => [...prev, { role: 'assistant', content: acc }])
+      setStreaming('')
+    },
+    [apiKey, model, question, style, includeRefAnswer],
+  )
+
+  useEffect(() => {
+    if (!apiKey.trim() || !mockStyleUsesAutoStart(style)) return
+    if (messages.length > 0 || loading || autoStartLockRef.current) return
+
+    const starter = getMockAutoStartUserMessage(style)
+    if (!starter) return
+
+    autoStartLockRef.current = true
+    setError(null)
+    const userTurn: ChatMessage = { role: 'user', content: starter }
+    setMessages([userTurn])
+    setLoading(true)
+    setStreaming('')
+
+    ;(async () => {
+      try {
+        await runStreamTurn([userTurn])
+      } catch (e) {
+        setError(formatApiError(e))
+        setStreaming('')
+        setMessages([])
+        autoStartLockRef.current = true
+      } finally {
+        setLoading(false)
+      }
+    })()
+  }, [apiKey, style, messages.length, loading, runStreamTurn])
+
+  useEffect(() => {
+    if (style !== 'code_review') return
+    const el = chatLogRef.current
+    if (!el) return
+    const id = requestAnimationFrame(() => {
+      el.scrollTop = el.scrollHeight
+    })
+    return () => cancelAnimationFrame(id)
+  }, [style, messages, streaming, loading])
+
+  async function send() {
+    if (!canSend) return
+    let text: string
+    if (mockStyleUsesCodeEditor(style)) {
+      const parts: string[] = []
+      const code = codeDraft.trim()
+      const notes = input.trim()
+      if (code) {
+        const intro =
+          style === 'code_review'
+            ? 'Here is my solution:'
+            : 'As the candidate, here is my code:'
+        parts.push(`${intro}\n\n\`\`\`tsx\n${code}\n\`\`\``)
+      }
+      if (notes) parts.push(notes)
+      text = parts.join('\n\n')
+      if (!text) return
+    } else {
+      text = input.trim()
+    }
+    setInput('')
+    setError(null)
+    const userTurn: ChatMessage = { role: 'user', content: text }
+    const nextThread = [...messages, userTurn]
+    setMessages(nextThread)
+    setLoading(true)
+    setStreaming('')
+
+    try {
+      await runStreamTurn(nextThread)
+    } catch (e) {
+      setError(formatApiError(e))
+      setStreaming('')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const hint =
+    style === 'verbal_practice'
+      ? 'Send your spoken-style answer; Claude will reply with structured feedback.'
+        : style === 'code_review'
+        ? 'Edit code in the VS Code–style editor below, add optional notes, then send for review. Follow-ups can be notes-only or include updated code.'
+        : style === 'interviewer'
+          ? 'Reply as the candidate: use the VS Code–style editor for code, optional notes for what you would say out loud. Claude stays in interviewer character.'
+          : 'Ask follow-ups to go deeper on approach, trade-offs, or edge cases.'
+
+  return (
+    <div className="q-chat-panel mock-interview-session">
+      {!apiKey.trim() && <p className="q-chat-warn">Add an Anthropic API key above to start the mock session.</p>}
+      {apiKey.trim() && <p className="q-chat-auto-hint">{hint}</p>}
+
+      <div
+        className={`mock-session-timer${timeUp ? ' mock-session-timer--up' : ''}${timerUrgent ? ' mock-session-timer--urgent' : ''}`}
+        role="timer"
+        aria-live="polite"
+        aria-label={
+          sessionStartedAt == null
+            ? `Question time budget ${formatCountdown(timeLimitSec)}`
+            : timeUp
+              ? 'Time is up'
+              : `${formatCountdown(remainingSec)} remaining of ${formatCountdown(timeLimitSec)}`
+        }
+      >
+        <span className="mock-session-timer-label">Question timer</span>
+        <span className="mock-session-timer-budget">
+          Budget <strong>{formatDurationLabel(timeLimitSec)}</strong>
+          <span className="mock-session-timer-meta">({describeMockTimeBudget(question)})</span>
+        </span>
+        {sessionStartedAt != null ? (
+          <span className="mock-session-timer-remaining">
+            {timeUp ? (
+              <span className="mock-session-timer-zero">Time&apos;s up</span>
+            ) : (
+              <>
+                <span className="mock-session-timer-digits">{formatCountdown(remainingSec)}</span>
+                <span className="mock-session-timer-sub">left</span>
+              </>
+            )}
+          </span>
+        ) : (
+          <span className="mock-session-timer-idle">Starts when the thread begins</span>
+        )}
+      </div>
+      {timeUp && (
+        <p className="mock-session-timer-banner">
+          Budget used for this question—you can keep chatting or <strong>Reset session</strong> for a fresh timer.
+        </p>
+      )}
+
+      <div className="q-chat-actions-top">
+        <button
+          type="button"
+          className="secondary"
+          onClick={clearThread}
+          disabled={messages.length === 0 && !streaming && !error}
+        >
+          Reset session
+        </button>
+      </div>
+
+      <div ref={chatLogRef} className="q-chat-log" aria-live="polite">
+        {messages.map((m, i) => (
+          <div key={i} className={`q-chat-bubble q-chat-bubble--${m.role}`}>
+            <span className="q-chat-role">{m.role === 'user' ? 'You' : 'Claude'}</span>
+            {m.role === 'assistant' ? (
+              <ChatMarkdown content={m.content} />
+            ) : (
+              <div className="q-chat-text">{m.content}</div>
+            )}
+          </div>
+        ))}
+        {(streaming || loading) && (
+          <div className="q-chat-bubble q-chat-bubble--assistant">
+            <span className="q-chat-role">Claude</span>
+            {streaming ? (
+              <ChatMarkdown content={streaming} />
+            ) : (
+              <div className="q-chat-text">
+                <span className="q-chat-typing">…</span>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+      {error && <div className="q-chat-error">{error}</div>}
+      <div className="q-chat-compose">
+        {mockStyleUsesCodeEditor(style) ? (
+          <>
+            <Suspense
+              fallback={
+                <div className="vscode-chrome vscode-chrome--loading" aria-busy>
+                  Loading editor…
+                </div>
+              }
+            >
+              <VsCodeStyleEditor
+                question={question}
+                value={codeDraft}
+                onChange={setCodeDraft}
+                height="min(42vh, 360px)"
+                windowTitle={
+                  style === 'code_review' ? 'Mock interview — code' : 'Mock interview — interviewer'
+                }
+              />
+            </Suspense>
+            <label className="mock-code-notes-label">
+              <span className="mock-code-notes-title">
+                {style === 'code_review' ? 'Notes (optional)' : 'Verbal notes (optional)'}
+              </span>
+              <textarea
+                className="q-chat-input mock-interview-compose mock-code-notes-input"
+                rows={3}
+                placeholder={composePlaceholder}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey && (e.metaKey || e.ctrlKey)) {
+                    e.preventDefault()
+                    void send()
+                  }
+                }}
+                disabled={!apiKey.trim() || loading}
+              />
+            </label>
+            <div className="mock-code-send-row">
+              <button type="button" className="secondary" onClick={() => void send()} disabled={!canSend}>
+                {style === 'code_review' ? 'Send for review' : 'Send reply'}
+              </button>
+              <span className="mock-code-send-hint">Tip: ⌃/⌘+Enter sends from the notes field.</span>
+            </div>
+          </>
+        ) : (
+          <>
+            <textarea
+              className="q-chat-input mock-interview-compose"
+              rows={style === 'verbal_practice' ? 6 : 3}
+              placeholder={composePlaceholder}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault()
+                  void send()
+                }
+              }}
+              disabled={!apiKey.trim() || loading}
+            />
+            <button type="button" className="secondary" onClick={() => void send()} disabled={!canSend}>
+              Send
+            </button>
+          </>
+        )}
+      </div>
+    </div>
+  )
+}
+
+export default function MockInterviewPage() {
+  const [search, setSearch] = useState('')
+  const [company, setCompany] = useState<string | null>(null)
+  const [difficulty, setDifficulty] = useState<Difficulty | null>(null)
+  const [category, setCategory] = useState<Category | null>(null)
+
+  const [customQuestions] = useState<Question[]>(() => loadCustomQuestionsFromStorage())
+
+  const [selectedId, setSelectedId] = useState<string>(() => QUESTIONS[0]?.id ?? '')
+  const [style, setStyle] = useState<MockTrainingStyle>('understand')
+  const [includeRefAnswer, setIncludeRefAnswer] = useState(false)
+
+  const [apiKey, setApiKey] = useState('')
+  const [anthropicModel, setAnthropicModel] = useState(DEFAULT_ANTHROPIC_MODEL)
+
+  const onCredentialsChange = useCallback((key: string, model: string) => {
+    setApiKey(key)
+    setAnthropicModel(model || DEFAULT_ANTHROPIC_MODEL)
+  }, [])
+
+  const allQuestions = useMemo(() => [...QUESTIONS, ...customQuestions], [customQuestions])
+
+  const filtered = useMemo(() => {
+    const q = search.toLowerCase().trim()
+    return allQuestions.filter((question) => {
+      if (company && !question.companies.includes(company)) return false
+      if (difficulty && question.difficulty !== difficulty) return false
+      if (category && question.category !== category) return false
+      if (
+        q &&
+        !question.title.toLowerCase().includes(q) &&
+        !question.description.toLowerCase().includes(q) &&
+        !question.tags.some((t) => t.includes(q))
+      )
+        return false
+      return true
+    })
+  }, [search, company, difficulty, category, allQuestions])
+
+  const selectedQuestion = useMemo(() => {
+    if (filtered.length === 0) return undefined
+    const inFilter = filtered.find((q) => q.id === selectedId)
+    if (inFilter) return inFilter
+    return filtered[0]
+  }, [filtered, selectedId])
+
+  useEffect(() => {
+    if (filtered.length === 0) return
+    if (!filtered.some((q) => q.id === selectedId)) {
+      setSelectedId(filtered[0].id)
+    }
+  }, [filtered, selectedId])
+
+  const hasFilters = search || company || difficulty || category
+
+  function clearFilters() {
+    setSearch('')
+    setCompany(null)
+    setDifficulty(null)
+    setCategory(null)
+  }
+
+  return (
+    <>
+      <h1 className="page-title">Mock interview</h1>
+      <p className="sandbox-page-lead mock-interview-lead">
+        Pick a question, choose how you want to train, then run a session with Claude. Uses the same library as{' '}
+        <strong>Company Q&amp;A</strong> (plus any custom questions already in your browser). Add or edit custom
+        questions on that tab if needed.
+      </p>
+
+      <ApiKeySettings onCredentialsChange={onCredentialsChange} />
+
+      <section className="mock-interview-setup">
+        <h2 className="mock-interview-h2">1. Choose a question</h2>
+        <div className="q-search-wrap mock-interview-search">
+          <input
+            type="text"
+            placeholder="Search title, description, tags…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="q-search"
+          />
+          {hasFilters && (
+            <button type="button" className="secondary" onClick={clearFilters}>
+              ✕ Clear filters
+            </button>
+          )}
+        </div>
+
+        <div className="q-filter-row mock-interview-filters">
+          <span className="q-filter-label">Company</span>
+          <div className="q-filter-chips">
+            {COMPANIES.map((c) => (
+              <button
+                key={c.id}
+                type="button"
+                className={`q-chip${company === c.id ? ' active' : ''}`}
+                style={{ '--chip-color': c.color } as CSSProperties}
+                onClick={() => setCompany(company === c.id ? null : c.id)}
+              >
+                {c.emoji} {c.id}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="q-filter-row mock-interview-filters">
+          <span className="q-filter-label">Difficulty</span>
+          <div className="q-filter-chips">
+            {(['easy', 'medium', 'hard'] as Difficulty[]).map((d) => (
+              <button
+                key={d}
+                type="button"
+                className={`q-chip${difficulty === d ? ' active' : ''}`}
+                style={{ '--chip-color': DIFFICULTY_COLOR[d] } as CSSProperties}
+                onClick={() => setDifficulty(difficulty === d ? null : d)}
+              >
+                {d}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="q-filter-row mock-interview-filters">
+          <span className="q-filter-label">Category</span>
+          <div className="q-filter-chips">
+            {CATEGORIES.map((cat) => (
+              <button
+                key={cat}
+                type="button"
+                className={`q-chip${category === cat ? ' active' : ''}`}
+                onClick={() => setCategory(category === cat ? null : cat)}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {filtered.length === 0 ? (
+          <p className="q-empty">No questions match. Clear filters or search.</p>
+        ) : (
+          <label className="mock-interview-select-label">
+            <span className="mock-interview-select-title">Question</span>
+            <select
+              className="mock-interview-select"
+              value={selectedQuestion?.id ?? ''}
+              onChange={(e) => setSelectedId(e.target.value)}
+            >
+              {filtered.map((q) => (
+                <option key={q.id} value={q.id}>
+                  [{q.difficulty}] {q.title}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+
+        {selectedQuestion && (
+          <div className="mock-interview-preview-card">
+            <div className="mock-interview-preview-meta">
+              <span className="q-category-label">{selectedQuestion.category}</span>
+              <span className="q-difficulty" style={{ color: DIFFICULTY_COLOR[selectedQuestion.difficulty] }}>
+                {selectedQuestion.difficulty}
+              </span>
+            </div>
+            <div className="q-title">{selectedQuestion.title}</div>
+            <p className="q-desc mock-interview-desc">{selectedQuestion.description}</p>
+            {selectedQuestion.tags.length > 0 && (
+              <div className="q-tags">
+                {selectedQuestion.tags.map((t) => (
+                  <span key={t} className="q-tag">
+                    #{t}
+                  </span>
+                ))}
+              </div>
+            )}
+            <p className="mock-interview-timer-hint">
+              Session timer: <strong>{formatDurationLabel(getMockTimeLimitSeconds(selectedQuestion))}</strong> —{' '}
+              {describeMockTimeBudget(selectedQuestion)}.
+            </p>
+          </div>
+        )}
+
+        <h2 className="mock-interview-h2">2. How do you want to train?</h2>
+        <div className="mock-style-grid">
+          {MOCK_TRAINING_OPTIONS.map((opt) => (
+            <label
+              key={opt.id}
+              className={`mock-style-card${style === opt.id ? ' mock-style-card--active' : ''}`}
+            >
+              <input
+                type="radio"
+                name="mock-training-style"
+                checked={style === opt.id}
+                onChange={() => setStyle(opt.id)}
+              />
+              <span className="mock-style-card-title">{opt.label}</span>
+              <span className="mock-style-card-blurb">{opt.blurb}</span>
+            </label>
+          ))}
+        </div>
+
+        <label className="q-chat-checkbox mock-interview-ref">
+          <input
+            type="checkbox"
+            checked={includeRefAnswer}
+            onChange={(e) => setIncludeRefAnswer(e.target.checked)}
+          />
+          Include reference answer in Claude&apos;s context (stronger feedback; may reduce discovery)
+        </label>
+
+        <h2 className="mock-interview-h2">3. Session</h2>
+        {selectedQuestion && (
+          <MockInterviewSession
+            key={`${selectedQuestion.id}-${style}`}
+            question={selectedQuestion}
+            style={style}
+            includeRefAnswer={includeRefAnswer}
+            apiKey={apiKey}
+            model={anthropicModel}
+          />
+        )}
+      </section>
+    </>
+  )
+}

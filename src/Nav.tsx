@@ -8,6 +8,8 @@ interface NavProps {
 const TABS: { id: Page; label: string }[] = [
   { id: 'js',        label: 'JS Patterns' },
   { id: 'react',     label: 'React Questions' },
+  { id: 'sandbox',   label: 'React sandbox' },
+  { id: 'mock',      label: 'Mock interview' },
   { id: 'questions', label: '🏢 Company Q&A' },
 ]
 

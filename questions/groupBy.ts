@@ -16,7 +16,7 @@ const users = [
     { id: 3, team: 'A' },
 ]
 
-console.log(groupBy(users, "team"))
+console.log(groupBy(users, (item) => item.team))
 console.log(groupBy2(users, "team"))
 
 type Key = string | number | symbol
@@ -46,9 +46,17 @@ function groupBy<T, K extends Key>(array: T[], selector: keyof T | ((item: T) =>
 
     return grouped
 }
-function groupBy2(array: any[], selector: string) {
+function groupBy2<T>(array: any[], selector: string | ((item: T) => string)) {
+    const getKey = (item: any) =>{
+        if(typeof selector === "function"){
+            return selector(item)
+        }
+        return (
+            item[selector]
+        )
+    }
     return array.reduce<Record<string, any[]>>((acc, item) => {
-        const key = String(item[String(selector)])
+        const key = getKey(item)
         if (!acc[key]) acc[key] = []
         acc[key].push(item)
         return acc

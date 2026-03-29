@@ -9,6 +9,17 @@ export type Category =
   | 'System Design'
   | 'Performance'
 
+export const CATEGORIES: Category[] = [
+  'Closures & Scope',
+  'Async & Promises',
+  'Prototypes & OOP',
+  'DOM & Browser',
+  'ES6+',
+  'Algorithms',
+  'System Design',
+  'Performance',
+]
+
 export interface Question {
   id: string
   companies: string[]
