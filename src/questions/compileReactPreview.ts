@@ -1,12 +1,12 @@
 import * as Babel from '@babel/standalone'
-import typescriptPreset from '@babel/preset-typescript'
+import transformTypeScript from '@babel/plugin-transform-typescript'
 
-let typescriptPresetRegistered = false
+let typescriptPluginRegistered = false
 
-function ensureTypescriptPreset(): void {
-  if (typescriptPresetRegistered) return
-  Babel.registerPreset('typescript', typescriptPreset as Parameters<typeof Babel.registerPreset>[1])
-  typescriptPresetRegistered = true
+function ensureTypescriptPlugin(): void {
+  if (typescriptPluginRegistered) return
+  Babel.registerPlugin('transform-typescript', transformTypeScript as Parameters<typeof Babel.registerPlugin>[1])
+  typescriptPluginRegistered = true
 }
 
 function stripModuleSyntax(code: string): string {
@@ -66,15 +66,13 @@ window.onerror=function(msg,src,line,col,err){
 }
 
 export async function compileAndBuildPreviewHtml(userCode: string): Promise<{ html: string } | { error: string }> {
-  ensureTypescriptPreset()
+  ensureTypescriptPlugin()
   const wrapped = wrapForPreview(userCode)
   try {
     const result = Babel.transform(wrapped, {
       filename: 'preview.tsx',
-      presets: [
-        ['typescript', { isTSX: true, allExtensions: true }],
-        'react',
-      ],
+      presets: ['react'],
+      plugins: [['transform-typescript', { isTSX: true, allExtensions: true }]],
     })
     const code = result?.code
     if (!code) return { error: 'Babel produced no output.' }

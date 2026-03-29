@@ -22,7 +22,7 @@
   "private": true,
   "dependencies": {
     "@anthropic-ai/sdk": "^0.80.0",
-    "@babel/preset-typescript": "^7.28.5",
+    "@babel/plugin-transform-typescript": "^7.28.5",
     "@babel/standalone": "^7.29.2",
     "@monaco-editor/react": "^4.7.0",
     "@vercel/analytics": "^2.0.1",
