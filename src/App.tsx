@@ -13,6 +13,7 @@ import MockInterviewPage from './questions/MockInterviewPage'
 import QuestionsPage from './questions/QuestionsPage'
 import type { Page } from './page'
 import { pageFromPathname } from './routes'
+import { AUTHOR_LINKEDIN_URL } from './site'
 
 export type { Page }
 
@@ -30,7 +31,7 @@ function AppShell() {
   }, [page, strings.home.metaTitle])
 
   return (
-    <>
+    <div className="app-shell">
       <Nav />
       <main className="main">
         <Routes>
@@ -43,9 +44,22 @@ function AppShell() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
+      <footer className="site-footer">
+        <p className="site-footer-inner">
+          {strings.siteCreditPrefix}
+          <a
+            className="site-footer-link"
+            href={AUTHOR_LINKEDIN_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {strings.siteCreditName}
+          </a>
+        </p>
+      </footer>
       <Analytics />
       <AppBrowserConsole />
-    </>
+    </div>
   )
 }
 

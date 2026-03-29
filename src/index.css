@@ -103,6 +103,16 @@ body {
   min-height: 100vh;
 }
 
+#root {
+  min-height: 100vh;
+}
+
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
 /* ── NAV ── */
 .nav {
   background: var(--surface);
@@ -248,7 +258,31 @@ button.nav-theme-btn[aria-pressed='true'] {
 
 /* ── LAYOUT ── */
 .main {
+  flex: 1;
   padding: 2rem;
+}
+
+.site-footer {
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+  margin-top: auto;
+  padding: 1rem 2rem 1.5rem;
+}
+.site-footer-inner {
+  color: var(--text-faint);
+  font-size: 0.8rem;
+  margin: 0 auto;
+  max-width: 1200px;
+  text-align: center;
+}
+.site-footer-link {
+  color: var(--accent);
+  font-weight: 600;
+  text-decoration: none;
+}
+.site-footer-link:hover {
+  color: var(--accent-2);
+  text-decoration: underline;
 }
 
 /* ── HOME ── */

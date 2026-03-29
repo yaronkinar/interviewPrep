@@ -22,9 +22,15 @@ export type HomeStrings = {
 export type AppStrings = {
   nav: Record<Page, string>
   home: HomeStrings
+  /** Text before the linked author name in the footer; omit per-locale to fall back to English. */
+  siteCreditPrefix?: string
+  /** Linked author display name; omit per-locale to fall back to English. */
+  siteCreditName?: string
 }
 
 const en: AppStrings = {
+  siteCreditPrefix: 'Created by ',
+  siteCreditName: 'Yaron Kinar',
   nav: {
     home: 'Home',
     js: 'JS Patterns',
@@ -70,6 +76,8 @@ const en: AppStrings = {
 }
 
 const he: AppStrings = {
+  siteCreditPrefix: 'נוצר על ידי ',
+  siteCreditName: 'ירון קינר',
   nav: {
     home: 'בית',
     js: 'דפוסי JS',
@@ -626,5 +634,10 @@ export const STRINGS_BY_LOCALE: Record<Locale, AppStrings> = {
 }
 
 export function getStrings(locale: Locale): AppStrings {
-  return STRINGS_BY_LOCALE[locale] ?? en
+  const s = STRINGS_BY_LOCALE[locale] ?? en
+  return {
+    ...s,
+    siteCreditPrefix: s.siteCreditPrefix ?? en.siteCreditPrefix,
+    siteCreditName: s.siteCreditName ?? en.siteCreditName,
+  }
 }
