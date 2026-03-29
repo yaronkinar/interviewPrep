@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react'
 import type { MessageParam } from '@anthropic-ai/sdk/resources/messages'
+import { useLocale } from '../i18n/LocaleContext'
 import { formatApiError, streamChatMessage } from './anthropicClient'
 import ChatMarkdown from './ChatMarkdown'
 
@@ -20,6 +21,7 @@ export interface OpenChatProps {
 }
 
 export default function OpenChat({ apiKey, model }: OpenChatProps) {
+  const { locale } = useLocale()
   const [open, setOpen] = useState(false)
   const [mode, setMode] = useState<OpenChatMode>('explain')
   const [messages, setMessages] = useState<ChatMessage[]>([])
@@ -59,6 +61,7 @@ export default function OpenChat({ apiKey, model }: OpenChatProps) {
         apiKey: apiKey.trim(),
         model: model.trim(),
         system,
+        locale,
         messages: apiMessages,
         onTextDelta: (d) => {
           acc += d

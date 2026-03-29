@@ -25,6 +25,22 @@
       content="Practice JavaScript patterns, React interview questions, company Q&amp;A, and mock interviews with Claude — interview prep in the browser."
     />
     <title>Interview Prep</title>
+    <script>
+      (function () {
+        try {
+          var t = localStorage.getItem('interview-prep-theme')
+          if (t === 'light' || t === 'dark') {
+            document.documentElement.dataset.theme = t
+            return
+          }
+        } catch (e) {}
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
+          document.documentElement.dataset.theme = 'light'
+        } else {
+          document.documentElement.dataset.theme = 'dark'
+        }
+      })()
+    </script>
   </head>
   <body>
     <div id="root"></div>

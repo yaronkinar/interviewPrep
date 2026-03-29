@@ -17,6 +17,7 @@ import {
   type Difficulty,
   type Category,
 } from './data'
+import { useLocale } from '../i18n/LocaleContext'
 import ApiKeySettings from './ApiKeySettings'
 import ChatMarkdown from './ChatMarkdown'
 import { formatApiError, streamChatMessage } from './anthropicClient'
@@ -74,6 +75,7 @@ function MockInterviewSession({
   apiKey,
   model,
 }: MockInterviewSessionProps) {
+  const { locale } = useLocale()
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [input, setInput] = useState('')
   const [codeDraft, setCodeDraft] = useState(() =>
@@ -205,6 +207,7 @@ function MockInterviewSession({
         apiKey: apiKey.trim(),
         model: model.trim(),
         system,
+        locale,
         messages: apiMessages,
         onTextDelta: (d) => {
           acc += d
@@ -215,7 +218,7 @@ function MockInterviewSession({
       setMessages((prev) => [...prev, { role: 'assistant', content: acc }])
       setStreaming('')
     },
-    [apiKey, model, question, style, includeRefAnswer],
+    [apiKey, model, question, style, includeRefAnswer, locale],
   )
 
   useEffect(() => {

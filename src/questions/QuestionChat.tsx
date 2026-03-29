@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { MessageParam } from '@anthropic-ai/sdk/resources/messages'
+import { useLocale } from '../i18n/LocaleContext'
 import type { Question } from './data'
 import { formatApiError, streamChatMessage } from './anthropicClient'
 import ChatMarkdown from './ChatMarkdown'
@@ -58,6 +59,7 @@ const AUTO_EXPLAIN_USER =
   'Explain this interview question for me: what it is testing, how you would approach it in an interview (steps, not necessarily full code), and common pitfalls. Stay concise; do not give a complete solution unless I ask for it in a follow-up.'
 
 export default function QuestionChat({ question, apiKey, model }: QuestionChatProps) {
+  const { locale } = useLocale()
   const [open, setOpen] = useState(false)
   const [mode, setMode] = useState<ChatMode>('explain')
   const [includeRefAnswer, setIncludeRefAnswer] = useState(false)
@@ -93,6 +95,7 @@ export default function QuestionChat({ question, apiKey, model }: QuestionChatPr
         apiKey: apiKey.trim(),
         model: model.trim(),
         system,
+        locale,
         messages: apiMessages,
         onTextDelta: (d) => {
           acc += d
@@ -103,7 +106,7 @@ export default function QuestionChat({ question, apiKey, model }: QuestionChatPr
       setMessages((prev) => [...prev, { role: 'assistant', content: acc }])
       setStreaming('')
     },
-    [apiKey, model, question],
+    [apiKey, model, question, locale],
   )
 
   useEffect(() => {

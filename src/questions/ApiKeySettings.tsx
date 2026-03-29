@@ -110,7 +110,7 @@ export default function ApiKeySettings({ onCredentialsChange }: ApiKeySettingsPr
         className="q-ai-settings-toggle code-toggle"
         onClick={() => setOpen((o) => !o)}
       >
-        {open ? '▼' : '▶'} Anthropic API (bring your own key)
+        {open ? '▼' : '▶'} Anthropic API
       </button>
       {open && (
         <div className="q-ai-settings-panel">

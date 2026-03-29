@@ -12,6 +12,8 @@ import { QuestionExample, hasQuestionExample } from './QuestionExample'
 import ApiKeySettings from './ApiKeySettings'
 import OpenChat from './OpenChat'
 import QuestionChat from './QuestionChat'
+import { useLocale } from '../i18n/LocaleContext'
+import { getUiStrings } from '../i18n/uiStrings'
 import {
   loadCustomQuestionsFromStorage,
   saveCustomQuestionsToStorage,
@@ -25,14 +27,15 @@ const DIFFICULTY_COLOR: Record<Difficulty, string> = {
   hard: '#f87171',
 }
 
-function buildThinkingSteps(q: Question): string[] {
+function buildThinkingSteps(q: Question, baseSteps: string[]): string[] {
   const firstTag = q.tags[0] ?? 'core concept'
+  const [step1, step2, step3, step4, step5] = baseSteps
   return [
-    `Clarify requirements, expected input/output, and edge cases for this ${q.category} problem.`,
-    `Pick an approach using ${firstTag} and explain why it fits better than alternatives.`,
-    'Implement incrementally and narrate key decisions while coding.',
-    'State time and space complexity, and mention what drives each.',
-    'Propose follow-ups (optimizations, trade-offs, or production hardening).',
+    `${step1} (${q.category})`,
+    `${step2} (${firstTag})`,
+    step3,
+    step4,
+    step5,
   ]
 }
 
@@ -54,10 +57,11 @@ interface QuestionCardProps {
   apiKey: string
   model: string
   isCustom: boolean
+  ui: ReturnType<typeof getUiStrings>
   onDeleteCustom?: () => void
 }
 
-function QuestionCard({ q, apiKey, model, isCustom, onDeleteCustom }: QuestionCardProps) {
+function QuestionCard({ q, apiKey, model, isCustom, ui, onDeleteCustom }: QuestionCardProps) {
   const [open, setOpen] = useState(false)
   const [showThinking, setShowThinking] = useState(false)
   const [showExample, setShowExample] = useState(false)
@@ -70,7 +74,7 @@ function QuestionCard({ q, apiKey, model, isCustom, onDeleteCustom }: QuestionCa
           {q.companies.length > 0 ? (
             q.companies.map((c) => <CompanyBadge key={c} name={c} />)
           ) : (
-            <span className="q-custom-badge">Custom</span>
+            <span className="q-custom-badge">{ui.questions.customBadge}</span>
           )}
         </div>
         <span className="q-difficulty" style={{ color: DIFFICULTY_COLOR[q.difficulty] }}>
@@ -91,23 +95,21 @@ function QuestionCard({ q, apiKey, model, isCustom, onDeleteCustom }: QuestionCa
       </div>
 
       <div className="explanation" style={{ marginBottom: '0.75rem' }}>
-        <div className="explanation-title">// explanation</div>
+        <div className="explanation-title">{ui.questions.explanationTitle}</div>
         <div className="step" style={{ marginTop: 6 }}>
           <span>{q.description}</span>
         </div>
         <p className="q-explain-claude-hint">
-          Open <strong>Chat with Claude</strong> below for an AI walkthrough—Claude uses the full card (tags, companies,
-          difficulty) and starts with an automatic explanation when the thread is empty. For TSX previews, use the{' '}
-          <strong>React sandbox</strong> tab.
+          {ui.questions.explainHint}
         </p>
       </div>
       <button className="code-toggle" onClick={() => setShowThinking((v) => !v)}>
-        🧠 {showThinking ? 'Hide' : 'Show'} interview thinking process
+        🧠 {showThinking ? ui.common.hide : ui.common.show} {ui.questions.toggleThinking}
       </button>
       {showThinking && (
         <div className="explanation" style={{ marginBottom: '0.75rem' }}>
-          <div className="explanation-title">// interview thinking process</div>
-          {buildThinkingSteps(q).map((step, i) => (
+          <div className="explanation-title">{ui.questions.thinkingTitle}</div>
+          {buildThinkingSteps(q, ui.questions.solveGuideSteps.slice(0, 5)).map((step, i) => (
             <div key={i} className="step">
               <span className="step-num">{i + 1}</span>
               <span>{step}</span>
@@ -117,12 +119,12 @@ function QuestionCard({ q, apiKey, model, isCustom, onDeleteCustom }: QuestionCa
       )}
 
       <button className="code-toggle" onClick={() => setOpen((o) => !o)}>
-        💡 {open ? 'Hide' : 'Show'} answer
+        💡 {open ? ui.common.hide : ui.common.show} {ui.questions.toggleAnswer}
       </button>
 
       {canShowExample && (
         <button className="code-toggle" onClick={() => setShowExample((v) => !v)}>
-          🧪 {showExample ? 'Hide' : 'Show'} UI example
+          🧪 {showExample ? ui.common.hide : ui.common.show} {ui.questions.toggleExample}
         </button>
       )}
 
@@ -132,14 +134,14 @@ function QuestionCard({ q, apiKey, model, isCustom, onDeleteCustom }: QuestionCa
 
       {isCustom && onDeleteCustom && (
         <button type="button" className="secondary q-custom-delete" onClick={onDeleteCustom}>
-          Remove custom question
+          {ui.questions.removeCustomQuestion}
         </button>
       )}
 
       {open && (
         <div>
           <CodeBlock code={q.answer} language="javascript" />
-          {q.source && <div className="q-source">source: {q.source}</div>}
+          {q.source && <div className="q-source">{ui.questions.source}: {q.source}</div>}
         </div>
       )}
     </div>
@@ -147,6 +149,8 @@ function QuestionCard({ q, apiKey, model, isCustom, onDeleteCustom }: QuestionCa
 }
 
 export default function QuestionsPage() {
+  const { locale } = useLocale()
+  const ui = getUiStrings(locale)
   const [search, setSearch] = useState('')
   const [company, setCompany] = useState<string | null>(null)
   const [difficulty, setDifficulty] = useState<Difficulty | null>(null)
@@ -249,79 +253,73 @@ export default function QuestionsPage() {
 
   return (
     <>
-      <h1 className="page-title">Company Interview Questions</h1>
+      <h1 className="page-title">{ui.pages.questionsTitle}</h1>
 
       <ApiKeySettings onCredentialsChange={onCredentialsChange} />
 
       <OpenChat apiKey={apiKey} model={anthropicModel} />
 
       <section className="q-upload-section">
-        <div className="q-upload-title">Custom questions (JSON)</div>
+        <div className="q-upload-title">{ui.questions.customQuestionsTitle}</div>
         <p className="q-upload-hint">
-          Upload a file or paste JSON: one object or an array. Each item needs <code>title</code> and{' '}
-          <code>description</code> (strings). Optional: <code>id</code>, <code>difficulty</code>,{' '}
-          <code>category</code>, <code>answer</code>, <code>answerType</code>, <code>tags</code>,{' '}
-          <code>companies</code>, <code>source</code>.
+          {ui.questions.customQuestionsHint}
         </p>
         <div className="q-upload-row">
           <label className="q-upload-file-label">
-            <span className="secondary">Choose JSON file</span>
+            <span className="secondary">{ui.questions.chooseJsonFile}</span>
             <input type="file" accept="application/json,.json" className="q-upload-file" onChange={handleFileChange} />
           </label>
           {customQuestions.length > 0 && (
             <button type="button" className="secondary" onClick={clearCustomQuestions}>
-              Remove all custom ({customQuestions.length})
+              {ui.questions.removeAllCustom} ({customQuestions.length})
             </button>
           )}
         </div>
         <textarea
           className="q-upload-textarea"
-          placeholder='Paste JSON, e.g. {"title":"…","description":"…","answer":"","tags":[]}'
+          placeholder='Paste JSON, e.g. {"title":"...","description":"...","answer":"","tags":[]}'
           value={uploadPaste}
           onChange={(e) => setUploadPaste(e.target.value)}
           rows={4}
         />
         <button type="button" className="secondary" onClick={handlePasteUpload} disabled={!uploadPaste.trim()}>
-          Add from paste
+          {ui.questions.addFromPaste}
         </button>
         {uploadError && <div className="q-upload-error">{uploadError}</div>}
       </section>
 
       <section className="solve-guide">
-        <div className="solve-guide-title">How to solve questions</div>
+        <div className="solve-guide-title">{ui.questions.solveGuideTitle}</div>
         <ol className="solve-guide-list">
-          <li>Clarify requirements and constraints before coding.</li>
-          <li>List edge cases and expected behavior for each one.</li>
-          <li>Choose a baseline approach, then optimize if needed.</li>
-          <li>Explain complexity in big-O terms for time and space.</li>
-          <li>Implement in small steps and narrate decisions out loud.</li>
-          <li>Validate with quick examples, then mention follow-ups.</li>
+          {ui.questions.solveGuideSteps.map((step, i) => (
+            <li key={i}>{step}</li>
+          ))}
         </ol>
       </section>
 
       <div className="q-search-wrap">
         <input
           type="text"
-          placeholder="Search questions, topics, tags…"
+          placeholder={ui.questions.searchPlaceholder}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="q-search"
         />
         {hasFilters && (
           <button className="secondary" onClick={clearFilters}>
-            ✕ Clear filters
+            ✕ {ui.questions.clearFilters}
           </button>
         )}
         <span className="q-count">
-          {filtered.length} / {allQuestions.length} questions
+          {filtered.length} / {allQuestions.length} {ui.questions.questionsCountSuffix}
           {customQuestions.length > 0 && (
-            <span className="q-count-custom"> ({customQuestions.length} custom)</span>
+            <span className="q-count-custom"> ({customQuestions.length} {ui.questions.customCountSuffix})</span>
           )}
         </span>
       </div>
 
       <div className="q-filter-row">
-        <span className="q-filter-label">Company</span>
+        <span className="q-filter-label">{ui.questions.company}</span>
         <div className="q-filter-chips">
           {COMPANIES.map((c) => {
             const count = allQuestions.filter((q) => q.companies.includes(c.id)).length
@@ -341,7 +339,7 @@ export default function QuestionsPage() {
       </div>
 
       <div className="q-filter-row">
-        <span className="q-filter-label">Difficulty</span>
+        <span className="q-filter-label">{ui.questions.difficulty}</span>
         <div className="q-filter-chips">
           {(['easy', 'medium', 'hard'] as Difficulty[]).map((d) => (
             <button
@@ -358,7 +356,7 @@ export default function QuestionsPage() {
       </div>
 
       <div className="q-filter-row">
-        <span className="q-filter-label">Category</span>
+        <span className="q-filter-label">{ui.questions.category}</span>
         <div className="q-filter-chips">
           {CATEGORIES.map((cat) => (
             <button
@@ -374,7 +372,7 @@ export default function QuestionsPage() {
       </div>
 
       {filtered.length === 0 ? (
-        <div className="q-empty">No questions match the current filters.</div>
+        <div className="q-empty">{ui.questions.emptyState}</div>
       ) : (
         <div className="q-grid">
           {filtered.map((q) => (
@@ -384,6 +382,7 @@ export default function QuestionsPage() {
               apiKey={apiKey}
               model={anthropicModel}
               isCustom={customIds.has(q.id)}
+              ui={ui}
               onDeleteCustom={
                 customIds.has(q.id) ? () => removeCustomQuestion(q.id) : undefined
               }
