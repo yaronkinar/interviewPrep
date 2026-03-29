@@ -38,6 +38,9 @@ import {
   getMockTimeLimitSeconds,
 } from './mockInterviewTimer'
 import { buildMockCodeReviewStarter } from './mockCodeStarter'
+import { useSpeechDictation } from './useSpeechDictation'
+import { useInterviewerSpeech } from './useInterviewerSpeech'
+import { isLikelyFemaleVoice, labelVoiceOption, pickFemaleVoice } from './ttsVoiceUtils'
 
 const VsCodeStyleEditor = lazy(() => import('./VsCodeStyleEditor'))
 
@@ -86,6 +89,59 @@ function MockInterviewSession({
   const streamGenerationRef = useRef(0)
   const chatLogRef = useRef<HTMLDivElement>(null)
 
+  const speechDisabled = !apiKey.trim() || loading
+  const speech = useSpeechDictation({
+    value: input,
+    onChange: setInput,
+    disabled: speechDisabled,
+  })
+
+  const [speakInterviewer, setSpeakInterviewer] = useState(() => style === 'interviewer')
+  const [ttsVoices, setTtsVoices] = useState<SpeechSynthesisVoice[]>([])
+  const [selectedVoiceURI, setSelectedVoiceURI] = useState<string>('')
+  const {
+    stop: stopInterviewerSpeech,
+    supported: interviewerTtsSupported,
+    speaking: interviewerSpeaking,
+  } = useInterviewerSpeech({
+    enabled: speakInterviewer && apiKey.trim().length > 0,
+    messages,
+    voiceURI: selectedVoiceURI || undefined,
+  })
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return
+    const synth = window.speechSynthesis
+    const updateVoices = () => {
+      const available = synth.getVoices()
+      setTtsVoices(available)
+      if (!available.some((v) => v.voiceURI === selectedVoiceURI)) {
+        const woman =
+          typeof navigator !== 'undefined'
+            ? pickFemaleVoice(available, navigator.language)
+            : undefined
+        const preferred =
+          woman ??
+          available.find((v) => v.default) ??
+          available.find((v) => v.lang.toLowerCase().startsWith(navigator.language.toLowerCase())) ??
+          available[0]
+        setSelectedVoiceURI(preferred?.voiceURI ?? '')
+      }
+    }
+    updateVoices()
+    synth.addEventListener('voiceschanged', updateVoices)
+    return () => {
+      synth.removeEventListener('voiceschanged', updateVoices)
+    }
+  }, [selectedVoiceURI])
+
+  const womanVoiceAvailable = useMemo(
+    () =>
+      ttsVoices.length > 0 &&
+      pickFemaleVoice(ttsVoices, typeof navigator !== 'undefined' ? navigator.language : 'en-US') != null,
+    [ttsVoices],
+  )
+
   const timeLimitSec = useMemo(() => getMockTimeLimitSeconds(question), [question])
 
   const canSend =
@@ -97,7 +153,7 @@ function MockInterviewSession({
 
   const composePlaceholder =
     style === 'verbal_practice'
-      ? 'Type the answer you would say out loud in the interview, then send for feedback…'
+      ? 'Type or use Voice to dictate what you would say in the interview, then send for feedback…'
       : style === 'code_review'
         ? 'Optional notes, questions, or context (sent together with the editor code)…'
         : style === 'interviewer'
@@ -105,6 +161,7 @@ function MockInterviewSession({
           : 'Follow-up message…'
 
   const clearThread = useCallback(() => {
+    stopInterviewerSpeech()
     streamGenerationRef.current += 1
     setMessages([])
     setStreaming('')
@@ -113,7 +170,7 @@ function MockInterviewSession({
     setCodeDraft(mockStyleUsesCodeEditor(style) ? buildMockCodeReviewStarter(question) : '')
     setInput('')
     autoStartLockRef.current = false
-  }, [style, question])
+  }, [style, question, stopInterviewerSpeech])
 
   useEffect(() => {
     if (messages.length === 0) {
@@ -243,7 +300,7 @@ function MockInterviewSession({
         : style === 'code_review'
         ? 'Edit code in the VS Code–style editor below, add optional notes, then send for review. Follow-ups can be notes-only or include updated code.'
         : style === 'interviewer'
-          ? 'Reply as the candidate: use the VS Code–style editor for code, optional notes for what you would say out loud. Claude stays in interviewer character.'
+          ? 'Reply as the candidate: use the VS Code–style editor for code, optional notes for what you would say out loud. Claude stays in interviewer character. Turn on Speak Claude\'s replies to hear each reply (browser text-to-speech).'
           : 'Ask follow-ups to go deeper on approach, trade-offs, or edge cases.'
 
   return (
@@ -326,6 +383,105 @@ function MockInterviewSession({
       </div>
       {error && <div className="q-chat-error">{error}</div>}
       <div className="q-chat-compose">
+        {!speech.supported && (
+          <p className="mock-voice-unavailable">
+            Voice-to-text is not available in this browser. Try Chrome, Edge, or Safari.
+          </p>
+        )}
+        {(speech.supported || interviewerTtsSupported) && (
+          <div className="mock-voice-toolbar">
+            {speech.supported && (
+              <>
+                <button
+                  type="button"
+                  className={`secondary mock-voice-btn${speech.listening ? ' mock-voice-btn--active' : ''}`}
+                  onClick={() => {
+                    speech.clearError()
+                    speech.toggle()
+                  }}
+                  disabled={speechDisabled}
+                  aria-pressed={speech.listening}
+                  title={
+                    speech.listening
+                      ? 'Stop voice input'
+                      : 'Dictate with your microphone (browser speech-to-text)'
+                  }
+                >
+                  {speech.listening ? 'Stop voice' : 'Voice'}
+                </button>
+                {speech.listening && (
+                  <span className="mock-voice-live">Listening… speak now</span>
+                )}
+                {speech.error && (
+                  <span className="mock-voice-err" role="alert">
+                    {speech.error}{' '}
+                    <button type="button" className="mock-voice-dismiss" onClick={speech.clearError}>
+                      Dismiss
+                    </button>
+                  </span>
+                )}
+              </>
+            )}
+            {interviewerTtsSupported && (
+              <>
+                <label className="mock-voice-tts-label">
+                  <input
+                    type="checkbox"
+                    checked={speakInterviewer}
+                    onChange={(e) => {
+                      setSpeakInterviewer(e.target.checked)
+                      if (!e.target.checked) stopInterviewerSpeech()
+                    }}
+                    disabled={!apiKey.trim()}
+                  />
+                  Speak Claude&apos;s replies
+                </label>
+                {speakInterviewer && ttsVoices.length > 0 && (
+                  <label className="mock-voice-select-wrap">
+                    <span className="mock-voice-select-label">Voice</span>
+                    <select
+                      className="mock-voice-select"
+                      value={selectedVoiceURI}
+                      onChange={(e) => setSelectedVoiceURI(e.target.value)}
+                    >
+                      {ttsVoices.map((v) => (
+                        <option key={v.voiceURI} value={v.voiceURI}>
+                          {labelVoiceOption(v, isLikelyFemaleVoice(v))}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      className="secondary mock-voice-woman-btn"
+                      disabled={!womanVoiceAvailable}
+                      title={
+                        womanVoiceAvailable
+                          ? 'Pick a woman voice if your system exposes one (name-based guess)'
+                          : 'No woman-labelled voice detected — choose from the list or install OS voices'
+                      }
+                      onClick={() => {
+                        const v = pickFemaleVoice(ttsVoices, navigator.language)
+                        if (v) setSelectedVoiceURI(v.voiceURI)
+                      }}
+                    >
+                      Woman voice
+                    </button>
+                  </label>
+                )}
+                {interviewerSpeaking && (
+                  <button
+                    type="button"
+                    className="secondary mock-voice-btn mock-voice-btn--active"
+                    onClick={() => stopInterviewerSpeech()}
+                    title="Stop reading the reply aloud"
+                  >
+                    Stop speech
+                  </button>
+                )}
+              </>
+            )}
+          </div>
+        )}
         {mockStyleUsesCodeEditor(style) ? (
           <>
             <Suspense
@@ -354,7 +510,7 @@ function MockInterviewSession({
                 rows={3}
                 placeholder={composePlaceholder}
                 value={input}
-                onChange={(e) => setInput(e.target.value)}
+                onChange={(e) => speech.onControlledInput(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && !e.shiftKey && (e.metaKey || e.ctrlKey)) {
                     e.preventDefault()
@@ -378,7 +534,7 @@ function MockInterviewSession({
               rows={style === 'verbal_practice' ? 6 : 3}
               placeholder={composePlaceholder}
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={(e) => speech.onControlledInput(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault()
