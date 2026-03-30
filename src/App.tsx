@@ -17,10 +17,37 @@ import { AUTHOR_LINKEDIN_URL } from './site'
 
 export type { Page }
 
+declare global {
+  interface Window {
+    dataLayer?: unknown[]
+    gtag?: (...args: unknown[]) => void
+  }
+}
+
+const GA_MEASUREMENT_ID = import.meta.env.VITE_GA_MEASUREMENT_ID as string | undefined
+
 function AppShell() {
   const location = useLocation()
   const page = pageFromPathname(location.pathname)
   const { strings } = useLocale()
+
+  useEffect(() => {
+    if (!GA_MEASUREMENT_ID) return
+    if (document.getElementById('ga-gtag-script')) return
+
+    const gtagScript = document.createElement('script')
+    gtagScript.id = 'ga-gtag-script'
+    gtagScript.async = true
+    gtagScript.src = `https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`
+    document.head.appendChild(gtagScript)
+
+    window.dataLayer = window.dataLayer ?? []
+    window.gtag = function gtag(...args: unknown[]) {
+      window.dataLayer?.push(args)
+    }
+    window.gtag('js', new Date())
+    window.gtag('config', GA_MEASUREMENT_ID, { send_page_view: false })
+  }, [])
 
   useEffect(() => {
     if (page === 'home') {
@@ -29,6 +56,16 @@ function AppShell() {
       document.title = 'Interview Prep'
     }
   }, [page, strings.home.metaTitle])
+
+  useEffect(() => {
+    if (!GA_MEASUREMENT_ID || !window.gtag) return
+    const path = `${location.pathname}${location.search}${location.hash}`
+    window.gtag('event', 'page_view', {
+      page_title: document.title,
+      page_path: path,
+      page_location: window.location.href,
+    })
+  }, [location.pathname, location.search, location.hash, strings.home.metaTitle, page])
 
   return (
     <div className="app-shell">
