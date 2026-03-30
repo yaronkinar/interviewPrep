@@ -2,6 +2,8 @@ import { useState, useRef } from 'react'
 import { debounce } from './utils'
 import LogPanel, { type LogEntry } from '../components/LogPanel'
 import { CollapsibleCode, Explanation } from '../components/CodeBlock'
+import { useLocale } from '../i18n/LocaleContext'
+import { getUiStrings } from '../i18n/uiStrings'
 
 const IMPL = `function debounce(fn, delay) {
   let timer = null
@@ -24,6 +26,8 @@ const onResize = debounce(() => recalculateLayout(), 200)
 window.addEventListener('resize', onResize)`
 
 export default function DebounceCard() {
+  const { locale } = useLocale()
+  const ui = getUiStrings(locale)
   const [delay, setDelay] = useState(500)
   const [calls, setCalls] = useState(0)
   const [fires, setFires] = useState(0)
@@ -36,7 +40,7 @@ export default function DebounceCard() {
   const debouncedRef = useRef(
     debounce((val: unknown) => {
       setFires(f => f + 1)
-      addLog(`→ fired: "${val}"`, 'fire')
+      addLog(`→ ${ui.js.debounce.fired.toLowerCase()}: "${val}"`, 'fire')
     }, delay)
   )
 
@@ -44,21 +48,21 @@ export default function DebounceCard() {
     setDelay(newDelay)
     debouncedRef.current = debounce((val: unknown) => {
       setFires(f => f + 1)
-      addLog(`→ fired: "${val}"`, 'fire')
+      addLog(`→ ${ui.js.debounce.fired.toLowerCase()}: "${val}"`, 'fire')
     }, newDelay)
-    addLog(`Delay updated to ${newDelay}ms`, 'info')
+    addLog(ui.js.debounce.delayUpdated.replace('{delay}', String(newDelay)), 'info')
   }
 
   function onInput(e: React.ChangeEvent<HTMLInputElement>) {
     setCalls(c => c + 1)
-    addLog(`  keystroke: "${e.target.value}"`, 'skip')
+    addLog(`  ${ui.js.debounce.keystrokes.toLowerCase()}: "${e.target.value}"`, 'skip')
     debouncedRef.current(e.target.value)
   }
 
   return (
     <div className="card">
-      <div className="card-title">Debounce</div>
-      <p className="card-desc">Fires only after you stop typing for <strong>{delay}ms</strong>. Rapid keystrokes reset the timer.</p>
+      <div className="card-title">{ui.js.debounce.title}</div>
+      <p className="card-desc">{ui.js.debounce.description.replace('{delay}', String(delay))}</p>
 
       <div className="params">
         <span><span className="v">delay</span> =</span>
@@ -68,26 +72,21 @@ export default function DebounceCard() {
       </div>
 
       <div className="controls">
-        <input type="text" placeholder="Type here…" onChange={onInput}
+        <input type="text" placeholder={ui.js.debounce.inputPlaceholder} onChange={onInput}
           style={{ flex: 1, minWidth: 0 }} />
       </div>
 
       <div className="stat-row">
-        <div className="stat"><div className="stat-value">{calls}</div><div className="stat-label">Keystrokes</div></div>
-        <div className="stat"><div className="stat-value">{fires}</div><div className="stat-label">Fired</div></div>
+        <div className="stat"><div className="stat-value">{calls}</div><div className="stat-label">{ui.js.debounce.keystrokes}</div></div>
+        <div className="stat"><div className="stat-value">{fires}</div><div className="stat-label">{ui.js.debounce.fired}</div></div>
       </div>
 
       <LogPanel entries={log} />
 
-      <CollapsibleCode label="implementation" code={IMPL}>
-        <Explanation steps={[
-          { text: <><code>timer</code> holds the pending timeout. Shared across calls via closure.</> },
-          { text: <>Every call cancels the previous timer with <code>clearTimeout</code> — resetting the countdown.</> },
-          { text: <>A new timer is scheduled. If no new call arrives before it fires, <code>fn</code> executes.</> },
-          { text: <><code>fn</code> only runs once the caller has been <em>quiet</em> for <code>delay</code> ms.</> },
-        ]} />
+      <CollapsibleCode label={ui.js.common.implementation} code={IMPL}>
+        <Explanation steps={ui.js.debounce.explainSteps.map(step => ({ text: <>{step}</> }))} />
       </CollapsibleCode>
-      <CollapsibleCode label="usage" code={USAGE} />
+      <CollapsibleCode label={ui.js.common.usage} code={USAGE} />
     </div>
   )
 }

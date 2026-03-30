@@ -1,6 +1,8 @@
 import { useRef, useState } from 'react'
 import Editor, { type BeforeMount } from '@monaco-editor/react'
 import { memoize, debounce, throttle } from './utils'
+import { useLocale } from '../i18n/LocaleContext'
+import { getUiStrings } from '../i18n/uiStrings'
 
 type SandboxLine = { text: string; type: 'log' | 'warn' | 'error' | 'info' | 'ret' | 'sep' }
 
@@ -85,6 +87,8 @@ function sandboxMemoize(fn: (...args: unknown[]) => unknown, maxSize?: number) {
 }
 
 export default function Sandbox() {
+  const { locale } = useLocale()
+  const ui = getUiStrings(locale)
   const [output, setOutput] = useState<SandboxLine[]>([])
   const [focused, setFocused] = useState(false)
   const editorRef = useRef<import('monaco-editor').editor.IStandaloneCodeEditor | null>(null)
@@ -122,11 +126,11 @@ export default function Sandbox() {
   return (
     <div className="card sandbox-wrap" style={{ marginTop: 0 }}>
       <div className="sandbox-header">
-        <span className="card-title">Code Sandbox</span>
-        <span className="sandbox-hint">Ctrl + Enter to run</span>
+        <span className="card-title">{ui.js.sandbox.title}</span>
+        <span className="sandbox-hint">{ui.js.sandbox.hint}</span>
       </div>
       <p className="card-desc">
-        Write any JavaScript. <code>memoize</code>, <code>debounce</code>, and <code>throttle</code> are available as globals.
+        {ui.js.sandbox.description}
       </p>
 
       <div className="sandbox-body">
@@ -164,7 +168,7 @@ export default function Sandbox() {
         </div>
 
         <div ref={outputRef} className="sandbox-output">
-          <div className="sandbox-output-label">// output</div>
+          <div className="sandbox-output-label">{ui.js.sandbox.outputLabel}</div>
           {output.map((line, i) =>
             <div key={i} className={`sandbox-line ${line.type}`}>{line.text}</div>
           )}
@@ -172,9 +176,9 @@ export default function Sandbox() {
       </div>
 
       <div className="controls">
-        <button onClick={run}>▶ Run</button>
-        <button className="secondary" onClick={() => setOutput([])}>Clear output</button>
-        <button className="secondary" onClick={() => { editorRef.current?.setValue(DEFAULT_CODE); setOutput([]) }}>Reset</button>
+        <button onClick={run}>▶ {ui.js.sandbox.runButton}</button>
+        <button className="secondary" onClick={() => setOutput([])}>{ui.js.sandbox.clearOutput}</button>
+        <button className="secondary" onClick={() => { editorRef.current?.setValue(DEFAULT_CODE); setOutput([]) }}>{ui.js.sandbox.reset}</button>
       </div>
     </div>
   )

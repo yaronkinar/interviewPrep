@@ -1,49 +1,16 @@
 import { Link } from 'react-router-dom'
-import { useLocale, SUPPORTED_LOCALES } from './i18n/LocaleContext'
-import { isRtlLocale, type Locale } from './i18n/locale'
+import { useLocale } from './i18n/LocaleContext'
+import { isRtlLocale } from './i18n/locale'
 import { PATH_FOR_PAGE } from './routes'
 
-const LOCALE_LABELS: Record<Locale, string> = {
-  en: 'English',
-  he: 'עברית',
-  es: 'Español',
-  fr: 'Français',
-  de: 'Deutsch',
-  pt: 'Português',
-  ja: '日本語',
-  zh: '中文',
-  ar: 'العربية',
-  ru: 'Русский',
-  hi: 'हिन्दी',
-  pl: 'Polski',
-  ko: '한국어',
-}
-
 export default function HomePage() {
-  const { locale, setLocale, strings } = useLocale()
+  const { locale, strings } = useLocale()
   const { home: h } = strings
   const contentDir = isRtlLocale(locale) ? 'rtl' : 'ltr'
 
   return (
     <div className="home-page" dir={contentDir}>
       <header className="home-hero">
-        <div className="home-lang-row">
-          <label htmlFor="home-locale" className="home-lang-label">
-            {h.langLabel}
-          </label>
-          <select
-            id="home-locale"
-            className="home-locale-select"
-            value={locale}
-            onChange={e => setLocale(e.target.value as Locale)}
-          >
-            {SUPPORTED_LOCALES.map(code => (
-              <option key={code} value={code}>
-                {LOCALE_LABELS[code]}
-              </option>
-            ))}
-          </select>
-        </div>
         <h1 className="home-hero-title">{h.heroTitle}</h1>
         <p className="home-hero-lead">{h.heroLead}</p>
       </header>

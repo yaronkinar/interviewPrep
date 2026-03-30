@@ -2,6 +2,8 @@ import { useState, useRef } from 'react'
 import { memoize } from './utils'
 import LogPanel, { type LogEntry } from '../components/LogPanel'
 import { CollapsibleCode, Explanation } from '../components/CodeBlock'
+import { useLocale } from '../i18n/LocaleContext'
+import { getUiStrings } from '../i18n/uiStrings'
 
 function fib(n: number): number {
   if (n <= 1) return n
@@ -39,6 +41,8 @@ await fetchUser(42)  // network request
 await fetchUser(42)  // cache hit`
 
 export default function MemoizeCard() {
+  const { locale } = useLocale()
+  const ui = getUiStrings(locale)
   const [n, setN] = useState(10)
   const [maxSize, setMaxSize] = useState(10)
   const [hits, setHits] = useState(0)
@@ -54,7 +58,7 @@ export default function MemoizeCard() {
   function rebuildMemo(newMax: number) {
     memoRef.current = memoize(fib as (...args: unknown[]) => unknown, newMax)
     setHits(0); setMisses(0); setLog([])
-    addLog(`Cache rebuilt — max size: ${newMax}`, 'info')
+    addLog(ui.js.memoize.cacheRebuilt.replace('{size}', String(newMax)), 'info')
   }
 
   function runMemo() {
@@ -73,13 +77,13 @@ export default function MemoizeCard() {
   function clearCache() {
     memoRef.current.clear()
     setHits(0); setMisses(0)
-    addLog('Cache cleared', 'info')
+    addLog(ui.js.memoize.cacheCleared, 'info')
   }
 
   return (
     <div className="card">
-      <div className="card-title">Memoize</div>
-      <p className="card-desc">Caches results by arguments. Same args → instant return, no recomputation.</p>
+      <div className="card-title">{ui.js.memoize.title}</div>
+      <p className="card-desc">{ui.js.memoize.description}</p>
 
       <div className="params">
         <span><span className="v">fn</span> = fib &nbsp;|&nbsp; <span className="v">n</span> =</span>
@@ -90,26 +94,21 @@ export default function MemoizeCard() {
       </div>
 
       <div className="controls">
-        <button onClick={runMemo}>compute fib(n)</button>
-        <button className="secondary" onClick={clearCache}>clear cache</button>
+        <button onClick={runMemo}>{ui.js.memoize.runButton}</button>
+        <button className="secondary" onClick={clearCache}>{ui.js.memoize.clearButton}</button>
       </div>
 
       <div className="stat-row">
-        <div className="stat"><div className="stat-value">{hits}</div><div className="stat-label">Cache hits</div></div>
-        <div className="stat"><div className="stat-value">{misses}</div><div className="stat-label">Computed</div></div>
+        <div className="stat"><div className="stat-value">{hits}</div><div className="stat-label">{ui.js.memoize.cacheHits}</div></div>
+        <div className="stat"><div className="stat-value">{misses}</div><div className="stat-label">{ui.js.memoize.computed}</div></div>
       </div>
 
       <LogPanel entries={log} />
 
-      <CollapsibleCode label="implementation" code={IMPL}>
-        <Explanation steps={[
-          { text: <><code>cache</code> is a <code>Map</code> that lives in the closure — persists across every call.</> },
-          { text: <>Args are serialized into a string <code>key</code> via <code>JSON.stringify</code>. Same args → same key.</> },
-          { text: <>Cache hit → return immediately, no computation.</> },
-          { text: <>Cache miss → run <code>fn</code>, store the result. Next call with same args will hit.</> },
-        ]} />
+      <CollapsibleCode label={ui.js.common.implementation} code={IMPL}>
+        <Explanation steps={ui.js.memoize.explainSteps.map(step => ({ text: <>{step}</> }))} />
       </CollapsibleCode>
-      <CollapsibleCode label="usage" code={USAGE} />
+      <CollapsibleCode label={ui.js.common.usage} code={USAGE} />
     </div>
   )
 }

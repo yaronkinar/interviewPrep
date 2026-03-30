@@ -10,12 +10,28 @@ import {
 } from '@/components/ui/sheet'
 import { useLocale } from './i18n/LocaleContext'
 import { getUiStrings } from './i18n/uiStrings'
-import { isRtlLocale } from './i18n/locale'
+import { isRtlLocale, type Locale } from './i18n/locale'
+import { SUPPORTED_LOCALES } from './i18n/LocaleContext'
 import type { Page } from './page'
 import { PATH_FOR_PAGE } from './routes'
 import { useTheme } from './theme/ThemeContext'
 
 const TAB_IDS: Page[] = ['home', 'js', 'react', 'sandbox', 'mock', 'questions']
+const LOCALE_LABELS: Record<Locale, string> = {
+  en: 'English',
+  he: 'עברית',
+  es: 'Español',
+  fr: 'Français',
+  de: 'Deutsch',
+  pt: 'Português',
+  ja: '日本語',
+  zh: '中文',
+  ar: 'العربية',
+  ru: 'Русский',
+  hi: 'हिन्दी',
+  pl: 'Polski',
+  ko: '한국어',
+}
 
 type NavLinksProps = {
   className?: string
@@ -43,7 +59,7 @@ function NavLinks({ className, linkClassName, onNavigate }: NavLinksProps) {
 }
 
 export default function Nav() {
-  const { locale } = useLocale()
+  const { locale, setLocale, strings } = useLocale()
   const ui = getUiStrings(locale)
   const { theme, setTheme } = useTheme()
   const rtl = isRtlLocale(locale)
@@ -104,6 +120,23 @@ export default function Nav() {
               >
                 🌙
               </button>
+            </div>
+            <div className="nav-locale">
+              <label htmlFor="nav-locale" className="nav-locale-label">
+                {strings.home.langLabel}
+              </label>
+              <select
+                id="nav-locale"
+                className="nav-locale-select"
+                value={locale}
+                onChange={e => setLocale(e.target.value as Locale)}
+              >
+                {SUPPORTED_LOCALES.map(code => (
+                  <option key={code} value={code}>
+                    {LOCALE_LABELS[code]}
+                  </option>
+                ))}
+              </select>
             </div>
             <NavLinks
               className="nav-tabs nav-tabs--inline"

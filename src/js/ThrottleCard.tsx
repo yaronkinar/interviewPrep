@@ -2,6 +2,8 @@ import { useState, useRef, useCallback } from 'react'
 import { throttle, type ThrottleDebugEvent } from './utils'
 import LogPanel, { type LogEntry } from '../components/LogPanel'
 import { CollapsibleCode, Explanation } from '../components/CodeBlock'
+import { useLocale } from '../i18n/LocaleContext'
+import { getUiStrings } from '../i18n/uiStrings'
 
 const IMPL = `function throttle(fn, delay) {
   let lastCall = 0
@@ -36,6 +38,8 @@ const onScroll = throttle(() => {
 window.addEventListener('scroll', onScroll)`
 
 export default function ThrottleCard() {
+  const { locale } = useLocale()
+  const ui = getUiStrings(locale)
   const [delay, setDelay] = useState(500)
   const [moves, setMoves] = useState(0)
   const [fires, setFires] = useState(0)
@@ -74,7 +78,7 @@ export default function ThrottleCard() {
   function updateDelay(newDelay: number) {
     setDelay(newDelay)
     handlerRef.current = makeThrottled(newDelay)
-    addLog(`Delay updated to ${newDelay}ms`, 'info')
+    addLog(ui.js.throttle.delayUpdated.replace('{delay}', String(newDelay)), 'info')
   }
 
   function onMouseMove(e: React.MouseEvent<HTMLDivElement>) {
@@ -88,8 +92,8 @@ export default function ThrottleCard() {
 
   return (
     <div className="card">
-      <div className="card-title">Throttle</div>
-      <p className="card-desc">Move your mouse over the box. The handler fires at most once per <strong>{delay}ms</strong>.</p>
+      <div className="card-title">{ui.js.throttle.title}</div>
+      <p className="card-desc">{ui.js.throttle.description.replace('{delay}', String(delay))}</p>
 
       <div className="params">
         <span><span className="v">delay</span> =</span>
@@ -98,25 +102,20 @@ export default function ThrottleCard() {
         <span>ms</span>
       </div>
 
-      <div className="throttle-zone" onMouseMove={onMouseMove}>Move mouse here</div>
+      <div className="throttle-zone" onMouseMove={onMouseMove}>{ui.js.throttle.moveMouseHere}</div>
       <div className="bar-wrap"><div className="bar" style={{ width: `${barWidth}%` }} /></div>
 
       <div className="stat-row">
-        <div className="stat"><div className="stat-value">{moves}</div><div className="stat-label">Mouse events</div></div>
-        <div className="stat"><div className="stat-value">{fires}</div><div className="stat-label">Fired</div></div>
+        <div className="stat"><div className="stat-value">{moves}</div><div className="stat-label">{ui.js.throttle.mouseEvents}</div></div>
+        <div className="stat"><div className="stat-value">{fires}</div><div className="stat-label">{ui.js.throttle.fired}</div></div>
       </div>
 
       <LogPanel entries={log} />
 
-      <CollapsibleCode label="implementation" code={IMPL}>
-        <Explanation steps={[
-          { text: <><code>lastCall</code> tracks when <code>fn</code> last ran. <code>remaining</code> = ms left in the window.</> },
-          { text: <><code>clearTimeout</code> is called every invocation so the trailing timer always uses the latest args.</> },
-          { text: <><strong>Leading call</strong> — if the window expired, fire immediately and stamp <code>lastCall</code>.</> },
-          { text: <><strong>Trailing call</strong> — schedule <code>fn</code> to fire at the end of the window. The last burst call is never dropped.</> },
-        ]} />
+      <CollapsibleCode label={ui.js.common.implementation} code={IMPL}>
+        <Explanation steps={ui.js.throttle.explainSteps.map(step => ({ text: <>{step}</> }))} />
       </CollapsibleCode>
-      <CollapsibleCode label="usage" code={USAGE} />
+      <CollapsibleCode label={ui.js.common.usage} code={USAGE} />
     </div>
   )
 }

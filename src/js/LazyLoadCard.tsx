@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect } from 'react'
 import LogPanel, { type LogEntry } from '../components/LogPanel'
 import { CollapsibleCode, Explanation } from '../components/CodeBlock'
+import { useLocale } from '../i18n/LocaleContext'
+import { getUiStrings } from '../i18n/uiStrings'
 
 const IMAGES = Array.from({ length: 8 }, (_, i) =>
   `https://picsum.photos/seed/lazy${i + 1}/600/80`
@@ -37,6 +39,8 @@ function useLazyImage(ref, dataSrc) {
 }`
 
 export default function LazyLoadCard() {
+  const { locale } = useLocale()
+  const ui = getUiStrings(locale)
   const [loaded, setLoaded] = useState(0)
   const [margin, setMargin] = useState(50)
   const [log, setLog] = useState<LogEntry[]>([])
@@ -71,7 +75,7 @@ export default function LazyLoadCard() {
       { root: container, rootMargin: `${margin}px 0px`, threshold: 0.1 }
     )
     imgs.forEach(img => observerRef.current?.observe(img))
-    addLog(`Observer created — rootMargin: ${margin}px`, 'info')
+    addLog(ui.js.lazy.observerCreated.replace('{margin}', String(margin)), 'info')
 
     return () => observerRef.current?.disconnect()
   }, [key, margin])
@@ -84,8 +88,8 @@ export default function LazyLoadCard() {
 
   return (
     <div className="card">
-      <div className="card-title">Lazy Loading</div>
-      <p className="card-desc">Images are not fetched until they scroll into view. <code>IntersectionObserver</code> swaps <code>data-src</code> → <code>src</code> on intersection.</p>
+      <div className="card-title">{ui.js.lazy.title}</div>
+      <p className="card-desc">{ui.js.lazy.description}</p>
 
       <div className="params">
         <span><span className="v">rootMargin</span> =</span>
@@ -95,19 +99,19 @@ export default function LazyLoadCard() {
       </div>
 
       <div className="controls">
-        <button className="secondary" onClick={reset}>Reset images</button>
+        <button className="secondary" onClick={reset}>{ui.js.lazy.resetButton}</button>
       </div>
 
       <div className="stat-row">
-        <div className="stat"><div className="stat-value">{IMAGES.length}</div><div className="stat-label">Total</div></div>
-        <div className="stat"><div className="stat-value">{loaded}</div><div className="stat-label">Loaded</div></div>
-        <div className="stat"><div className="stat-value">{IMAGES.length - loaded}</div><div className="stat-label">Pending</div></div>
+        <div className="stat"><div className="stat-value">{IMAGES.length}</div><div className="stat-label">{ui.js.lazy.total}</div></div>
+        <div className="stat"><div className="stat-value">{loaded}</div><div className="stat-label">{ui.js.lazy.loaded}</div></div>
+        <div className="stat"><div className="stat-value">{IMAGES.length - loaded}</div><div className="stat-label">{ui.js.lazy.pending}</div></div>
       </div>
 
       <div ref={containerRef} className="lazy-scroll" key={key}>
         {IMAGES.map((src, i) => (
           <div key={i} className="lazy-img-wrap">
-            <span className="lazy-placeholder">image {i + 1} — waiting…</span>
+            <span className="lazy-placeholder">{ui.js.lazy.imageWaiting.replace('{index}', String(i + 1))}</span>
             <img
               data-src={src}
               data-idx={i + 1}
@@ -124,16 +128,10 @@ export default function LazyLoadCard() {
 
       <LogPanel entries={log} />
 
-      <CollapsibleCode label="implementation" code={IMPL}>
-        <Explanation steps={[
-          { text: <>Images rendered with <code>data-src</code> — browser never requests them upfront.</> },
-          { text: <><code>IntersectionObserver</code> fires whenever a watched element enters the viewport.</> },
-          { text: <>On intersection, <code>img.src</code> is set from <code>data-src</code> — triggering the fetch.</> },
-          { text: <><code>unobserve</code> is called immediately so each image loads only once.</> },
-          { text: <><code>rootMargin</code> pre-fetches images slightly before they enter view, preventing blank flashes.</> },
-        ]} />
+      <CollapsibleCode label={ui.js.common.implementation} code={IMPL}>
+        <Explanation steps={ui.js.lazy.explainSteps.map(step => ({ text: <>{step}</> }))} />
       </CollapsibleCode>
-      <CollapsibleCode label="usage (React hook)" code={USAGE} />
+      <CollapsibleCode label={ui.js.lazy.usageReactHook} code={USAGE} />
     </div>
   )
 }
