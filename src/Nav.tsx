@@ -1,6 +1,13 @@
-import { useEffect, useId, useState } from 'react'
-import { createPortal } from 'react-dom'
+import { useEffect, useState } from 'react'
 import { Link, NavLink } from 'react-router-dom'
+import {
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet'
 import { useLocale } from './i18n/LocaleContext'
 import { getUiStrings } from './i18n/uiStrings'
 import { isRtlLocale } from './i18n/locale'
@@ -41,27 +48,8 @@ export default function Nav() {
   const { theme, setTheme } = useTheme()
   const rtl = isRtlLocale(locale)
   const [menuOpen, setMenuOpen] = useState(false)
-  const drawerTitleId = useId()
 
   const closeMenu = () => setMenuOpen(false)
-
-  useEffect(() => {
-    if (!menuOpen) return
-    const prevOverflow = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-    return () => {
-      document.body.style.overflow = prevOverflow
-    }
-  }, [menuOpen])
-
-  useEffect(() => {
-    if (!menuOpen) return
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') closeMenu()
-    }
-    window.addEventListener('keydown', onKeyDown)
-    return () => window.removeEventListener('keydown', onKeyDown)
-  }, [menuOpen])
 
   useEffect(() => {
     const mq = window.matchMedia('(min-width: 721px)')
@@ -72,65 +60,25 @@ export default function Nav() {
     return () => mq.removeEventListener('change', onChange)
   }, [])
 
-  const mobileOverlay = (
-    <>
-      <div
-        className={`nav-mobile-backdrop${menuOpen ? ' nav-mobile-backdrop--visible' : ''}`}
-        aria-hidden={!menuOpen}
-        onClick={closeMenu}
-      />
-      <aside
-        id="nav-mobile-drawer"
-        className={`nav-mobile-drawer${rtl ? ' nav-mobile-drawer--rtl' : ''}${menuOpen ? ' nav-mobile-drawer--open' : ''}`}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={drawerTitleId}
-        aria-hidden={!menuOpen}
-        onClick={e => e.stopPropagation()}
-      >
-        <div className="nav-mobile-drawer-header">
-          <p id={drawerTitleId} className="nav-mobile-drawer-title">
-            {ui.nav.menuLabel}
-          </p>
-          <button
-            type="button"
-            className="nav-mobile-drawer-close"
-            aria-label={ui.nav.closeMenu}
-            onClick={closeMenu}
-          >
-            ×
-          </button>
-        </div>
-        <NavLinks
-          className="nav-tabs nav-tabs--drawer"
-          linkClassName={({ isActive }) => `nav-tab nav-tab--drawer${isActive ? ' active' : ''}`}
-          onNavigate={closeMenu}
-        />
-      </aside>
-    </>
-  )
-
   return (
-    <>
-      <nav
-        className={`nav${rtl ? ' nav--rtl' : ''}${menuOpen ? ' nav--menu-open' : ''}`}
-        dir={rtl ? 'rtl' : 'ltr'}
-      >
+    <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
+      <nav className={`nav${rtl ? ' nav--rtl' : ''}`} dir={rtl ? 'rtl' : 'ltr'}>
         <div className="nav-inner">
-          <button
-            type="button"
-            className="nav-menu-toggle"
-            aria-expanded={menuOpen}
-            aria-controls="nav-mobile-drawer"
-            aria-label={menuOpen ? ui.nav.closeMenu : ui.nav.openMenu}
-            onClick={() => setMenuOpen(o => !o)}
-          >
-            <span className="nav-menu-toggle-bars" aria-hidden>
-              <span />
-              <span />
-              <span />
-            </span>
-          </button>
+          <SheetTrigger asChild>
+            <button
+              type="button"
+              className="nav-menu-toggle"
+              aria-expanded={menuOpen}
+              aria-controls="nav-mobile-drawer"
+              aria-label={menuOpen ? ui.nav.closeMenu : ui.nav.openMenu}
+            >
+              <span className="nav-menu-toggle-bars" aria-hidden>
+                <span />
+                <span />
+                <span />
+              </span>
+            </button>
+          </SheetTrigger>
           <Link to="/" className="nav-logo nav-logo-btn" dir="ltr" translate="no">
             Interview Prep
           </Link>
@@ -164,7 +112,26 @@ export default function Nav() {
           </div>
         </div>
       </nav>
-      {createPortal(mobileOverlay, document.body)}
-    </>
+      <SheetContent
+        id="nav-mobile-drawer"
+        side={rtl ? 'right' : 'left'}
+        className="nav-mobile-sheet w-[min(20rem,88vw)] p-0"
+        showCloseButton={false}
+      >
+        <SheetHeader className="nav-mobile-drawer-header">
+          <SheetTitle className="nav-mobile-drawer-title">{ui.nav.menuLabel}</SheetTitle>
+          <SheetClose asChild>
+            <button type="button" className="nav-mobile-drawer-close" aria-label={ui.nav.closeMenu}>
+              ×
+            </button>
+          </SheetClose>
+        </SheetHeader>
+        <NavLinks
+          className="nav-tabs nav-tabs--drawer"
+          linkClassName={({ isActive }) => `nav-tab nav-tab--drawer${isActive ? ' active' : ''}`}
+          onNavigate={closeMenu}
+        />
+      </SheetContent>
+    </Sheet>
   )
 }
