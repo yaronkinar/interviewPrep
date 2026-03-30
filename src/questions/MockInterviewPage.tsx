@@ -41,7 +41,17 @@ import {
 import { buildMockCodeReviewStarter } from './mockCodeStarter'
 import { useSpeechDictation } from './useSpeechDictation'
 import { useInterviewerSpeech } from './useInterviewerSpeech'
-import { isLikelyFemaleVoice, labelVoiceOption, pickFemaleVoice } from './ttsVoiceUtils'
+import {
+  isLikelyFemaleVoice,
+  labelVoiceOption,
+  pickBestInterviewVoice,
+  pickFemaleVoice,
+} from './ttsVoiceUtils'
+import { DEFAULT_ELEVENLABS_VOICE_ID, ELEVENLABS_VOICES } from './elevenlabsVoices'
+import ScreenHeader from '../components/layout/ScreenHeader'
+import FilterRow from '../components/filters/FilterRow'
+import FilterChip from '../components/filters/FilterChip'
+import FilterSearchBar from '../components/filters/FilterSearchBar'
 
 const VsCodeStyleEditor = lazy(() => import('./VsCodeStyleEditor'))
 
@@ -60,12 +70,15 @@ interface ChatMessage {
   content: string
 }
 
+type VoiceAvailability = 'unknown' | 'checking' | 'ok' | 'blocked'
+
 interface MockInterviewSessionProps {
   question: Question
   style: MockTrainingStyle
   includeRefAnswer: boolean
   apiKey: string
   model: string
+  elevenLabsApiKey: string
 }
 
 function MockInterviewSession({
@@ -74,6 +87,7 @@ function MockInterviewSession({
   includeRefAnswer,
   apiKey,
   model,
+  elevenLabsApiKey,
 }: MockInterviewSessionProps) {
   const { locale } = useLocale()
   const [messages, setMessages] = useState<ChatMessage[]>([])
@@ -101,14 +115,30 @@ function MockInterviewSession({
   const [speakInterviewer, setSpeakInterviewer] = useState(() => style === 'interviewer')
   const [ttsVoices, setTtsVoices] = useState<SpeechSynthesisVoice[]>([])
   const [selectedVoiceURI, setSelectedVoiceURI] = useState<string>('')
+  const [voiceEngine, setVoiceEngine] = useState<'browser' | 'elevenlabs'>('browser')
+  const [elevenLabsVoiceId, setElevenLabsVoiceId] = useState<string>(DEFAULT_ELEVENLABS_VOICE_ID)
+  const [speechRate, setSpeechRate] = useState(0.95)
+  const [disableBrowserFallback, setDisableBrowserFallback] = useState(false)
+  const [voiceAvailability, setVoiceAvailability] = useState<Record<string, VoiceAvailability>>({})
+  const [scanningVoices, setScanningVoices] = useState(false)
   const {
     stop: stopInterviewerSpeech,
     supported: interviewerTtsSupported,
+    elevenlabsEnabled,
     speaking: interviewerSpeaking,
+    activeEngine,
+    lastError: voiceStatus,
+    speakPreview,
+    diagnoseVoice,
   } = useInterviewerSpeech({
     enabled: speakInterviewer && apiKey.trim().length > 0,
     messages,
     voiceURI: selectedVoiceURI || undefined,
+    engine: voiceEngine,
+    elevenlabsApiKey: elevenLabsApiKey,
+    elevenlabsVoiceId: elevenLabsVoiceId,
+    speechRate,
+    disableBrowserFallback,
   })
 
   useEffect(() => {
@@ -118,15 +148,10 @@ function MockInterviewSession({
       const available = synth.getVoices()
       setTtsVoices(available)
       if (!available.some((v) => v.voiceURI === selectedVoiceURI)) {
-        const woman =
-          typeof navigator !== 'undefined'
-            ? pickFemaleVoice(available, navigator.language)
-            : undefined
         const preferred =
-          woman ??
-          available.find((v) => v.default) ??
-          available.find((v) => v.lang.toLowerCase().startsWith(navigator.language.toLowerCase())) ??
-          available[0]
+          typeof navigator !== 'undefined'
+            ? pickBestInterviewVoice(available, navigator.language)
+            : available.find((v) => v.default) ?? available[0]
         setSelectedVoiceURI(preferred?.voiceURI ?? '')
       }
     }
@@ -145,6 +170,76 @@ function MockInterviewSession({
   )
 
   const timeLimitSec = useMemo(() => getMockTimeLimitSeconds(question), [question])
+  const selectedElevenLabsVoice = useMemo(
+    () => ELEVENLABS_VOICES.find((v) => v.id === elevenLabsVoiceId) ?? ELEVENLABS_VOICES[0],
+    [elevenLabsVoiceId],
+  )
+  const availableVoices = useMemo(
+    () => ELEVENLABS_VOICES.filter((v) => voiceAvailability[v.id] === 'ok'),
+    [voiceAvailability],
+  )
+
+  useEffect(() => {
+    if (voiceEngine !== 'elevenlabs' || !elevenLabsApiKey.trim()) return
+    if (scanningVoices) return
+    // Skip if already scanned all configured voices.
+    const allKnown = ELEVENLABS_VOICES.every((v) => voiceAvailability[v.id] && voiceAvailability[v.id] !== 'unknown')
+    if (allKnown) return
+
+    let cancelled = false
+    setScanningVoices(true)
+    setVoiceAvailability((prev) => {
+      const next = { ...prev }
+      ELEVENLABS_VOICES.forEach((v) => {
+        if (!next[v.id]) next[v.id] = 'checking'
+      })
+      return next
+    })
+
+    void (async () => {
+      for (const voice of ELEVENLABS_VOICES) {
+        if (cancelled) break
+        try {
+          const res = await fetch(
+            `https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voice.id)}`,
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'xi-api-key': elevenLabsApiKey.trim(),
+                Accept: 'audio/mpeg',
+              },
+              body: JSON.stringify({
+                text: 'Voice availability check.',
+                model_id: 'eleven_turbo_v2_5',
+              }),
+            },
+          )
+          const status: VoiceAvailability = res.ok ? 'ok' : res.status === 402 || res.status === 403 ? 'blocked' : 'blocked'
+          if (!cancelled) {
+            setVoiceAvailability((prev) => ({ ...prev, [voice.id]: status }))
+          }
+        } catch {
+          if (!cancelled) {
+            setVoiceAvailability((prev) => ({ ...prev, [voice.id]: 'blocked' }))
+          }
+        }
+      }
+      if (!cancelled) setScanningVoices(false)
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [voiceEngine, elevenLabsApiKey, scanningVoices, voiceAvailability])
+
+  useEffect(() => {
+    if (voiceEngine !== 'elevenlabs') return
+    if (availableVoices.length === 0) return
+    if (!availableVoices.some((v) => v.id === elevenLabsVoiceId)) {
+      setElevenLabsVoiceId(availableVoices[0].id)
+    }
+  }, [availableVoices, elevenLabsVoiceId, voiceEngine])
 
   const canSend =
     apiKey.trim().length > 0 &&
@@ -306,8 +401,15 @@ function MockInterviewSession({
           ? 'Reply as the candidate: use the VS Code–style editor for code, optional notes for what you would say out loud. Claude stays in interviewer character. Turn on Speak Claude\'s replies to hear each reply (browser text-to-speech).'
           : 'Ask follow-ups to go deeper on approach, trade-offs, or edge cases.'
 
+  const progressItems = [
+    'Introduction & Background',
+    question.title,
+    'Scaling the solution (current)',
+    'Complexity analysis',
+  ]
+
   return (
-    <div className="q-chat-panel mock-interview-session">
+    <div className="q-chat-panel mock-interview-session mockv2-session">
       {!apiKey.trim() && <p className="q-chat-warn">Add an Anthropic API key above to start the mock session.</p>}
       {apiKey.trim() && <p className="q-chat-auto-hint">{hint}</p>}
 
@@ -360,7 +462,50 @@ function MockInterviewSession({
         </button>
       </div>
 
-      <div ref={chatLogRef} className="q-chat-log" aria-live="polite">
+      <div className="mockv2-session-grid">
+        <section className="mockv2-panel mockv2-panel--context">
+          <h3 className="mockv2-panel-title">Session context</h3>
+          <div className="mockv2-context-list">
+            <div className="mockv2-context-row">
+              <span className="mockv2-context-key">Target role</span>
+              <span className="mockv2-context-val">Frontend Engineer (Interview focus)</span>
+            </div>
+            <div className="mockv2-context-row">
+              <span className="mockv2-context-key">Question</span>
+              <span className="mockv2-context-val">{question.title}</span>
+            </div>
+            <div className="mockv2-context-row">
+              <span className="mockv2-context-key">Mode</span>
+              <span className="mockv2-context-val">
+                {MOCK_TRAINING_OPTIONS.find((opt) => opt.id === style)?.label ?? style}
+              </span>
+            </div>
+          </div>
+        </section>
+
+        <section className="mockv2-panel mockv2-panel--progress">
+          <h3 className="mockv2-panel-title">Interview progress</h3>
+          <div className="mockv2-progress-track" aria-hidden />
+          <ul className="mockv2-progress-list">
+            {progressItems.map((item, idx) => (
+              <li
+                key={item}
+                className={`mockv2-progress-item${
+                  idx < 2 ? ' done' : idx === 2 ? ' current' : ''
+                }`}
+              >
+                {item}
+              </li>
+            ))}
+          </ul>
+        </section>
+      </div>
+
+      <div className="mockv2-transcript-head">
+        <span>Live transcript</span>
+        <span className="mockv2-live-pill">Live</span>
+      </div>
+      <div ref={chatLogRef} className="q-chat-log mockv2-transcript-log" aria-live="polite">
         {messages.map((m, i) => (
           <div key={i} className={`q-chat-bubble q-chat-bubble--${m.role}`}>
             <span className="q-chat-role">{m.role === 'user' ? 'You' : 'Claude'}</span>
@@ -385,7 +530,7 @@ function MockInterviewSession({
         )}
       </div>
       {error && <div className="q-chat-error">{error}</div>}
-      <div className="q-chat-compose">
+      <div className="q-chat-compose mockv2-compose">
         {!speech.supported && (
           <p className="mock-voice-unavailable">
             Voice-to-text is not available in this browser. Try Chrome, Edge, or Safari.
@@ -427,6 +572,57 @@ function MockInterviewSession({
             )}
             {interviewerTtsSupported && (
               <>
+                <div className="mock-voice-engine-row" role="radiogroup" aria-label="Voice engine">
+                  <span className="mock-voice-select-label">Voice engine</span>
+                  <label className="mock-voice-tts-label">
+                    <input
+                      type="radio"
+                      name="mock-voice-engine"
+                      checked={voiceEngine === 'browser'}
+                      onChange={() => {
+                        setVoiceEngine('browser')
+                        stopInterviewerSpeech()
+                      }}
+                    />
+                    Browser
+                  </label>
+                  <label className="mock-voice-tts-label">
+                    <input
+                      type="radio"
+                      name="mock-voice-engine"
+                      checked={voiceEngine === 'elevenlabs'}
+                      onChange={() => {
+                        setVoiceEngine('elevenlabs')
+                        stopInterviewerSpeech()
+                      }}
+                    />
+                    ElevenLabs {elevenlabsEnabled ? '' : '(fallback active)'}
+                  </label>
+                </div>
+                <label className="mock-voice-rate">
+                  <span className="mock-voice-select-label">Voice speed: {speechRate.toFixed(2)}x</span>
+                  <input
+                    type="range"
+                    min={0.8}
+                    max={1.15}
+                    step={0.05}
+                    value={speechRate}
+                    onChange={(e) => setSpeechRate(Number(e.target.value))}
+                  />
+                </label>
+                {voiceEngine === 'elevenlabs' && (
+                  <label className="mock-voice-tts-label">
+                    <input
+                      type="checkbox"
+                      checked={disableBrowserFallback}
+                      onChange={(e) => setDisableBrowserFallback(e.target.checked)}
+                    />
+                    Force ElevenLabs only (no fallback)
+                  </label>
+                )}
+                <span className="mock-voice-engine-status">
+                  Active engine: <strong>{activeEngine}</strong>
+                </span>
                 <label className="mock-voice-tts-label">
                   <input
                     type="checkbox"
@@ -439,7 +635,7 @@ function MockInterviewSession({
                   />
                   Speak Claude&apos;s replies
                 </label>
-                {speakInterviewer && ttsVoices.length > 0 && (
+                {speakInterviewer && voiceEngine === 'browser' && ttsVoices.length > 0 && (
                   <label className="mock-voice-select-wrap">
                     <span className="mock-voice-select-label">Voice</span>
                     <select
@@ -471,6 +667,76 @@ function MockInterviewSession({
                     </button>
                   </label>
                 )}
+                {speakInterviewer && voiceEngine === 'elevenlabs' && (
+                  <div className="mock-voice-elevenlabs-picker">
+                    <div className="mock-voice-elevenlabs-head">
+                      <span className="mock-voice-select-label">Premium voices</span>
+                      {scanningVoices && (
+                        <span className="mock-voice-elevenlabs-fallback">Scanning voices available on your plan…</span>
+                      )}
+                      {!elevenlabsEnabled && (
+                        <span className="mock-voice-elevenlabs-fallback">
+                          Add ElevenLabs key in API settings to enable premium audio.
+                        </span>
+                      )}
+                    </div>
+                    <div className="mock-voice-avatar-grid">
+                      {(availableVoices.length > 0 ? availableVoices : ELEVENLABS_VOICES).map((voice) => (
+                        <button
+                          key={voice.id}
+                          type="button"
+                          className={`mock-voice-avatar-card${
+                            elevenLabsVoiceId === voice.id ? ' mock-voice-avatar-card--active' : ''
+                          }${voice.requiresPaidPlan ? ' mock-voice-avatar-card--locked' : ''}`}
+                          onClick={() => {
+                            if (voice.requiresPaidPlan) return
+                            setElevenLabsVoiceId(voice.id)
+                          }}
+                          disabled={Boolean(voice.requiresPaidPlan)}
+                          title={
+                            voice.requiresPaidPlan
+                              ? 'Paid ElevenLabs plan required for API usage'
+                              : undefined
+                          }
+                        >
+                          <img src={voice.avatarPath} alt={`${voice.name} voice avatar`} />
+                          <span className="mock-voice-avatar-name">{voice.name}</span>
+                          <span className="mock-voice-avatar-meta">{voice.accent} - {voice.vibe}</span>
+                          {voice.requiresPaidPlan && (
+                            <span className="mock-voice-avatar-badge">Paid plan required</span>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="mock-voice-selected">
+                      Selected: <strong>{selectedElevenLabsVoice.name}</strong> ({selectedElevenLabsVoice.vibe})
+                    </div>
+                  </div>
+                )}
+                {speakInterviewer && (
+                  <button
+                    type="button"
+                    className="secondary"
+                    onClick={() =>
+                      speakPreview(
+                        'This is a voice test. I will guide you through your interview answer with concise feedback.',
+                      )
+                    }
+                    disabled={!apiKey.trim()}
+                  >
+                    Play sample
+                  </button>
+                )}
+                {voiceEngine === 'elevenlabs' && (
+                  <button
+                    type="button"
+                    className="secondary"
+                    onClick={() => void diagnoseVoice()}
+                    disabled={!apiKey.trim()}
+                  >
+                    Diagnose voice
+                  </button>
+                )}
                 {interviewerSpeaking && (
                   <button
                     type="button"
@@ -485,6 +751,7 @@ function MockInterviewSession({
             )}
           </div>
         )}
+        {voiceStatus && <p className="mock-voice-status">{voiceStatus}</p>}
         {mockStyleUsesCodeEditor(style) ? (
           <>
             <Suspense
@@ -569,6 +836,7 @@ export default function MockInterviewPage() {
   const [includeRefAnswer, setIncludeRefAnswer] = useState(false)
 
   const [apiKey, setApiKey] = useState('')
+  const [elevenLabsApiKey, setElevenLabsApiKey] = useState('')
   const [anthropicModel, setAnthropicModel] = useState(DEFAULT_ANTHROPIC_MODEL)
 
   const onCredentialsChange = useCallback((key: string, model: string) => {
@@ -619,168 +887,224 @@ export default function MockInterviewPage() {
   }
 
   return (
-    <>
-      <h1 className="page-title">Mock interview</h1>
-      <p className="sandbox-page-lead mock-interview-lead">
-        Pick a question, choose how you want to train, then run a session with Claude. Uses the same library as{' '}
-        <strong>Company Q&amp;A</strong> (plus any custom questions already in your browser). Add or edit custom
-        questions on that tab if needed.
-      </p>
+    <div className="editorial-page editorial-page--mock mockv2-page">
+      <ScreenHeader title="Mock interview" lead="Practice in a realistic interview dashboard." />
 
-      <ApiKeySettings onCredentialsChange={onCredentialsChange} />
-
-      <section className="mock-interview-setup">
-        <h2 className="mock-interview-h2">1. Choose a question</h2>
-        <div className="q-search-wrap mock-interview-search">
-          <input
-            type="text"
-            placeholder="Search title, description, tags…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="q-search"
-          />
-          {hasFilters && (
-            <button type="button" className="secondary" onClick={clearFilters}>
-              ✕ Clear filters
+      <div className="mockv2-layout">
+        <aside className="mockv2-sidebar">
+          <div className="mockv2-brand">
+            <div className="mockv2-brand-title">Interview Bot</div>
+            <div className="mockv2-brand-status">v3.2 Active</div>
+          </div>
+          <nav className="mockv2-side-nav" aria-label="Mock interview sections">
+            <button type="button" className="mockv2-side-link">
+              <span className="mockv2-side-link-icon" aria-hidden>⚙</span>
+              <span className="mockv2-side-link-label">Setup</span>
             </button>
-          )}
-        </div>
-
-        <div className="q-filter-row mock-interview-filters">
-          <span className="q-filter-label">Company</span>
-          <div className="q-filter-chips">
-            {COMPANIES.map((c) => (
-              <button
-                key={c.id}
-                type="button"
-                className={`q-chip${company === c.id ? ' active' : ''}`}
-                style={{ '--chip-color': c.color } as CSSProperties}
-                onClick={() => setCompany(company === c.id ? null : c.id)}
-              >
-                {c.emoji} {c.id}
-              </button>
-            ))}
+            <button type="button" className="mockv2-side-link">
+              <span className="mockv2-side-link-icon" aria-hidden>📚</span>
+              <span className="mockv2-side-link-label">Library</span>
+            </button>
+            <button type="button" className="mockv2-side-link">
+              <span className="mockv2-side-link-icon" aria-hidden>📈</span>
+              <span className="mockv2-side-link-label">Analytics</span>
+            </button>
+            <button type="button" className="mockv2-side-link active" aria-current="page">
+              <span className="mockv2-side-link-icon" aria-hidden>💬</span>
+              <span className="mockv2-side-link-label">Practice</span>
+            </button>
+            <button type="button" className="mockv2-side-link">
+              <span className="mockv2-side-link-icon" aria-hidden>🛠</span>
+              <span className="mockv2-side-link-label">Settings</span>
+            </button>
+          </nav>
+          <div className="mockv2-sidebar-footer">
+            <button type="button" className="mockv2-start-btn">
+              Start session
+            </button>
           </div>
-        </div>
+        </aside>
 
-        <div className="q-filter-row mock-interview-filters">
-          <span className="q-filter-label">Difficulty</span>
-          <div className="q-filter-chips">
-            {(['easy', 'medium', 'hard'] as Difficulty[]).map((d) => (
-              <button
-                key={d}
-                type="button"
-                className={`q-chip${difficulty === d ? ' active' : ''}`}
-                style={{ '--chip-color': DIFFICULTY_COLOR[d] } as CSSProperties}
-                onClick={() => setDifficulty(difficulty === d ? null : d)}
-              >
-                {d}
-              </button>
-            ))}
+        <section className="mockv2-main">
+          <div className="mockv2-main-top">
+            <h2 className="mockv2-title">Practice</h2>
+            <div className="mockv2-top-right">Anthropic-powered mock interview</div>
           </div>
-        </div>
 
-        <div className="q-filter-row mock-interview-filters">
-          <span className="q-filter-label">Category</span>
-          <div className="q-filter-chips">
-            {CATEGORIES.map((cat) => (
-              <button
-                key={cat}
-                type="button"
-                className={`q-chip${category === cat ? ' active' : ''}`}
-                onClick={() => setCategory(category === cat ? null : cat)}
-              >
-                {cat}
-              </button>
-            ))}
-          </div>
-        </div>
+          <section className="mockv2-overview-grid">
+            <article className="mockv2-overview-card">
+              <div className="mockv2-overview-label">Current interviewer</div>
+              <div className="mockv2-interviewer-row">
+                <div className="mockv2-avatar" aria-hidden>
+                  SJ
+                </div>
+                <div>
+                  <div className="mockv2-interviewer-name">Sarah Jenkins</div>
+                  <div className="mockv2-interviewer-role">Senior Engineering Manager</div>
+                </div>
+              </div>
+              <div className="mockv2-listening-strip">
+                <span>Live voice feedback</span>
+                <span>Listening</span>
+              </div>
+            </article>
 
-        {filtered.length === 0 ? (
-          <p className="q-empty">No questions match. Clear filters or search.</p>
-        ) : (
-          <label className="mock-interview-select-label">
-            <span className="mock-interview-select-title">Question</span>
-            <select
-              className="mock-interview-select"
-              value={selectedQuestion?.id ?? ''}
-              onChange={(e) => setSelectedId(e.target.value)}
-            >
-              {filtered.map((q) => (
-                <option key={q.id} value={q.id}>
-                  [{q.difficulty}] {q.title}
-                </option>
+            <article className="mockv2-overview-card">
+              <div className="mockv2-overview-label">Session context</div>
+              <p className="mockv2-overview-text">
+                Target role: Fullstack Engineer (System design focus)
+              </p>
+              <p className="mockv2-overview-text">
+                Focus area: {selectedQuestion?.category ?? 'Interview practice'}
+              </p>
+            </article>
+          </section>
+
+          <section className="editorial-panel editorial-panel--tight">
+            <ApiKeySettings
+              onCredentialsChange={onCredentialsChange}
+              onElevenLabsChange={setElevenLabsApiKey}
+            />
+          </section>
+
+          <section className="mock-interview-setup editorial-panel mockv2-setup">
+            <h2 className="mock-interview-h2">1. Choose a question</h2>
+            <FilterSearchBar
+              className="mock-interview-search"
+              placeholder="Search title, description, tags…"
+              value={search}
+              onChange={setSearch}
+              showClear={Boolean(hasFilters)}
+              onClear={clearFilters}
+              clearLabel="Clear filters"
+            />
+
+            <FilterRow label="Company" className="mock-interview-filters">
+              {COMPANIES.map((c) => (
+                <FilterChip
+                  key={c.id}
+                  active={company === c.id}
+                  style={{ '--chip-color': c.color } as CSSProperties}
+                  onClick={() => setCompany(company === c.id ? null : c.id)}
+                >
+                  {c.emoji} {c.id}
+                </FilterChip>
               ))}
-            </select>
-          </label>
-        )}
+            </FilterRow>
 
-        {selectedQuestion && (
-          <div className="mock-interview-preview-card">
-            <div className="mock-interview-preview-meta">
-              <span className="q-category-label">{selectedQuestion.category}</span>
-              <span className="q-difficulty" style={{ color: DIFFICULTY_COLOR[selectedQuestion.difficulty] }}>
-                {selectedQuestion.difficulty}
-              </span>
-            </div>
-            <div className="q-title">{selectedQuestion.title}</div>
-            <p className="q-desc mock-interview-desc">{selectedQuestion.description}</p>
-            {selectedQuestion.tags.length > 0 && (
-              <div className="q-tags">
-                {selectedQuestion.tags.map((t) => (
-                  <span key={t} className="q-tag">
-                    #{t}
+            <FilterRow label="Difficulty" className="mock-interview-filters">
+              {(['easy', 'medium', 'hard'] as Difficulty[]).map((d) => (
+                <FilterChip
+                  key={d}
+                  active={difficulty === d}
+                  style={{ '--chip-color': DIFFICULTY_COLOR[d] } as CSSProperties}
+                  onClick={() => setDifficulty(difficulty === d ? null : d)}
+                >
+                  {d}
+                </FilterChip>
+              ))}
+            </FilterRow>
+
+            <FilterRow label="Category" className="mock-interview-filters">
+              {CATEGORIES.map((cat) => (
+                <FilterChip
+                  key={cat}
+                  active={category === cat}
+                  onClick={() => setCategory(category === cat ? null : cat)}
+                >
+                  {cat}
+                </FilterChip>
+              ))}
+            </FilterRow>
+
+            {filtered.length === 0 ? (
+              <p className="q-empty">No questions match. Clear filters or search.</p>
+            ) : (
+              <label className="mock-interview-select-label">
+                <span className="mock-interview-select-title">Question</span>
+                <select
+                  className="mock-interview-select"
+                  value={selectedQuestion?.id ?? ''}
+                  onChange={(e) => setSelectedId(e.target.value)}
+                >
+                  {filtered.map((q) => (
+                    <option key={q.id} value={q.id}>
+                      [{q.difficulty}] {q.title}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
+
+            {selectedQuestion && (
+              <div className="mock-interview-preview-card">
+                <div className="mock-interview-preview-meta">
+                  <span className="q-category-label">{selectedQuestion.category}</span>
+                  <span className="q-difficulty" style={{ color: DIFFICULTY_COLOR[selectedQuestion.difficulty] }}>
+                    {selectedQuestion.difficulty}
                   </span>
-                ))}
+                </div>
+                <div className="q-title">{selectedQuestion.title}</div>
+                <p className="q-desc mock-interview-desc">{selectedQuestion.description}</p>
+                {selectedQuestion.tags.length > 0 && (
+                  <div className="q-tags">
+                    {selectedQuestion.tags.map((t) => (
+                      <span key={t} className="q-tag">
+                        #{t}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <p className="mock-interview-timer-hint">
+                  Session timer: <strong>{formatDurationLabel(getMockTimeLimitSeconds(selectedQuestion))}</strong> —{' '}
+                  {describeMockTimeBudget(selectedQuestion)}.
+                </p>
               </div>
             )}
-            <p className="mock-interview-timer-hint">
-              Session timer: <strong>{formatDurationLabel(getMockTimeLimitSeconds(selectedQuestion))}</strong> —{' '}
-              {describeMockTimeBudget(selectedQuestion)}.
-            </p>
-          </div>
-        )}
 
-        <h2 className="mock-interview-h2">2. How do you want to train?</h2>
-        <div className="mock-style-grid">
-          {MOCK_TRAINING_OPTIONS.map((opt) => (
-            <label
-              key={opt.id}
-              className={`mock-style-card${style === opt.id ? ' mock-style-card--active' : ''}`}
-            >
+            <h2 className="mock-interview-h2">2. How do you want to train?</h2>
+            <div className="mock-style-grid">
+              {MOCK_TRAINING_OPTIONS.map((opt) => (
+                <label
+                  key={opt.id}
+                  className={`mock-style-card${style === opt.id ? ' mock-style-card--active' : ''}`}
+                >
+                  <input
+                    type="radio"
+                    name="mock-training-style"
+                    checked={style === opt.id}
+                    onChange={() => setStyle(opt.id)}
+                  />
+                  <span className="mock-style-card-title">{opt.label}</span>
+                  <span className="mock-style-card-blurb">{opt.blurb}</span>
+                </label>
+              ))}
+            </div>
+
+            <label className="q-chat-checkbox mock-interview-ref">
               <input
-                type="radio"
-                name="mock-training-style"
-                checked={style === opt.id}
-                onChange={() => setStyle(opt.id)}
+                type="checkbox"
+                checked={includeRefAnswer}
+                onChange={(e) => setIncludeRefAnswer(e.target.checked)}
               />
-              <span className="mock-style-card-title">{opt.label}</span>
-              <span className="mock-style-card-blurb">{opt.blurb}</span>
+              Include reference answer in Claude&apos;s context (stronger feedback; may reduce discovery)
             </label>
-          ))}
-        </div>
 
-        <label className="q-chat-checkbox mock-interview-ref">
-          <input
-            type="checkbox"
-            checked={includeRefAnswer}
-            onChange={(e) => setIncludeRefAnswer(e.target.checked)}
-          />
-          Include reference answer in Claude&apos;s context (stronger feedback; may reduce discovery)
-        </label>
-
-        <h2 className="mock-interview-h2">3. Session</h2>
-        {selectedQuestion && (
-          <MockInterviewSession
-            key={`${selectedQuestion.id}-${style}`}
-            question={selectedQuestion}
-            style={style}
-            includeRefAnswer={includeRefAnswer}
-            apiKey={apiKey}
-            model={anthropicModel}
-          />
-        )}
-      </section>
-    </>
+            <h2 className="mock-interview-h2">3. Session</h2>
+            {selectedQuestion && (
+              <MockInterviewSession
+                key={`${selectedQuestion.id}-${style}`}
+                question={selectedQuestion}
+                style={style}
+                includeRefAnswer={includeRefAnswer}
+                apiKey={apiKey}
+                model={anthropicModel}
+                elevenLabsApiKey={elevenLabsApiKey}
+              />
+            )}
+          </section>
+        </section>
+      </div>
+    </div>
   )
 }

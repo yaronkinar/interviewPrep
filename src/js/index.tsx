@@ -11,19 +11,34 @@ export default function JsPage() {
   const ui = getUiStrings(locale)
 
   return (
-    <>
-      <h1 className="page-title">{ui.pages.jsTitle}</h1>
-      <div className="grid">
-        <MemoizeCard />
-        <DebounceCard />
-        <ThrottleCard />
-        <LazyLoadCard />
-      </div>
-      <div style={{ maxWidth: 1200, margin: '1.5rem auto 0' }}>
-        <div className="grid full">
+    <div className="js-editorial js-editorial--stitch" dir="ltr">
+      <header className="js-editorial-header">
+        <div>
+          <h1 className="js-editorial-title">{ui.pages.jsTitle}</h1>
+          <p className="js-editorial-lead">
+            Learn by tweaking values and watching runtime behavior. A curated sandbox for the modern engineer.
+          </p>
+        </div>
+        <div className="js-editorial-actions">
+          <button type="button" className="secondary js-editorial-btn">Export Lab</button>
+          <button type="button" className="js-editorial-btn js-editorial-btn--primary">Share Workspace</button>
+        </div>
+      </header>
+
+      <section className="js-editorial-panel">
+        <div className="grid js-editorial-grid">
+          <DebounceCard />
+          <ThrottleCard />
+          <MemoizeCard />
+          <LazyLoadCard />
+        </div>
+      </section>
+
+      <section className="js-editorial-panel js-editorial-panel--sandbox">
+        <div className="grid full js-editorial-sandbox-wrap">
           <Sandbox />
         </div>
-      </div>
-    </>
+      </section>
+    </div>
   )
 }

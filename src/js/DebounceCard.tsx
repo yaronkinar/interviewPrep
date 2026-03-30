@@ -76,8 +76,13 @@ export default function DebounceCard() {
 
   return (
     <div className="card">
-      <div className="card-title">{ui.js.debounce.title}</div>
-      <p className="card-desc">{ui.js.debounce.description.replace('{delay}', String(delay))}</p>
+      <div className="js-card-head">
+        <div>
+          <div className="card-title">{ui.js.debounce.title}</div>
+          <p className="card-desc">{ui.js.debounce.description.replace('{delay}', String(delay))}</p>
+        </div>
+        <span className="js-card-icon" aria-hidden>◴</span>
+      </div>
 
       <div className="params">
         <span><span className="v">delay</span> =</span>

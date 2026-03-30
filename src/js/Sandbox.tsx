@@ -126,8 +126,15 @@ export default function Sandbox() {
   return (
     <div className="card sandbox-wrap" style={{ marginTop: 0 }}>
       <div className="sandbox-header">
-        <span className="card-title">{ui.js.sandbox.title}</span>
-        <span className="sandbox-hint">{ui.js.sandbox.hint}</span>
+        <div className="sandbox-header-left">
+          <span className="card-title">{ui.js.sandbox.title}</span>
+          <span className="sandbox-hint">{ui.js.sandbox.hint}</span>
+        </div>
+        <div className="sandbox-actions">
+          <button onClick={run}>▶ {ui.js.sandbox.runButton}</button>
+          <button className="secondary" onClick={() => setOutput([])}>{ui.js.sandbox.clearOutput}</button>
+          <button className="secondary" onClick={() => { editorRef.current?.setValue(DEFAULT_CODE); setOutput([]) }}>{ui.js.sandbox.reset}</button>
+        </div>
       </div>
       <p className="card-desc">
         {ui.js.sandbox.description}
@@ -175,11 +182,6 @@ export default function Sandbox() {
         </div>
       </div>
 
-      <div className="controls">
-        <button onClick={run}>▶ {ui.js.sandbox.runButton}</button>
-        <button className="secondary" onClick={() => setOutput([])}>{ui.js.sandbox.clearOutput}</button>
-        <button className="secondary" onClick={() => { editorRef.current?.setValue(DEFAULT_CODE); setOutput([]) }}>{ui.js.sandbox.reset}</button>
-      </div>
     </div>
   )
 }

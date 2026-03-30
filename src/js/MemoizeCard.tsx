@@ -115,8 +115,13 @@ export default function MemoizeCard() {
 
   return (
     <div className="card">
-      <div className="card-title">{ui.js.memoize.title}</div>
-      <p className="card-desc">{ui.js.memoize.description}</p>
+      <div className="js-card-head">
+        <div>
+          <div className="card-title">{ui.js.memoize.title}</div>
+          <p className="card-desc">{ui.js.memoize.description}</p>
+        </div>
+        <span className="js-card-icon" aria-hidden>⛁</span>
+      </div>
 
       <div className="params">
         <span><span className="v">fn</span> = fib &nbsp;|&nbsp; <span className="v">n</span> =</span>

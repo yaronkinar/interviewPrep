@@ -51,3 +51,33 @@ export function labelVoiceOption(v: SpeechSynthesisVoice, likelyFemale: boolean)
 export function isLikelyFemaleVoice(v: SpeechSynthesisVoice): boolean {
   return femaleScore(v) >= 1
 }
+
+/**
+ * Best-effort default voice for interview playback:
+ * 1) locale-matching woman voice (if available)
+ * 2) locale-matching default/system voice
+ * 3) any default voice
+ * 4) first available voice
+ */
+export function pickBestInterviewVoice(
+  voices: SpeechSynthesisVoice[],
+  localeHint: string,
+): SpeechSynthesisVoice | undefined {
+  if (voices.length === 0) return undefined
+  const lang = localeHint.toLowerCase()
+  const short = lang.split('-')[0] ?? lang
+
+  const woman = pickFemaleVoice(voices, localeHint)
+  if (woman) return woman
+
+  const inLocale = voices.filter(
+    (v) => v.lang.toLowerCase().startsWith(lang) || v.lang.toLowerCase().startsWith(short),
+  )
+  const localeDefault = inLocale.find((v) => v.default)
+  if (localeDefault) return localeDefault
+  if (inLocale.length > 0) return inLocale[0]
+
+  const anyDefault = voices.find((v) => v.default)
+  if (anyDefault) return anyDefault
+  return voices[0]
+}

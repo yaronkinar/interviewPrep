@@ -95,8 +95,13 @@ export default function LazyLoadCard() {
 
   return (
     <div className="card">
-      <div className="card-title">{ui.js.lazy.title}</div>
-      <p className="card-desc">{ui.js.lazy.description}</p>
+      <div className="js-card-head">
+        <div>
+          <div className="card-title">{ui.js.lazy.title}</div>
+          <p className="card-desc">{ui.js.lazy.description}</p>
+        </div>
+        <span className="js-card-icon" aria-hidden>◌</span>
+      </div>
 
       <div className="params">
         <span><span className="v">rootMargin</span> =</span>

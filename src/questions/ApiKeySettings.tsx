@@ -64,27 +64,62 @@ function persistKey(mode: KeyPersistMode, key: string): void {
 
 export interface ApiKeySettingsProps {
   onCredentialsChange: (apiKey: string, model: string) => void
+  onElevenLabsChange?: (apiKey: string) => void
 }
 
-export default function ApiKeySettings({ onCredentialsChange }: ApiKeySettingsProps) {
+const ELEVENLABS_API_KEY_SESSION_KEY = 'interviews:elevenlabsApiKeySession'
+const ELEVENLABS_API_KEY_LOCAL_KEY = 'interviews:elevenlabsApiKeyLocal'
+
+function loadStoredElevenLabsKey(mode: KeyPersistMode): string {
+  try {
+    if (mode === 'local') {
+      return localStorage.getItem(ELEVENLABS_API_KEY_LOCAL_KEY) ?? ''
+    }
+    return sessionStorage.getItem(ELEVENLABS_API_KEY_SESSION_KEY) ?? ''
+  } catch {
+    return ''
+  }
+}
+
+function persistElevenLabsKey(mode: KeyPersistMode, key: string): void {
+  try {
+    sessionStorage.removeItem(ELEVENLABS_API_KEY_SESSION_KEY)
+    localStorage.removeItem(ELEVENLABS_API_KEY_LOCAL_KEY)
+    if (!key) return
+    if (mode === 'local') {
+      localStorage.setItem(ELEVENLABS_API_KEY_LOCAL_KEY, key)
+    } else {
+      sessionStorage.setItem(ELEVENLABS_API_KEY_SESSION_KEY, key)
+    }
+  } catch {
+    // ignore
+  }
+}
+
+export default function ApiKeySettings({ onCredentialsChange, onElevenLabsChange }: ApiKeySettingsProps) {
   const [open, setOpen] = useState(false)
   const [persistMode, setPersistMode] = useState<KeyPersistMode>(loadPersistMode)
   const [apiKeyInput, setApiKeyInput] = useState('')
   const [model, setModel] = useState(loadModel)
+  const [elevenLabsKeyInput, setElevenLabsKeyInput] = useState('')
 
   useEffect(() => {
     const mode = loadPersistMode()
     setPersistMode(mode)
     const key = loadStoredKey(mode)
+    const elevenLabsKey = loadStoredElevenLabsKey(mode)
     setApiKeyInput(key)
+    setElevenLabsKeyInput(elevenLabsKey)
     const m = loadModel()
     setModel(m)
     onCredentialsChange(key, m)
+    onElevenLabsChange?.(elevenLabsKey)
     // eslint-disable-next-line react-hooks/exhaustive-deps -- sync parent once on mount from storage
   }, [])
 
   function applySave() {
     persistKey(persistMode, apiKeyInput.trim())
+    persistElevenLabsKey(persistMode, elevenLabsKeyInput.trim())
     try {
       localStorage.setItem(ANTHROPIC_MODEL_STORAGE_KEY, model.trim() || DEFAULT_ANTHROPIC_MODEL)
     } catch {
@@ -93,12 +128,18 @@ export default function ApiKeySettings({ onCredentialsChange }: ApiKeySettingsPr
     const m = model.trim() || DEFAULT_ANTHROPIC_MODEL
     setModel(m)
     onCredentialsChange(apiKeyInput.trim(), m)
+    onElevenLabsChange?.(elevenLabsKeyInput.trim())
   }
 
   function clearKey() {
     setApiKeyInput('')
     persistKey(persistMode, '')
     onCredentialsChange('', model.trim() || DEFAULT_ANTHROPIC_MODEL)
+  }
+  function clearElevenLabsKey() {
+    setElevenLabsKeyInput('')
+    persistElevenLabsKey(persistMode, '')
+    onElevenLabsChange?.('')
   }
 
   const hasKey = Boolean(apiKeyInput.trim())
@@ -140,6 +181,17 @@ export default function ApiKeySettings({ onCredentialsChange }: ApiKeySettingsPr
               placeholder={DEFAULT_ANTHROPIC_MODEL}
             />
           </label>
+          <label className="q-ai-label">
+            ElevenLabs API key (voice quality upgrade)
+            <input
+              type="password"
+              className="q-ai-input"
+              placeholder="xi-…"
+              value={elevenLabsKeyInput}
+              onChange={(e) => setElevenLabsKeyInput(e.target.value)}
+              autoComplete="off"
+            />
+          </label>
           <div className="q-ai-persist-row">
             <span className="q-ai-label-inline">Store key:</span>
             <label className="q-ai-radio">
@@ -167,6 +219,14 @@ export default function ApiKeySettings({ onCredentialsChange }: ApiKeySettingsPr
             </button>
             <button type="button" className="secondary" onClick={clearKey} disabled={!hasKey}>
               Clear key
+            </button>
+            <button
+              type="button"
+              className="secondary"
+              onClick={clearElevenLabsKey}
+              disabled={!elevenLabsKeyInput.trim()}
+            >
+              Clear ElevenLabs key
             </button>
           </div>
         </div>

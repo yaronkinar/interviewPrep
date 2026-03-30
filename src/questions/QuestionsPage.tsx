@@ -20,6 +20,10 @@ import {
   parseQuestionsJson,
 } from './customQuestions'
 import { DEFAULT_ANTHROPIC_MODEL } from './anthropicConstants'
+import ScreenHeader from '../components/layout/ScreenHeader'
+import FilterRow from '../components/filters/FilterRow'
+import FilterChip from '../components/filters/FilterChip'
+import FilterSearchBar from '../components/filters/FilterSearchBar'
 
 const DIFFICULTY_COLOR: Record<Difficulty, string> = {
   easy: '#34d399',
@@ -252,14 +256,16 @@ export default function QuestionsPage() {
   const hasFilters = search || company || difficulty || category
 
   return (
-    <>
-      <h1 className="page-title">{ui.pages.questionsTitle}</h1>
+    <div className="editorial-page editorial-page--questions">
+      <ScreenHeader title={ui.pages.questionsTitle} />
 
-      <ApiKeySettings onCredentialsChange={onCredentialsChange} />
+      <section className="editorial-panel editorial-panel--tight">
+        <ApiKeySettings onCredentialsChange={onCredentialsChange} />
 
-      <OpenChat apiKey={apiKey} model={anthropicModel} />
+        <OpenChat apiKey={apiKey} model={anthropicModel} />
+      </section>
 
-      <section className="q-upload-section">
+      <section className="q-upload-section editorial-panel">
         <div className="q-upload-title">{ui.questions.customQuestionsTitle}</div>
         <p className="q-upload-hint">
           {ui.questions.customQuestionsHint}
@@ -288,7 +294,7 @@ export default function QuestionsPage() {
         {uploadError && <div className="q-upload-error">{uploadError}</div>}
       </section>
 
-      <section className="solve-guide">
+      <section className="solve-guide editorial-panel">
         <div className="solve-guide-title">{ui.questions.solveGuideTitle}</div>
         <ol className="solve-guide-list">
           {ui.questions.solveGuideSteps.map((step, i) => (
@@ -297,79 +303,68 @@ export default function QuestionsPage() {
         </ol>
       </section>
 
-      <div className="q-search-wrap">
-        <input
-          type="text"
+      <section className="editorial-panel editorial-panel--tight">
+        <FilterSearchBar
           placeholder={ui.questions.searchPlaceholder}
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="q-search"
-        />
-        {hasFilters && (
-          <button className="secondary" onClick={clearFilters}>
-            ✕ {ui.questions.clearFilters}
-          </button>
-        )}
-        <span className="q-count">
-          {filtered.length} / {allQuestions.length} {ui.questions.questionsCountSuffix}
-          {customQuestions.length > 0 && (
-            <span className="q-count-custom"> ({customQuestions.length} {ui.questions.customCountSuffix})</span>
+          onChange={setSearch}
+          showClear={Boolean(hasFilters)}
+          onClear={clearFilters}
+          clearLabel={ui.questions.clearFilters}
+          rightSlot={(
+            <span className="q-count">
+              {filtered.length} / {allQuestions.length} {ui.questions.questionsCountSuffix}
+              {customQuestions.length > 0 && (
+                <span className="q-count-custom"> ({customQuestions.length} {ui.questions.customCountSuffix})</span>
+              )}
+            </span>
           )}
-        </span>
-      </div>
+        />
 
-      <div className="q-filter-row">
-        <span className="q-filter-label">{ui.questions.company}</span>
-        <div className="q-filter-chips">
+        <FilterRow label={ui.questions.company}>
           {COMPANIES.map((c) => {
             const count = allQuestions.filter((q) => q.companies.includes(c.id)).length
             return (
-              <button
+              <FilterChip
                 key={c.id}
-                className={`q-chip${company === c.id ? ' active' : ''}`}
+                active={company === c.id}
                 style={{ '--chip-color': c.color } as React.CSSProperties}
                 onClick={() => setCompany(company === c.id ? null : c.id)}
               >
                 {c.emoji} {c.id}
                 <span className="q-chip-count">{count}</span>
-              </button>
+              </FilterChip>
             )
           })}
-        </div>
-      </div>
+        </FilterRow>
 
-      <div className="q-filter-row">
-        <span className="q-filter-label">{ui.questions.difficulty}</span>
-        <div className="q-filter-chips">
+        <FilterRow label={ui.questions.difficulty}>
           {(['easy', 'medium', 'hard'] as Difficulty[]).map((d) => (
-            <button
+            <FilterChip
               key={d}
-              className={`q-chip${difficulty === d ? ' active' : ''}`}
+              active={difficulty === d}
               style={{ '--chip-color': DIFFICULTY_COLOR[d] } as React.CSSProperties}
               onClick={() => setDifficulty(difficulty === d ? null : d)}
             >
               {d}
               <span className="q-chip-count">{allQuestions.filter((q) => q.difficulty === d).length}</span>
-            </button>
+            </FilterChip>
           ))}
-        </div>
-      </div>
+        </FilterRow>
 
-      <div className="q-filter-row">
-        <span className="q-filter-label">{ui.questions.category}</span>
-        <div className="q-filter-chips">
+        <FilterRow label={ui.questions.category}>
           {CATEGORIES.map((cat) => (
-            <button
+            <FilterChip
               key={cat}
-              className={`q-chip${category === cat ? ' active' : ''}`}
+              active={category === cat}
               onClick={() => setCategory(category === cat ? null : cat)}
             >
               {cat}
               <span className="q-chip-count">{allQuestions.filter((q) => q.category === cat).length}</span>
-            </button>
+            </FilterChip>
           ))}
-        </div>
-      </div>
+        </FilterRow>
+      </section>
 
       {filtered.length === 0 ? (
         <div className="q-empty">{ui.questions.emptyState}</div>
@@ -390,6 +385,6 @@ export default function QuestionsPage() {
           ))}
         </div>
       )}
-    </>
+    </div>
   )
 }
