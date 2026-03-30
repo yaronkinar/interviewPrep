@@ -1,6 +1,11 @@
 import type { Locale } from './locale'
 
 type UiStrings = {
+  nav: {
+    openMenu: string
+    closeMenu: string
+    menuLabel: string
+  }
   theme: {
     label: string
     useLight: string
@@ -50,6 +55,11 @@ type UiStrings = {
 }
 
 const en: UiStrings = {
+  nav: {
+    openMenu: 'Open menu',
+    closeMenu: 'Close menu',
+    menuLabel: 'Site navigation',
+  },
   theme: {
     label: 'Theme',
     useLight: 'Use light theme',
@@ -109,6 +119,11 @@ const en: UiStrings = {
 }
 
 const he: UiStrings = {
+  nav: {
+    openMenu: 'פתח תפריט',
+    closeMenu: 'סגור תפריט',
+    menuLabel: 'ניווט באתר',
+  },
   theme: {
     label: 'ערכת נושא',
     useLight: 'מצב בהיר',
@@ -175,6 +190,7 @@ export function getUiStrings(locale: Locale): UiStrings {
   const override = OVERRIDES[locale]
   if (!override) return en
   return {
+    nav: { ...en.nav, ...(override.nav ?? {}) },
     theme: { ...en.theme, ...(override.theme ?? {}) },
     pages: { ...en.pages, ...(override.pages ?? {}) },
     common: { ...en.common, ...(override.common ?? {}) },

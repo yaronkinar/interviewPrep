@@ -10,8 +10,12 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
-    "sourceMap": true
+    "sourceMap": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    }
   },
-  "include": ["**/*.ts", "src/**/*.d.ts"],
+  "include": ["**/*.ts", "**/*.tsx", "src/**/*.d.ts"],
   "exclude": ["node_modules", "dist", "questions"]
 }
