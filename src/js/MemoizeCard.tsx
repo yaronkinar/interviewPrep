@@ -48,6 +48,8 @@ export default function MemoizeCard() {
   const [hits, setHits] = useState(0)
   const [misses, setMisses] = useState(0)
   const [log, setLog] = useState<LogEntry[]>([])
+  const keyOrderRef = useRef<string[]>([])
+  const keySetRef = useRef<Set<string>>(new Set())
 
   const memoRef = useRef(memoize(fib as (...args: unknown[]) => unknown, 10))
 
@@ -57,14 +59,43 @@ export default function MemoizeCard() {
 
   function rebuildMemo(newMax: number) {
     memoRef.current = memoize(fib as (...args: unknown[]) => unknown, newMax)
+    keyOrderRef.current = []
+    keySetRef.current = new Set()
     setHits(0); setMisses(0); setLog([])
     addLog(ui.js.memoize.cacheRebuilt.replace('{size}', String(newMax)), 'info')
   }
 
   function runMemo() {
+    const key = JSON.stringify([n])
+    addLog(`${ui.js.common.calcLabel}: key = JSON.stringify([${n}]) => ${key}`, 'log')
+    const predictedHit = keySetRef.current.has(key)
+    addLog(
+      `${ui.js.common.calcLabel}: cache.has(${key}) => ${predictedHit} (size=${keySetRef.current.size}/${maxSize})`,
+      'log'
+    )
+    if (!predictedHit && keySetRef.current.size >= maxSize) {
+      const evicted = keyOrderRef.current[0]
+      addLog(
+        `${ui.js.common.calcLabel}: size >= max (${keySetRef.current.size} >= ${maxSize}) -> ${ui.js.memoize.evictWord} ${evicted}`,
+        'info'
+      )
+    }
+
     const t0 = performance.now()
     const { value, fromCache } = memoRef.current(n) as { value: number; fromCache: boolean }
     const ms = (performance.now() - t0).toFixed(2)
+
+    if (!fromCache) {
+      if (!keySetRef.current.has(key)) {
+        if (keySetRef.current.size >= maxSize) {
+          const evicted = keyOrderRef.current.shift()
+          if (evicted) keySetRef.current.delete(evicted)
+        }
+        keySetRef.current.add(key)
+        keyOrderRef.current.push(key)
+      }
+    }
+
     if (fromCache) {
       setHits(h => h + 1)
       addLog(`fib(${n}) = ${value}  ✓ cache hit  ${ms}ms`, 'hit')
@@ -76,6 +107,8 @@ export default function MemoizeCard() {
 
   function clearCache() {
     memoRef.current.clear()
+    keyOrderRef.current = []
+    keySetRef.current = new Set()
     setHits(0); setMisses(0)
     addLog(ui.js.memoize.cacheCleared, 'info')
   }

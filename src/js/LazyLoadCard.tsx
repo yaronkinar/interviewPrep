@@ -62,6 +62,11 @@ export default function LazyLoadCard() {
     observerRef.current = new IntersectionObserver(
       (entries) => {
         entries.forEach(entry => {
+          const ratio = entry.intersectionRatio.toFixed(2)
+          addLog(
+            `${ui.js.common.calcLabel}: ratio(${ratio}) >= 0.10 && isIntersecting=${entry.isIntersecting}`,
+            'log'
+          )
           if (entry.isIntersecting) {
             const img = entry.target as HTMLImageElement
             const idx = img.dataset.idx
@@ -69,6 +74,8 @@ export default function LazyLoadCard() {
             observerRef.current?.unobserve(img)
             setLoaded(l => l + 1)
             addLog(`↓ image ${idx} fetched`, 'fire')
+          } else {
+            addLog(`${ui.js.common.skipLabel}: ${ui.js.lazy.outsideViewport}`, 'skip')
           }
         })
       },

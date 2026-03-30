@@ -56,6 +56,9 @@ type UiStrings = {
     common: {
       implementation: string
       usage: string
+      calcLabel: string
+      scheduleLabel: string
+      skipLabel: string
     }
     debounce: {
       title: string
@@ -76,6 +79,7 @@ type UiStrings = {
       computed: string
       cacheCleared: string
       explainSteps: string[]
+      evictWord: string
     }
     throttle: {
       title: string
@@ -97,6 +101,7 @@ type UiStrings = {
       imageWaiting: string
       usageReactHook: string
       explainSteps: string[]
+      outsideViewport: string
     }
     sandbox: {
       title: string
@@ -180,6 +185,9 @@ const en: UiStrings = {
     common: {
       implementation: 'implementation',
       usage: 'usage',
+      calcLabel: 'calc',
+      scheduleLabel: 'schedule',
+      skipLabel: 'skip',
     },
     debounce: {
       title: 'Debounce',
@@ -210,6 +218,7 @@ const en: UiStrings = {
         'Cache hit returns immediately with no extra computation.',
         'Cache miss computes, stores the value, and future identical calls hit.',
       ],
+      evictWord: 'evict',
     },
     throttle: {
       title: 'Throttle',
@@ -243,6 +252,7 @@ const en: UiStrings = {
         'Call `unobserve` so each image loads once only.',
         '`rootMargin` preloads slightly before visibility to avoid flashes.',
       ],
+      outsideViewport: 'image still outside viewport',
     },
     sandbox: {
       title: 'Code Sandbox',
@@ -340,6 +350,7 @@ const JS_OVERRIDES: Partial<Record<Locale, DeepPartial<UiStrings['js']>>> = {
     memoize: {
       runButton: 'חשב fib(n)',
       clearButton: 'נקה מטמון',
+      evictWord: 'פנה',
       explainSteps: [
         '`cache` הוא `Map` שנשמר ב-closure לאורך כל הקריאות.',
         'הארגומנטים מומרצים למפתח יציב עם `JSON.stringify`.',
@@ -359,6 +370,7 @@ const JS_OVERRIDES: Partial<Record<Locale, DeepPartial<UiStrings['js']>>> = {
     },
     lazy: {
       imageWaiting: 'תמונה {index} - ממתינה...',
+      outsideViewport: 'התמונה עדיין מחוץ לאזור התצוגה',
       explainSteps: [
         'התמונות מוצגות עם `data-src`, ולכן הדפדפן לא טוען אותן מיד.',
         '`IntersectionObserver` מזהה מתי תמונה נכנסת לאזור הנראה.',
@@ -368,9 +380,16 @@ const JS_OVERRIDES: Partial<Record<Locale, DeepPartial<UiStrings['js']>>> = {
       ],
     },
     sandbox: { clearOutput: 'נקה פלט', reset: 'איפוס' },
+    common: { calcLabel: 'חישוב', scheduleLabel: 'תזמון', skipLabel: 'דילוג' },
   },
   es: {
-    common: { implementation: 'implementacion', usage: 'uso' },
+    common: {
+      implementation: 'implementacion',
+      usage: 'uso',
+      calcLabel: 'calculo',
+      scheduleLabel: 'programar',
+      skipLabel: 'omitir',
+    },
     debounce: {
       title: 'Debounce',
       description: 'Solo se ejecuta cuando dejas de escribir durante {delay} ms. Las pulsaciones rapidas reinician el temporizador.',
@@ -394,6 +413,7 @@ const JS_OVERRIDES: Partial<Record<Locale, DeepPartial<UiStrings['js']>>> = {
       cacheHits: 'Aciertos de cache',
       computed: 'Calculado',
       cacheCleared: 'Cache limpiada',
+      evictWord: 'expulsar',
       explainSteps: [
         '`cache` es un `Map` en closure y persiste entre llamadas.',
         'Los argumentos se serializan con `JSON.stringify` para la clave.',
@@ -425,6 +445,7 @@ const JS_OVERRIDES: Partial<Record<Locale, DeepPartial<UiStrings['js']>>> = {
       pending: 'Pendientes',
       imageWaiting: 'imagen {index} - esperando...',
       usageReactHook: 'uso (hook de React)',
+      outsideViewport: 'la imagen sigue fuera del area visible',
       explainSteps: [
         'Las imagenes salen con `data-src`, asi el navegador no las pide al inicio.',
         '`IntersectionObserver` detecta cuando cada imagen entra en vista.',
@@ -444,7 +465,13 @@ const JS_OVERRIDES: Partial<Record<Locale, DeepPartial<UiStrings['js']>>> = {
     },
   },
   fr: {
-    common: { implementation: 'implementation', usage: 'utilisation' },
+    common: {
+      implementation: 'implementation',
+      usage: 'utilisation',
+      calcLabel: 'calcul',
+      scheduleLabel: 'planifier',
+      skipLabel: 'ignorer',
+    },
     debounce: {
       inputPlaceholder: 'Tapez ici…',
       keystrokes: 'Frappes',
@@ -461,6 +488,7 @@ const JS_OVERRIDES: Partial<Record<Locale, DeepPartial<UiStrings['js']>>> = {
       clearButton: 'vider le cache',
       cacheHits: 'Succes du cache',
       computed: 'Calcule',
+      evictWord: 'expulser',
       explainSteps: [
         '`cache` est une `Map` en closure qui persiste entre appels.',
         'Les arguments sont serialises via `JSON.stringify` pour la cle.',
@@ -481,6 +509,7 @@ const JS_OVERRIDES: Partial<Record<Locale, DeepPartial<UiStrings['js']>>> = {
     lazy: {
       imageWaiting: 'image {index} - en attente...',
       usageReactHook: 'utilisation (hook React)',
+      outsideViewport: "l'image est encore hors de la zone visible",
       explainSteps: [
         'Les images sont rendues avec `data-src`, donc pas de requete immediate.',
         '`IntersectionObserver` detecte l entree de chaque image dans la zone visible.',
@@ -492,7 +521,12 @@ const JS_OVERRIDES: Partial<Record<Locale, DeepPartial<UiStrings['js']>>> = {
     sandbox: { title: 'Bac a code', hint: 'Ctrl + Entree pour executer', clearOutput: 'Vider la sortie', reset: 'Reinitialiser', outputLabel: '// sortie' },
   },
   de: {
-    common: { usage: 'Verwendung' },
+    common: {
+      usage: 'Verwendung',
+      calcLabel: 'berechnung',
+      scheduleLabel: 'planen',
+      skipLabel: 'ueberspringen',
+    },
     debounce: {
       inputPlaceholder: 'Hier tippen…',
       keystrokes: 'Tastenanschlage',
@@ -506,6 +540,7 @@ const JS_OVERRIDES: Partial<Record<Locale, DeepPartial<UiStrings['js']>>> = {
     memoize: {
       runButton: 'fib(n) berechnen',
       clearButton: 'cache leeren',
+      evictWord: 'entfernen',
       explainSteps: [
         '`cache` ist eine `Map` in der Closure und bleibt uber Aufrufe erhalten.',
         'Argumente werden mit `JSON.stringify` zu einem stabilen Schlussel serialisiert.',
@@ -526,6 +561,7 @@ const JS_OVERRIDES: Partial<Record<Locale, DeepPartial<UiStrings['js']>>> = {
     lazy: {
       imageWaiting: 'bild {index} - wartet...',
       usageReactHook: 'verwendung (React Hook)',
+      outsideViewport: 'bild ist noch ausserhalb des sichtbereichs',
       explainSteps: [
         'Bilder werden mit `data-src` gerendert, daher startet kein sofortiger Request.',
         '`IntersectionObserver` erkennt, wenn ein Bild in den sichtbaren Bereich kommt.',
@@ -537,7 +573,7 @@ const JS_OVERRIDES: Partial<Record<Locale, DeepPartial<UiStrings['js']>>> = {
     sandbox: { title: 'Code-Sandbox', hint: 'Ctrl + Enter zum Ausfuhren', clearOutput: 'Ausgabe leeren', outputLabel: '// ausgabe' },
   },
   pt: {
-    common: { usage: 'Uso' },
+    common: { usage: 'Uso', calcLabel: 'calculo', scheduleLabel: 'agendar', skipLabel: 'ignorar' },
     debounce: {
       inputPlaceholder: 'Digite aqui…',
       keystrokes: 'Teclas',
@@ -551,6 +587,7 @@ const JS_OVERRIDES: Partial<Record<Locale, DeepPartial<UiStrings['js']>>> = {
     memoize: {
       runButton: 'calcular fib(n)',
       clearButton: 'limpar cache',
+      evictWord: 'remover',
       explainSteps: [
         '`cache` e um `Map` na closure e persiste entre chamadas.',
         'Os argumentos sao serializados com `JSON.stringify` para formar a chave.',
@@ -571,6 +608,7 @@ const JS_OVERRIDES: Partial<Record<Locale, DeepPartial<UiStrings['js']>>> = {
     lazy: {
       imageWaiting: 'imagem {index} - aguardando...',
       usageReactHook: 'uso (hook React)',
+      outsideViewport: 'a imagem ainda esta fora da area visivel',
       explainSteps: [
         'As imagens comecam com `data-src`, entao o navegador nao baixa de imediato.',
         '`IntersectionObserver` detecta quando cada imagem entra na area visivel.',
@@ -582,7 +620,7 @@ const JS_OVERRIDES: Partial<Record<Locale, DeepPartial<UiStrings['js']>>> = {
     sandbox: { title: 'Sandbox de codigo', hint: 'Ctrl + Enter para executar', clearOutput: 'Limpar saida', outputLabel: '// saida' },
   },
   ja: {
-    common: { usage: '使い方' },
+    common: { usage: '使い方', calcLabel: '計算', scheduleLabel: '予約', skipLabel: 'スキップ' },
     debounce: {
       inputPlaceholder: 'ここに入力…',
       keystrokes: '入力回数',
@@ -596,6 +634,7 @@ const JS_OVERRIDES: Partial<Record<Locale, DeepPartial<UiStrings['js']>>> = {
     memoize: {
       runButton: 'fib(n) を計算',
       clearButton: 'キャッシュをクリア',
+      evictWord: '削除',
       explainSteps: [
         '`cache` はクロージャ内の `Map` で、呼び出し間で保持されます。',
         '引数は `JSON.stringify` でシリアライズされ、キーになります。',
@@ -616,6 +655,7 @@ const JS_OVERRIDES: Partial<Record<Locale, DeepPartial<UiStrings['js']>>> = {
     lazy: {
       imageWaiting: '画像 {index} - 待機中...',
       usageReactHook: '使い方 (React hook)',
+      outsideViewport: '画像はまだ表示領域の外です',
       explainSteps: [
         '画像は `data-src` で描画されるため、最初は取得されません。',
         '`IntersectionObserver` が画像の表示領域への侵入を検知します。',
@@ -627,7 +667,7 @@ const JS_OVERRIDES: Partial<Record<Locale, DeepPartial<UiStrings['js']>>> = {
     sandbox: { title: 'コードサンドボックス', hint: 'Ctrl + Enter で実行', clearOutput: '出力をクリア', outputLabel: '// 出力' },
   },
   zh: {
-    common: { usage: '用法' },
+    common: { usage: '用法', calcLabel: '计算', scheduleLabel: '调度', skipLabel: '跳过' },
     debounce: {
       inputPlaceholder: '在此输入…',
       keystrokes: '按键次数',
@@ -641,6 +681,7 @@ const JS_OVERRIDES: Partial<Record<Locale, DeepPartial<UiStrings['js']>>> = {
     memoize: {
       runButton: '计算 fib(n)',
       clearButton: '清空缓存',
+      evictWord: '淘汰',
       explainSteps: [
         '`cache` 是闭包中的 `Map`，会在多次调用间保留。',
         '参数通过 `JSON.stringify` 序列化为稳定键。',
@@ -661,6 +702,7 @@ const JS_OVERRIDES: Partial<Record<Locale, DeepPartial<UiStrings['js']>>> = {
     lazy: {
       imageWaiting: '图片 {index} - 等待中...',
       usageReactHook: '用法 (React Hook)',
+      outsideViewport: '图片仍在可视区域外',
       explainSteps: [
         '图片先以 `data-src` 渲染，浏览器不会立即请求。',
         '`IntersectionObserver` 检测图片何时进入可视区域。',
@@ -672,7 +714,7 @@ const JS_OVERRIDES: Partial<Record<Locale, DeepPartial<UiStrings['js']>>> = {
     sandbox: { title: '代码沙箱', hint: 'Ctrl + Enter 运行', clearOutput: '清空输出', outputLabel: '// 输出' },
   },
   ar: {
-    common: { usage: 'الاستخدام' },
+    common: { usage: 'الاستخدام', calcLabel: 'حساب', scheduleLabel: 'جدولة', skipLabel: 'تخطي' },
     debounce: {
       inputPlaceholder: 'اكتب هنا…',
       keystrokes: 'عدد الضغطات',
@@ -686,6 +728,7 @@ const JS_OVERRIDES: Partial<Record<Locale, DeepPartial<UiStrings['js']>>> = {
     memoize: {
       runButton: 'احسب fib(n)',
       clearButton: 'امسح الذاكرة المؤقتة',
+      evictWord: 'ازالة',
       explainSteps: [
         '`cache` عبارة عن `Map` داخل closure وتستمر عبر الاستدعاءات.',
         'يتم تحويل الوسائط إلى مفتاح ثابت باستخدام `JSON.stringify`.',
@@ -706,6 +749,7 @@ const JS_OVERRIDES: Partial<Record<Locale, DeepPartial<UiStrings['js']>>> = {
     lazy: {
       imageWaiting: 'صورة {index} - بانتظار التحميل...',
       usageReactHook: 'الاستخدام (React hook)',
+      outsideViewport: 'الصورة ما زالت خارج نطاق العرض',
       explainSteps: [
         'تُعرض الصور أولًا باستخدام `data-src` لذلك لا يبدأ التحميل مباشرة.',
         '`IntersectionObserver` يرصد دخول الصورة إلى منطقة العرض.',
@@ -717,7 +761,7 @@ const JS_OVERRIDES: Partial<Record<Locale, DeepPartial<UiStrings['js']>>> = {
     sandbox: { title: 'بيئة كود', hint: 'Ctrl + Enter للتشغيل', clearOutput: 'امسح المخرجات', outputLabel: '// المخرجات' },
   },
   ru: {
-    common: { usage: 'Использование' },
+    common: { usage: 'Использование', calcLabel: 'расчет', scheduleLabel: 'план', skipLabel: 'пропуск' },
     debounce: {
       inputPlaceholder: 'Введите здесь…',
       keystrokes: 'Нажатия',
@@ -731,6 +775,7 @@ const JS_OVERRIDES: Partial<Record<Locale, DeepPartial<UiStrings['js']>>> = {
     memoize: {
       runButton: 'вычислить fib(n)',
       clearButton: 'очистить кеш',
+      evictWord: 'вытеснить',
       explainSteps: [
         '`cache` — это `Map` в замыкании, сохраняется между вызовами.',
         'Аргументы сериализуются через `JSON.stringify` в стабильный ключ.',
@@ -751,6 +796,7 @@ const JS_OVERRIDES: Partial<Record<Locale, DeepPartial<UiStrings['js']>>> = {
     lazy: {
       imageWaiting: 'изображение {index} - ожидание...',
       usageReactHook: 'использование (React hook)',
+      outsideViewport: 'изображение пока вне области видимости',
       explainSteps: [
         'Изображения рендерятся с `data-src`, поэтому не загружаются сразу.',
         '`IntersectionObserver` отслеживает вход изображения в область видимости.',
@@ -762,7 +808,7 @@ const JS_OVERRIDES: Partial<Record<Locale, DeepPartial<UiStrings['js']>>> = {
     sandbox: { title: 'Песочница кода', hint: 'Ctrl + Enter для запуска', clearOutput: 'Очистить вывод', outputLabel: '// вывод' },
   },
   hi: {
-    common: { usage: 'उपयोग' },
+    common: { usage: 'उपयोग', calcLabel: 'गणना', scheduleLabel: 'शेड्यूल', skipLabel: 'स्किप' },
     debounce: {
       inputPlaceholder: 'यहां टाइप करें…',
       keystrokes: 'कीस्ट्रोक',
@@ -776,6 +822,7 @@ const JS_OVERRIDES: Partial<Record<Locale, DeepPartial<UiStrings['js']>>> = {
     memoize: {
       runButton: 'fib(n) गणना करें',
       clearButton: 'कैश साफ करें',
+      evictWord: 'हटाएं',
       explainSteps: [
         '`cache` एक `Map` है जो closure में रहकर कॉल्स के बीच बना रहता है।',
         'Arguments को `JSON.stringify` से key में serialize किया जाता है।',
@@ -796,6 +843,7 @@ const JS_OVERRIDES: Partial<Record<Locale, DeepPartial<UiStrings['js']>>> = {
     lazy: {
       imageWaiting: 'इमेज {index} - प्रतीक्षा में...',
       usageReactHook: 'उपयोग (React hook)',
+      outsideViewport: 'इमेज अभी viewport के बाहर है',
       explainSteps: [
         'इमेज पहले `data-src` के साथ render होती हैं, इसलिए तुरंत fetch नहीं होतीं।',
         '`IntersectionObserver` देखता है कि इमेज viewport में कब आती है।',
@@ -807,7 +855,7 @@ const JS_OVERRIDES: Partial<Record<Locale, DeepPartial<UiStrings['js']>>> = {
     sandbox: { title: 'कोड सैंडबॉक्स', hint: 'चलाने के लिए Ctrl + Enter', clearOutput: 'आउटपुट साफ करें', outputLabel: '// आउटपुट' },
   },
   pl: {
-    common: { usage: 'Uzycie' },
+    common: { usage: 'Uzycie', calcLabel: 'obliczenie', scheduleLabel: 'plan', skipLabel: 'pomin' },
     debounce: {
       inputPlaceholder: 'Wpisz tutaj…',
       keystrokes: 'Nacisniecia',
@@ -821,6 +869,7 @@ const JS_OVERRIDES: Partial<Record<Locale, DeepPartial<UiStrings['js']>>> = {
     memoize: {
       runButton: 'oblicz fib(n)',
       clearButton: 'wyczysc cache',
+      evictWord: 'usun',
       explainSteps: [
         '`cache` to `Map` w closure i utrzymuje sie miedzy wywolaniami.',
         'Argumenty sa serializowane przez `JSON.stringify` do stabilnego klucza.',
@@ -841,6 +890,7 @@ const JS_OVERRIDES: Partial<Record<Locale, DeepPartial<UiStrings['js']>>> = {
     lazy: {
       imageWaiting: 'obraz {index} - oczekiwanie...',
       usageReactHook: 'uzycie (hook React)',
+      outsideViewport: 'obraz nadal jest poza obszarem widoku',
       explainSteps: [
         'Obrazy sa renderowane z `data-src`, wiec przegladarka nie pobiera ich od razu.',
         '`IntersectionObserver` wykrywa, kiedy obraz wchodzi do viewportu.',
@@ -852,7 +902,7 @@ const JS_OVERRIDES: Partial<Record<Locale, DeepPartial<UiStrings['js']>>> = {
     sandbox: { title: 'Piaskownica kodu', hint: 'Ctrl + Enter aby uruchomic', clearOutput: 'Wyczysc wynik', outputLabel: '// wynik' },
   },
   ko: {
-    common: { usage: '사용법' },
+    common: { usage: '사용법', calcLabel: '계산', scheduleLabel: '예약', skipLabel: '건너뜀' },
     debounce: {
       inputPlaceholder: '여기에 입력…',
       keystrokes: '입력 횟수',
@@ -866,6 +916,7 @@ const JS_OVERRIDES: Partial<Record<Locale, DeepPartial<UiStrings['js']>>> = {
     memoize: {
       runButton: 'fib(n) 계산',
       clearButton: '캐시 지우기',
+      evictWord: '제거',
       explainSteps: [
         '`cache` 는 클로저 안의 `Map` 이며 호출 간에 유지됩니다.',
         '인자는 `JSON.stringify` 로 직렬화되어 안정적인 키가 됩니다.',
@@ -886,6 +937,7 @@ const JS_OVERRIDES: Partial<Record<Locale, DeepPartial<UiStrings['js']>>> = {
     lazy: {
       imageWaiting: '이미지 {index} - 대기 중...',
       usageReactHook: '사용법 (React hook)',
+      outsideViewport: '이미지가 아직 뷰포트 밖에 있습니다',
       explainSteps: [
         '이미지는 `data-src` 로 먼저 렌더링되어 즉시 요청되지 않습니다.',
         '`IntersectionObserver` 가 이미지의 뷰포트 진입을 감지합니다.',

@@ -32,6 +32,7 @@ export default function DebounceCard() {
   const [calls, setCalls] = useState(0)
   const [fires, setFires] = useState(0)
   const [log, setLog] = useState<LogEntry[]>([])
+  const scheduledAtRef = useRef<number | null>(null)
 
   function addLog(text: string, type: LogEntry['type']) {
     setLog(prev => [...prev, { text, type }])
@@ -39,6 +40,7 @@ export default function DebounceCard() {
 
   const debouncedRef = useRef(
     debounce((val: unknown) => {
+      scheduledAtRef.current = null
       setFires(f => f + 1)
       addLog(`→ ${ui.js.debounce.fired.toLowerCase()}: "${val}"`, 'fire')
     }, delay)
@@ -47,6 +49,7 @@ export default function DebounceCard() {
   function updateDelay(newDelay: number) {
     setDelay(newDelay)
     debouncedRef.current = debounce((val: unknown) => {
+      scheduledAtRef.current = null
       setFires(f => f + 1)
       addLog(`→ ${ui.js.debounce.fired.toLowerCase()}: "${val}"`, 'fire')
     }, newDelay)
@@ -54,6 +57,18 @@ export default function DebounceCard() {
   }
 
   function onInput(e: React.ChangeEvent<HTMLInputElement>) {
+    const now = Date.now()
+    if (scheduledAtRef.current !== null) {
+      const elapsed = now - scheduledAtRef.current
+      const remaining = Math.max(0, delay - elapsed)
+      addLog(
+        `${ui.js.common.calcLabel}: ${delay} - (${now} - ${scheduledAtRef.current}) = ${remaining}ms`,
+        'log'
+      )
+    }
+    const fireAt = now + delay
+    scheduledAtRef.current = now
+    addLog(`${ui.js.common.scheduleLabel}: ${now} + ${delay} = ${fireAt}`, 'info')
     setCalls(c => c + 1)
     addLog(`  ${ui.js.debounce.keystrokes.toLowerCase()}: "${e.target.value}"`, 'skip')
     debouncedRef.current(e.target.value)
