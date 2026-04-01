@@ -1601,4 +1601,642 @@ Common interviewer follow-ups:
 - Q: How to validate the choice?
 - A: Profile FPS, frame time, memory, and input latency with realistic datasets.`,
   },
+  {
+    id: 'promise-any',
+    companies: ['Google', 'Meta', 'Amazon'],
+    title: 'Implement Promise.any(promises)',
+    difficulty: 'medium',
+    category: 'Async & Promises',
+    description: 'Implement `Promise.any` from scratch. It should resolve with the first fulfilled promise and only reject when all promises reject, with an aggregate error.',
+    answerType: 'code',
+    tags: ['promises', 'async', 'concurrency'],
+    answer: `function promiseAny(promises) {
+  return new Promise((resolve, reject) => {
+    if (promises.length === 0) {
+      return reject(new AggregateError([], 'All promises were rejected'))
+    }
+
+    const errors = new Array(promises.length)
+    let rejectedCount = 0
+
+    promises.forEach((p, i) => {
+      Promise.resolve(p)
+        .then(resolve) // first success wins immediately
+        .catch((err) => {
+          errors[i] = err
+          rejectedCount++
+          if (rejectedCount === promises.length) {
+            reject(new AggregateError(errors, 'All promises were rejected'))
+          }
+        })
+    })
+  })
+}
+
+// Usage
+promiseAny([
+  Promise.reject('fail-1'),
+  new Promise((res) => setTimeout(() => res('ok'), 50)),
+  Promise.reject('fail-2'),
+]).then(console.log) // "ok"`,
+  },
+  {
+    id: 'flatten-object-paths',
+    companies: ['Amazon', 'Stripe', 'Uber'],
+    title: 'Flatten nested object keys into dot paths',
+    difficulty: 'medium',
+    category: 'Algorithms',
+    description: 'Given a nested object, return a flat object where keys are dot-separated paths. Arrays should use numeric indices in the path.',
+    answerType: 'code',
+    tags: ['recursion', 'objects', 'data transformation'],
+    answer: `function flattenObject(input) {
+  const out = {}
+
+  function walk(value, path) {
+    if (value === null || typeof value !== 'object') {
+      out[path] = value
+      return
+    }
+
+    if (Array.isArray(value)) {
+      if (value.length === 0) out[path] = []
+      value.forEach((item, i) => {
+        const next = path ? \`\${path}.\${i}\` : String(i)
+        walk(item, next)
+      })
+      return
+    }
+
+    const keys = Object.keys(value)
+    if (keys.length === 0 && path) out[path] = {}
+    for (const key of keys) {
+      const next = path ? \`\${path}.\${key}\` : key
+      walk(value[key], next)
+    }
+  }
+
+  walk(input, '')
+  return out
+}
+
+// Usage
+flattenObject({
+  user: { name: 'Ana', address: { city: 'TLV' } },
+  tags: ['a', 'b']
+})
+// {
+//   "user.name": "Ana",
+//   "user.address.city": "TLV",
+//   "tags.0": "a",
+//   "tags.1": "b"
+// }`,
+  },
+  {
+    id: 'react-key-reconciliation',
+    companies: ['Meta', 'Airbnb', 'TikTok'],
+    title: 'Why React list keys matter (and bad key bugs)',
+    difficulty: 'easy',
+    category: 'Performance',
+    description: 'Explain how React uses keys during reconciliation, why index keys can break stateful list items, and when index keys are acceptable.',
+    answerType: 'mixed',
+    tags: ['react', 'reconciliation', 'rendering', 'lists'],
+    answer: `Interview explanation:
+- Keys let React identify which child is the "same" between renders.
+- Stable keys preserve local component state (input values, focus, animations).
+- Unstable keys (array index for reordered lists) can move state to the wrong row.
+
+Bad example (index key with reordering):
+\`\`\`jsx
+{items.map((item, index) => (
+  <TodoRow key={index} item={item} />
+))}
+\`\`\`
+If one item is inserted at the top, all following rows get new keys and may reuse wrong state.
+
+Better:
+\`\`\`jsx
+{items.map((item) => (
+  <TodoRow key={item.id} item={item} />
+))}
+\`\`\`
+
+When index keys are acceptable:
+- The list is static (never reordered, inserted, or removed).
+- Items have no stable ID and rows are purely presentational (no local state).
+
+Rule of thumb:
+- Use stable domain IDs for dynamic lists.
+- Treat key selection as a correctness decision, not only a warning fix.`,
+  },
+  {
+    id: 'consistent-hashing-design',
+    companies: ['Netflix', 'Amazon', 'Google'],
+    title: 'Design consistent hashing for cache sharding',
+    difficulty: 'hard',
+    category: 'System Design',
+    description: 'Design a consistent hashing strategy for distributing cache keys across servers so that adding/removing nodes causes minimal key remapping.',
+    answerType: 'text',
+    tags: ['distributed systems', 'caching', 'sharding'],
+    answer: `Interview explanation:
+- Consistent hashing maps both servers and keys onto the same hash ring.
+- A key is assigned to the first server clockwise from the key hash.
+- When a server joins/leaves, only nearby keys remap, not the full keyspace.
+
+Core design:
+1) Hash ring (e.g. 0..2^32-1) with sorted server positions.
+2) Virtual nodes per physical server (e.g. 100-500) for better load balance.
+3) Lookup: hash(key) -> binary search first vnode >= hash, wrap to start if needed.
+4) Replication: choose next N distinct physical servers clockwise.
+5) Health-aware routing: skip unhealthy nodes during reads/writes.
+
+Operational concerns:
+- Rebalancing rate limits to avoid thundering migrations.
+- Warm-up strategy for new nodes (background prefill).
+- Observability: per-node hit rate, memory pressure, key distribution skew.
+- Failure mode: temporary increase in misses; mitigate with multi-layer cache (L1+L2).
+
+Complexity:
+- Lookup is O(log V) with binary search on V virtual nodes.
+- Space is O(V).`,
+  },
+  {
+    id: 'promise-race',
+    companies: ['Google', 'Amazon', 'Meta'],
+    title: 'Implement Promise.race(promises)',
+    difficulty: 'easy',
+    category: 'Async & Promises',
+    description: 'Implement `Promise.race` from scratch. It should settle as soon as the first input promise settles (resolve or reject).',
+    answerType: 'code',
+    tags: ['promises', 'async', 'polyfill'],
+    answer: `function promiseRace(promises) {
+  return new Promise((resolve, reject) => {
+    for (const p of promises) {
+      Promise.resolve(p).then(resolve, reject)
+    }
+  })
+}
+
+// Usage
+promiseRace([
+  new Promise((res) => setTimeout(() => res('slow'), 100)),
+  new Promise((res) => setTimeout(() => res('fast'), 20)),
+]).then(console.log) // "fast"`,
+  },
+  {
+    id: 'promise-finally-polyfill',
+    companies: ['Apple', 'Stripe', 'Uber'],
+    title: 'Implement Promise.prototype.finally',
+    difficulty: 'medium',
+    category: 'Async & Promises',
+    description: 'Implement a `finally` polyfill that runs a callback regardless of resolve/reject, while preserving the original outcome.',
+    answerType: 'code',
+    tags: ['promises', 'polyfill', 'error handling'],
+    answer: `if (!Promise.prototype.myFinally) {
+  Promise.prototype.myFinally = function (onFinally) {
+    const P = this.constructor
+    const handler =
+      typeof onFinally === 'function' ? onFinally : () => undefined
+
+    return this.then(
+      (value) => P.resolve(handler()).then(() => value),
+      (reason) =>
+        P.resolve(handler()).then(() => {
+          throw reason
+        })
+    )
+  }
+}
+
+// Usage
+Promise.resolve('ok')
+  .myFinally(() => console.log('cleanup'))
+  .then(console.log) // cleanup, ok
+
+Promise.reject('err')
+  .myFinally(() => console.log('cleanup'))
+  .catch(console.error) // cleanup, err`,
+  },
+  {
+    id: 'promise-retry-backoff',
+    companies: ['Amazon', 'Netflix', 'Google'],
+    title: 'Implement retry(fn, retries, delay) with backoff',
+    difficulty: 'medium',
+    category: 'Async & Promises',
+    description: 'Implement a Promise-based retry utility for flaky APIs. Retry failed async calls with exponential backoff and stop after max retries.',
+    answerType: 'code',
+    tags: ['promises', 'retry', 'backoff', 'resilience'],
+    answer: `function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+async function retry(fn, retries = 3, baseDelay = 100) {
+  let attempt = 0
+  let lastError
+
+  while (attempt <= retries) {
+    try {
+      return await fn()
+    } catch (err) {
+      lastError = err
+      if (attempt === retries) break
+
+      const wait = baseDelay * 2 ** attempt // exponential backoff
+      await sleep(wait)
+      attempt++
+    }
+  }
+
+  throw lastError
+}
+
+// Usage
+let calls = 0
+retry(async () => {
+  calls++
+  if (calls < 3) throw new Error('temporary')
+  return 'success'
+}, 4, 50).then(console.log)`,
+  },
+  {
+    id: 'promise-pool-concurrency',
+    companies: ['Meta', 'TikTok', 'Stripe'],
+    title: 'Implement Promise pool with concurrency limit',
+    difficulty: 'hard',
+    category: 'Async & Promises',
+    description: 'Given async task functions and a concurrency limit, implement a scheduler that runs at most N tasks in parallel and returns results in original order.',
+    answerType: 'code',
+    tags: ['promises', 'concurrency', 'scheduling'],
+    answer: `async function runWithLimit(tasks, limit) {
+  if (limit <= 0) throw new Error('limit must be > 0')
+  const results = new Array(tasks.length)
+  let nextIndex = 0
+
+  async function worker() {
+    while (nextIndex < tasks.length) {
+      const current = nextIndex
+      nextIndex++
+      results[current] = await tasks[current]()
+    }
+  }
+
+  const workers = Array.from(
+    { length: Math.min(limit, tasks.length) },
+    () => worker()
+  )
+
+  await Promise.all(workers)
+  return results
+}
+
+// Usage
+const tasks = [
+  () => Promise.resolve(1),
+  () => new Promise((r) => setTimeout(() => r(2), 30)),
+  () => Promise.resolve(3),
+]
+runWithLimit(tasks, 2).then(console.log) // [1, 2, 3]`,
+  },
+  {
+    id: 'promise-timeout-wrapper',
+    companies: ['Amazon', 'Google', 'Netflix'],
+    title: 'Wrap a promise with timeout',
+    difficulty: 'medium',
+    category: 'Async & Promises',
+    description: 'Implement `withTimeout(promise, ms)` that rejects with a timeout error if the original promise does not settle in time.',
+    answerType: 'code',
+    tags: ['promises', 'timeout', 'error handling'],
+    answer: `function withTimeout(promise, ms, message = 'Operation timed out') {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      reject(new Error(message))
+    }, ms)
+
+    Promise.resolve(promise)
+      .then((value) => {
+        clearTimeout(timer)
+        resolve(value)
+      })
+      .catch((err) => {
+        clearTimeout(timer)
+        reject(err)
+      })
+  })
+}
+
+// Usage
+withTimeout(new Promise((res) => setTimeout(() => res('ok'), 30)), 100)
+  .then(console.log) // ok
+
+withTimeout(new Promise((res) => setTimeout(() => res('late'), 200)), 50)
+  .catch((e) => console.error(e.message)) // Operation timed out`,
+  },
+  {
+    id: 'abortable-fetch-pattern',
+    companies: ['Meta', 'TikTok', 'Stripe'],
+    title: 'Implement cancellable async flow with AbortController',
+    difficulty: 'medium',
+    category: 'Async & Promises',
+    description: 'Show how to make async requests cancellable using `AbortController`, and explain how to avoid race conditions in rapid user interactions.',
+    answerType: 'mixed',
+    tags: ['promises', 'abortcontroller', 'cancellation', 'race conditions'],
+    answer: `// Interview explanation:
+// Promises are not cancellable by themselves.
+// Cancellation is usually modeled via AbortSignal passed to APIs (fetch, streams).
+
+function createSearchClient(endpoint) {
+  let controller = null
+
+  return async function search(query) {
+    // cancel previous in-flight request
+    if (controller) controller.abort()
+    controller = new AbortController()
+
+    try {
+      const res = await fetch(
+        \`\${endpoint}?q=\${encodeURIComponent(query)}\`,
+        { signal: controller.signal }
+      )
+      if (!res.ok) throw new Error('HTTP ' + res.status)
+      return await res.json()
+    } catch (err) {
+      if (err && err.name === 'AbortError') {
+        // expected cancellation path; do not show error toast
+        return null
+      }
+      throw err
+    }
+  }
+}
+
+// Usage
+const search = createSearchClient('/api/search')
+// rapid typing: only latest request is allowed to complete
+search('rea')
+search('react')
+search('react hooks')`,
+  },
+  {
+    id: 'priority-task-queue',
+    companies: ['Google', 'Uber', 'Amazon'],
+    title: 'Design async priority queue with concurrency',
+    difficulty: 'hard',
+    category: 'Async & Promises',
+    description: 'Implement a priority-based async task queue that executes higher-priority tasks first while respecting a max concurrency limit.',
+    answerType: 'code',
+    tags: ['promises', 'queue', 'priority', 'concurrency'],
+    answer: `class PriorityTaskQueue {
+  constructor(concurrency = 2) {
+    this.concurrency = concurrency
+    this.running = 0
+    this.queue = [] // { priority, task, resolve, reject, seq }
+    this.seq = 0
+  }
+
+  add(task, priority = 0) {
+    return new Promise((resolve, reject) => {
+      this.queue.push({ task, priority, resolve, reject, seq: this.seq++ })
+      // higher priority first, stable order for same priority
+      this.queue.sort((a, b) =>
+        b.priority - a.priority || a.seq - b.seq
+      )
+      this._drain()
+    })
+  }
+
+  _drain() {
+    while (this.running < this.concurrency && this.queue.length > 0) {
+      const item = this.queue.shift()
+      this.running++
+
+      Promise.resolve()
+        .then(() => item.task())
+        .then(item.resolve, item.reject)
+        .finally(() => {
+          this.running--
+          this._drain()
+        })
+    }
+  }
+}
+
+// Usage
+const q = new PriorityTaskQueue(2)
+q.add(() => Promise.resolve('low-1'), 1).then(console.log)
+q.add(() => Promise.resolve('high'), 10).then(console.log)
+q.add(() => new Promise((r) => setTimeout(() => r('low-2'), 30)), 1).then(console.log)`,
+  },
+  {
+    id: 'promise-chain-implementation',
+    companies: ['Apple', 'Meta', 'Google'],
+    title: 'Implement a minimal Promise class (then/catch)',
+    difficulty: 'hard',
+    category: 'Async & Promises',
+    description: 'Implement a simplified Promise class supporting asynchronous resolution, `then`, and `catch` chaining (educational subset of Promises/A+ behavior).',
+    answerType: 'code',
+    tags: ['promises', 'internals', 'event loop'],
+    answer: `class MiniPromise {
+  constructor(executor) {
+    this.state = 'pending'
+    this.value = undefined
+    this.handlers = []
+
+    const resolve = (value) => this._settle('fulfilled', value)
+    const reject = (reason) => this._settle('rejected', reason)
+
+    try {
+      executor(resolve, reject)
+    } catch (err) {
+      reject(err)
+    }
+  }
+
+  _settle(state, value) {
+    if (this.state !== 'pending') return
+    this.state = state
+    this.value = value
+    queueMicrotask(() => {
+      this.handlers.forEach((h) => this._handle(h))
+      this.handlers = []
+    })
+  }
+
+  _handle(handler) {
+    if (this.state === 'pending') {
+      this.handlers.push(handler)
+      return
+    }
+
+    const cb =
+      this.state === 'fulfilled' ? handler.onFulfilled : handler.onRejected
+
+    if (!cb) {
+      ;(this.state === 'fulfilled' ? handler.resolve : handler.reject)(this.value)
+      return
+    }
+
+    try {
+      handler.resolve(cb(this.value))
+    } catch (err) {
+      handler.reject(err)
+    }
+  }
+
+  then(onFulfilled, onRejected) {
+    return new MiniPromise((resolve, reject) => {
+      this._handle({ onFulfilled, onRejected, resolve, reject })
+    })
+  }
+
+  catch(onRejected) {
+    return this.then(undefined, onRejected)
+  }
+}
+
+// Usage
+new MiniPromise((resolve) => setTimeout(() => resolve(2), 10))
+  .then((x) => x * 3)
+  .then(console.log) // 6`,
+  },
+  {
+    id: 'promise-foreach-pitfall',
+    companies: ['Amazon', 'Meta', 'Stripe'],
+    title: 'Why async/await with forEach is a bug',
+    difficulty: 'easy',
+    category: 'Async & Promises',
+    description: 'Explain why `await arr.forEach(async ...)` does not wait, and show correct sequential and parallel alternatives.',
+    answerType: 'mixed',
+    tags: ['async', 'await', 'pitfalls', 'loops'],
+    answer: `// Pitfall:
+// forEach ignores returned promises, so outer await does nothing useful.
+async function wrong(items) {
+  await items.forEach(async (item) => {
+    await save(item)
+  })
+  console.log('done') // runs before saves finish
+}
+
+// Sequential (ordered):
+async function sequential(items) {
+  for (const item of items) {
+    await save(item)
+  }
+}
+
+// Parallel (faster, unordered completion):
+async function parallel(items) {
+  await Promise.all(items.map((item) => save(item)))
+}
+
+// Rule: use for...of for sequential work, Promise.all(map) for parallel work.`,
+  },
+  {
+    id: 'missing-return-in-then-chain',
+    companies: ['Google', 'Netflix', 'Uber'],
+    title: 'Missing return in .then() chain',
+    difficulty: 'easy',
+    category: 'Async & Promises',
+    description: 'Identify the common bug where a promise is created inside `.then` but not returned, breaking chaining and error propagation.',
+    answerType: 'code',
+    tags: ['promises', 'then', 'pitfalls', 'error handling'],
+    answer: `// Buggy:
+fetchUser()
+  .then((user) => {
+    fetchOrders(user.id) // missing return
+  })
+  .then((orders) => {
+    console.log(orders) // often undefined
+  })
+
+// Correct:
+fetchUser()
+  .then((user) => {
+    return fetchOrders(user.id)
+  })
+  .then((orders) => {
+    console.log(orders)
+  })
+  .catch(console.error)
+
+// Async/await equivalent (usually clearer):
+async function run() {
+  const user = await fetchUser()
+  const orders = await fetchOrders(user.id)
+  console.log(orders)
+}`,
+  },
+  {
+    id: 'unhandled-rejection-debugging',
+    companies: ['Meta', 'Amazon', 'Google'],
+    title: 'Unhandled promise rejections: causes and fixes',
+    difficulty: 'medium',
+    category: 'Async & Promises',
+    description: 'Explain what unhandled promise rejections are, why they happen, and how to systematically prevent them in app code.',
+    answerType: 'mixed',
+    tags: ['promises', 'errors', 'debugging', 'best practices'],
+    answer: `Interview explanation:
+- An unhandled rejection means a promise rejected without a rejection handler.
+- In modern runtimes this is noisy and can crash processes (Node settings dependent).
+
+Common causes:
+1) Fire-and-forget promise without .catch.
+2) Missing await in try/catch (error escapes scope).
+3) Missing return in .then chain.
+
+Examples:
+void riskyAsync().catch(reportError) // explicit fire-and-forget handling
+
+async function handler() {
+  try {
+    await riskyAsync()
+  } catch (err) {
+    reportError(err)
+  }
+}
+
+Prevention checklist:
+- Always return/await promises from functions.
+- Add a terminal .catch on top-level chains.
+- Wrap UI event async handlers in try/catch.
+- Centralize logging for unexpected async failures.`,
+  },
+  {
+    id: 'double-resolve-race-guard',
+    companies: ['Stripe', 'TikTok', 'Apple'],
+    title: 'Guard against double resolve/reject in wrappers',
+    difficulty: 'medium',
+    category: 'Async & Promises',
+    description: 'When adapting callback APIs to promises, demonstrate how to prevent accidental multiple settle calls.',
+    answerType: 'code',
+    tags: ['promises', 'wrappers', 'callbacks', 'pitfalls'],
+    answer: `function fromCallback(register) {
+  return new Promise((resolve, reject) => {
+    let settled = false
+
+    const onceResolve = (value) => {
+      if (settled) return
+      settled = true
+      resolve(value)
+    }
+
+    const onceReject = (err) => {
+      if (settled) return
+      settled = true
+      reject(err)
+    }
+
+    try {
+      register(onceResolve, onceReject)
+    } catch (err) {
+      onceReject(err)
+    }
+  })
+}
+
+// Usage: adapt odd callback API
+const p = fromCallback((ok, fail) => {
+  ok('first')
+  ok('second') // ignored safely
+})
+p.then(console.log) // first`,
+  },
 ]
