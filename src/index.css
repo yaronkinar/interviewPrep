@@ -392,6 +392,7 @@ button.nav-mobile-drawer-close:hover {
 /* ── LAYOUT ── */
 .main {
   flex: 1;
+  min-width: 0;
   padding: 2rem;
 }
 
@@ -848,8 +849,15 @@ button.nav-mobile-drawer-close:hover {
   }
 }
 @media (max-width: 720px) {
+  .main {
+    padding: 1rem 0.85rem;
+  }
   .editorial-page {
     padding-inline: 0;
+  }
+  .editorial-page.editorial-page--mock {
+    padding-left: max(0.65rem, env(safe-area-inset-left, 0px));
+    padding-right: max(0.65rem, env(safe-area-inset-right, 0px));
   }
   .editorial-panel {
     border-radius: 12px;
@@ -2829,12 +2837,18 @@ button.mock-voice-avatar-card.mock-voice-avatar-card--active {
 
 /* ── MOCK V2 DASHBOARD ── */
 .mockv2-page {
+  box-sizing: border-box;
   max-width: 1400px;
+  width: 100%;
 }
 .mockv2-layout {
   display: grid;
   gap: 1rem;
   grid-template-columns: 230px minmax(0, 1fr);
+  min-width: 0;
+}
+.mockv2-main {
+  min-width: 0;
 }
 .mockv2-sidebar {
   background: #0d1730;
@@ -3033,6 +3047,8 @@ button.mockv2-start-btn:hover {
 .mockv2-session.q-chat-panel {
   background: #081026;
   border-color: #1f2d4d;
+  max-width: 100%;
+  min-width: 0;
 }
 .mockv2-session-grid {
   display: grid;
@@ -3249,5 +3265,72 @@ button.mockv2-start-btn:hover {
   }
   .mockv2-session-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .mockv2-main-top {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+  .mock-session-timer-remaining,
+  .mock-session-timer-idle {
+    flex-basis: 100%;
+    margin-left: 0;
+  }
+  .mockv2-transcript-log.q-chat-log {
+    max-height: min(40vh, 260px);
+  }
+  .mockv2-setup .q-filter-row.mock-interview-filters {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+  .mockv2-setup .mock-interview-filters .q-filter-label {
+    min-width: 0;
+    padding-top: 0;
+  }
+  .mockv2-setup .q-desc,
+  .mockv2-setup .q-title,
+  .mockv2-context-val {
+    overflow-wrap: anywhere;
+  }
+  .mockv2-session .vscode-chrome {
+    max-width: 100%;
+  }
+  .mockv2-session .vscode-editor-surface {
+    max-width: 100%;
+  }
+  .mock-voice-engine-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .mock-voice-select-wrap {
+    align-items: stretch;
+    flex-direction: column;
+    max-width: 100%;
+    width: 100%;
+  }
+  .mock-voice-select {
+    max-width: 100%;
+    width: 100%;
+  }
+  .mock-voice-rate {
+    flex-wrap: wrap;
+    max-width: 100%;
+    width: 100%;
+  }
+  .mock-voice-rate input[type='range'] {
+    flex: 1 1 140px;
+    max-width: 100%;
+    width: 100%;
+  }
+  .mock-code-send-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .mock-code-send-row .secondary {
+    width: 100%;
   }
 }

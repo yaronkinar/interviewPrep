@@ -1,5 +1,5 @@
 import Editor, { type BeforeMount, type OnMount } from '@monaco-editor/react'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { Question } from './data'
 import { buildQuestionAmbientTypes, questionTsxFileName } from './mockCodeStarter'
 import { configureMonacoInterviewTypeScript } from './monacoTsxInterview'
@@ -62,6 +62,16 @@ export default function VsCodeStyleEditor({
   const isTsx = resolvedPath.endsWith('.tsx') || tabLabel.endsWith('.tsx')
 
   const ambientDisposableRef = useRef<{ dispose: () => void } | null>(null)
+  const [narrowViewport, setNarrowViewport] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia('(max-width: 720px)').matches,
+  )
+
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 720px)')
+    const sync = () => setNarrowViewport(mq.matches)
+    mq.addEventListener('change', sync)
+    return () => mq.removeEventListener('change', sync)
+  }, [])
 
   const onMount: OnMount = (_editor, monaco) => {
     ambientDisposableRef.current?.dispose()
@@ -103,7 +113,7 @@ export default function VsCodeStyleEditor({
       </div>
       <div className="vscode-editor-surface" style={{ height: surfaceHeight }}>
         <Editor
-          key={resolvedPath + (question?.id ?? '')}
+          key={`${resolvedPath + (question?.id ?? '')}-${narrowViewport ? 'm' : 'd'}`}
           height="100%"
           theme="vs-dark"
           path={resolvedPath}
@@ -116,8 +126,8 @@ export default function VsCodeStyleEditor({
             readOnly,
             /** Suggest widget escapes parents with `overflow: hidden` (e.g. `.vscode-chrome`). */
             fixedOverflowWidgets: true,
-            minimap: { enabled: true, scale: 0.85 },
-            fontSize: 13,
+            minimap: { enabled: !narrowViewport, scale: 0.85 },
+            fontSize: narrowViewport ? 12 : 13,
             lineHeight: 20,
             fontFamily: '"Cascadia Code", "Segoe UI Mono", "Consolas", monospace',
             lineNumbers: 'on',
