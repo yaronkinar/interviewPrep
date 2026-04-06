@@ -5,6 +5,7 @@ import LazyLoadCard from './LazyLoadCard'
 import Sandbox from './Sandbox'
 import { useLocale } from '../i18n/LocaleContext'
 import { getUiStrings } from '../i18n/uiStrings'
+import ExpandableCard from '../components/ExpandableCard'
 
 export default function JsPage() {
   const { locale } = useLocale()
@@ -27,16 +28,16 @@ export default function JsPage() {
 
       <section className="js-editorial-panel">
         <div className="grid js-editorial-grid">
-          <DebounceCard />
-          <ThrottleCard />
-          <MemoizeCard />
-          <LazyLoadCard />
+          <ExpandableCard><DebounceCard /></ExpandableCard>
+          <ExpandableCard><ThrottleCard /></ExpandableCard>
+          <ExpandableCard><MemoizeCard /></ExpandableCard>
+          <ExpandableCard><LazyLoadCard /></ExpandableCard>
         </div>
       </section>
 
       <section className="js-editorial-panel js-editorial-panel--sandbox">
         <div className="grid full js-editorial-sandbox-wrap">
-          <Sandbox />
+          <ExpandableCard><Sandbox /></ExpandableCard>
         </div>
       </section>
     </div>

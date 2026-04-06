@@ -1,4 +1,5 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import {
   QUESTIONS,
   COMPANIES,
@@ -9,7 +10,7 @@ import {
 } from './data'
 import { CodeBlock } from '../components/CodeBlock'
 import { QuestionExample, hasQuestionExample } from './QuestionExample'
-import ApiKeySettings from './ApiKeySettings'
+import ApiKeySettings, { type AiSettingsSnapshot } from './ApiKeySettings'
 import OpenChat from './OpenChat'
 import QuestionChat from './QuestionChat'
 import { useLocale } from '../i18n/LocaleContext'
@@ -20,6 +21,8 @@ import {
   parseQuestionsJson,
 } from './customQuestions'
 import { DEFAULT_ANTHROPIC_MODEL } from './anthropicConstants'
+import { DEFAULT_GEMINI_MODEL } from './geminiConstants'
+import { DEFAULT_OPENAI_MODEL } from './openaiConstants'
 import ScreenHeader from '../components/layout/ScreenHeader'
 import FilterRow from '../components/filters/FilterRow'
 import FilterChip from '../components/filters/FilterChip'
@@ -60,19 +63,36 @@ interface QuestionCardProps {
   q: Question
   apiKey: string
   model: string
+  llmProvider: AiSettingsSnapshot['provider']
   isCustom: boolean
   ui: ReturnType<typeof getUiStrings>
   onDeleteCustom?: () => void
 }
 
-function QuestionCard({ q, apiKey, model, isCustom, ui, onDeleteCustom }: QuestionCardProps) {
-  const [open, setOpen] = useState(false)
-  const [showThinking, setShowThinking] = useState(false)
-  const [showExample, setShowExample] = useState(false)
+interface QuestionCardBodyProps {
+  q: Question
+  apiKey: string
+  model: string
+  llmProvider: AiSettingsSnapshot['provider']
+  isCustom: boolean
+  ui: ReturnType<typeof getUiStrings>
+  onDeleteCustom?: () => void
+  open: boolean
+  setOpen: (v: boolean | ((prev: boolean) => boolean)) => void
+  showThinking: boolean
+  setShowThinking: (v: boolean | ((prev: boolean) => boolean)) => void
+  showExample: boolean
+  setShowExample: (v: boolean | ((prev: boolean) => boolean)) => void
+}
+
+function QuestionCardBody({
+  q, apiKey, model, llmProvider, isCustom, ui, onDeleteCustom,
+  open, setOpen, showThinking, setShowThinking, showExample, setShowExample,
+}: QuestionCardBodyProps) {
   const canShowExample = hasQuestionExample(q.id)
 
   return (
-    <div className="q-card">
+    <>
       <div className="q-card-meta">
         <div className="q-companies">
           {q.companies.length > 0 ? (
@@ -134,7 +154,7 @@ function QuestionCard({ q, apiKey, model, isCustom, ui, onDeleteCustom }: Questi
 
       {showExample && <QuestionExample questionId={q.id} />}
 
-      <QuestionChat question={q} apiKey={apiKey} model={model} />
+      <QuestionChat question={q} apiKey={apiKey} model={model} llmProvider={llmProvider} />
 
       {isCustom && onDeleteCustom && (
         <button type="button" className="secondary q-custom-delete" onClick={onDeleteCustom}>
@@ -148,7 +168,75 @@ function QuestionCard({ q, apiKey, model, isCustom, ui, onDeleteCustom }: Questi
           {q.source && <div className="q-source">{ui.questions.source}: {q.source}</div>}
         </div>
       )}
-    </div>
+    </>
+  )
+}
+
+function QuestionCard({ q, apiKey, model, llmProvider, isCustom, ui, onDeleteCustom }: QuestionCardProps) {
+  const [open, setOpen] = useState(false)
+  const [showThinking, setShowThinking] = useState(false)
+  const [showExample, setShowExample] = useState(false)
+  const [expanded, setExpanded] = useState(false)
+  const closeRef = useRef<HTMLButtonElement>(null)
+
+  useEffect(() => {
+    if (!expanded) return
+    closeRef.current?.focus()
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setExpanded(false) }
+    document.addEventListener('keydown', onKey)
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.removeEventListener('keydown', onKey)
+      document.body.style.overflow = ''
+    }
+  }, [expanded])
+
+  const sharedProps = { q, apiKey, model, llmProvider, isCustom, ui, onDeleteCustom, open, setOpen, showThinking, setShowThinking, showExample, setShowExample }
+
+  return (
+    <>
+      <div className="q-card">
+        <button
+          type="button"
+          className="q-expand-btn"
+          title="Expand to full width"
+          onClick={() => setExpanded(true)}
+          aria-label="Expand question"
+        >
+          ⤢
+        </button>
+        <QuestionCardBody {...sharedProps} />
+      </div>
+
+      {expanded && createPortal(
+        <div
+          className="q-modal-overlay"
+          onClick={(e) => { if (e.target === e.currentTarget) setExpanded(false) }}
+          role="dialog"
+          aria-modal="true"
+          aria-label={q.title}
+        >
+          <div className="q-modal">
+            <div className="q-modal-header">
+              <span className="q-modal-title">{q.title}</span>
+              <button
+                ref={closeRef}
+                type="button"
+                className="q-modal-close"
+                onClick={() => setExpanded(false)}
+                aria-label="Close"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="q-modal-body">
+              <QuestionCardBody {...sharedProps} />
+            </div>
+          </div>
+        </div>,
+        document.body,
+      )}
+    </>
   )
 }
 
@@ -166,13 +254,32 @@ export default function QuestionsPage() {
   const [uploadPaste, setUploadPaste] = useState('')
   const [uploadError, setUploadError] = useState<string | null>(null)
 
-  const [apiKey, setApiKey] = useState('')
-  const [anthropicModel, setAnthropicModel] = useState(DEFAULT_ANTHROPIC_MODEL)
+  const [aiSettings, setAiSettings] = useState<AiSettingsSnapshot>(() => ({
+    provider: 'anthropic',
+    anthropicApiKey: '',
+    anthropicModel: DEFAULT_ANTHROPIC_MODEL,
+    geminiApiKey: '',
+    geminiModel: DEFAULT_GEMINI_MODEL,
+    openaiApiKey: '',
+    openaiModel: DEFAULT_OPENAI_MODEL,
+  }))
 
-  const onCredentialsChange = useCallback((key: string, model: string) => {
-    setApiKey(key)
-    setAnthropicModel(model || DEFAULT_ANTHROPIC_MODEL)
+  const onAiSettingsChange = useCallback((s: AiSettingsSnapshot) => {
+    setAiSettings(s)
   }, [])
+
+  const chatApiKey =
+    aiSettings.provider === 'gemini'
+      ? aiSettings.geminiApiKey
+      : aiSettings.provider === 'openai'
+        ? aiSettings.openaiApiKey
+        : aiSettings.anthropicApiKey
+  const chatModel =
+    aiSettings.provider === 'gemini'
+      ? aiSettings.geminiModel
+      : aiSettings.provider === 'openai'
+        ? aiSettings.openaiModel
+        : aiSettings.anthropicModel
 
   const customIds = useMemo(() => new Set(customQuestions.map((q) => q.id)), [customQuestions])
 
@@ -260,9 +367,13 @@ export default function QuestionsPage() {
       <ScreenHeader title={ui.pages.questionsTitle} />
 
       <section className="editorial-panel editorial-panel--tight">
-        <ApiKeySettings onCredentialsChange={onCredentialsChange} />
+        <ApiKeySettings onAiSettingsChange={onAiSettingsChange} />
 
-        <OpenChat apiKey={apiKey} model={anthropicModel} />
+        <OpenChat
+          apiKey={chatApiKey}
+          model={chatModel}
+          llmProvider={aiSettings.provider}
+        />
       </section>
 
       <section className="q-upload-section editorial-panel">
@@ -374,8 +485,9 @@ export default function QuestionsPage() {
             <QuestionCard
               key={q.id}
               q={q}
-              apiKey={apiKey}
-              model={anthropicModel}
+              apiKey={chatApiKey}
+              model={chatModel}
+              llmProvider={aiSettings.provider}
               isCustom={customIds.has(q.id)}
               ui={ui}
               onDeleteCustom={

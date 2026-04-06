@@ -9,6 +9,7 @@ import { useLocale } from '../i18n/LocaleContext'
 import { getUiStrings } from '../i18n/uiStrings'
 import ScreenHeader from '../components/layout/ScreenHeader'
 import ContentSection from '../components/layout/ContentSection'
+import ExpandableCard from '../components/ExpandableCard'
 
 export default function ReactPage() {
   const { locale } = useLocale()
@@ -20,13 +21,13 @@ export default function ReactPage() {
       <section className="editorial-panel">
         <ContentSection className="editorial-content">
           <div className="grid">
-            <UseFetchDemo />
-            <UseDebounceDemo />
-            <UseCallbackDemo />
-            <UseRefDemo />
-            <LazyLoadThrottleDemo />
-            <EventLoopDemo />
-            <DropdownPortalDemo />
+            <ExpandableCard><UseFetchDemo /></ExpandableCard>
+            <ExpandableCard><UseDebounceDemo /></ExpandableCard>
+            <ExpandableCard><UseCallbackDemo /></ExpandableCard>
+            <ExpandableCard><UseRefDemo /></ExpandableCard>
+            <ExpandableCard><LazyLoadThrottleDemo /></ExpandableCard>
+            <ExpandableCard><EventLoopDemo /></ExpandableCard>
+            <ExpandableCard><DropdownPortalDemo /></ExpandableCard>
           </div>
         </ContentSection>
       </section>
