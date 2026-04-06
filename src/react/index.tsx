@@ -4,6 +4,7 @@ import UseCallbackDemo from './UseCallbackDemo'
 import UseRefDemo from './UseRefDemo'
 import LazyLoadThrottleDemo from './LazyLoadThrottleDemo'
 import EventLoopDemo from './EventLoopDemo'
+import DropdownPortalDemo from './DropdownPortalDemo'
 import { useLocale } from '../i18n/LocaleContext'
 import { getUiStrings } from '../i18n/uiStrings'
 import ScreenHeader from '../components/layout/ScreenHeader'
@@ -25,6 +26,7 @@ export default function ReactPage() {
             <UseRefDemo />
             <LazyLoadThrottleDemo />
             <EventLoopDemo />
+            <DropdownPortalDemo />
           </div>
         </ContentSection>
       </section>

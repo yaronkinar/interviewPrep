@@ -1,4 +1,5 @@
-import { useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 
 type Props = {
   questionId: string
@@ -288,8 +289,151 @@ function FlatArrayExample() {
   )
 }
 
+const DROPDOWN_ITEMS = ['Profile', 'Settings', 'Notifications', 'Help', 'Sign out']
+
+function getPlacement(triggerRect: DOMRect, dropdownHeight: number): 'top' | 'bottom' {
+  const spaceBelow = window.innerHeight - triggerRect.bottom
+  const spaceAbove = triggerRect.top
+  if (spaceBelow >= dropdownHeight) return 'bottom'
+  if (spaceAbove >= dropdownHeight) return 'top'
+  return spaceBelow >= spaceAbove ? 'bottom' : 'top'
+}
+
+function buildDropdownStyle(triggerRect: DOMRect, placement: 'top' | 'bottom'): React.CSSProperties {
+  const left = Math.max(8, Math.min(triggerRect.left, window.innerWidth - triggerRect.width - 8))
+  return {
+    position: 'fixed',
+    left,
+    width: triggerRect.width,
+    zIndex: 9999,
+    ...(placement === 'bottom'
+      ? { top: triggerRect.bottom + 4 }
+      : { bottom: window.innerHeight - triggerRect.top + 4 }),
+  }
+}
+
+function DropdownPortalExample() {
+  const DROPDOWN_HEIGHT = 172
+  const triggerRef = useRef<HTMLButtonElement>(null)
+  const dropdownRef = useRef<HTMLDivElement>(null)
+  const [open, setOpen] = useState(false)
+  const [placement, setPlacement] = useState<'top' | 'bottom'>('bottom')
+  const [dropStyle, setDropStyle] = useState<React.CSSProperties>({})
+  const [usePortal, setUsePortal] = useState(true)
+  const [forcePosition, setForcePosition] = useState<'auto' | 'top' | 'bottom'>('auto')
+
+  const update = useCallback(() => {
+    const rect = triggerRef.current?.getBoundingClientRect()
+    if (!rect) return
+    const resolved = forcePosition === 'auto' ? getPlacement(rect, DROPDOWN_HEIGHT) : forcePosition
+    setPlacement(resolved)
+    setDropStyle(buildDropdownStyle(rect, resolved))
+  }, [forcePosition])
+
+  useEffect(() => {
+    if (!open) return
+    update()
+    window.addEventListener('scroll', update, true)
+    window.addEventListener('resize', update)
+    return () => {
+      window.removeEventListener('scroll', update, true)
+      window.removeEventListener('resize', update)
+    }
+  }, [open, update])
+
+  useEffect(() => {
+    if (!open) return
+    function onMouseDown(e: MouseEvent) {
+      const target = e.target as Node
+      if (!triggerRef.current?.contains(target) && !dropdownRef.current?.contains(target)) {
+        setOpen(false)
+      }
+    }
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') setOpen(false)
+    }
+    document.addEventListener('mousedown', onMouseDown)
+    document.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.removeEventListener('mousedown', onMouseDown)
+      document.removeEventListener('keydown', onKeyDown)
+    }
+  }, [open])
+
+  const dropdownNode = open && (
+    <div
+      ref={dropdownRef}
+      className="q-dropdown-menu"
+      style={usePortal ? dropStyle : undefined}
+      data-placement={placement}
+    >
+      <div className="q-dropdown-placement-badge">{placement} · {usePortal ? 'portal' : 'inline'}</div>
+      {DROPDOWN_ITEMS.map((item) => (
+        <button key={item} className="q-dropdown-item" onClick={() => setOpen(false)}>
+          {item}
+        </button>
+      ))}
+    </div>
+  )
+
+  return (
+    <div className="q-demo">
+      <div className="q-demo-title">Dropdown portal positioning playground</div>
+
+      <div className="q-demo-controls">
+        <label>placement:</label>
+        {(['auto', 'top', 'bottom'] as const).map((p) => (
+          <button
+            key={p}
+            className={forcePosition === p ? 'q-demo-chip active' : 'q-demo-chip'}
+            onClick={() => setForcePosition(p)}
+          >
+            {p}
+          </button>
+        ))}
+        <label style={{ marginLeft: '0.5rem' }}>portal:</label>
+        <button
+          className={usePortal ? 'q-demo-chip active' : 'q-demo-chip'}
+          onClick={() => { setUsePortal((v) => !v); setOpen(false) }}
+        >
+          {usePortal ? 'on' : 'off'}
+        </button>
+      </div>
+
+      <div className="q-dropdown-scroll-box">
+        <p className="q-dropdown-hint">
+          This box has <code>overflow: hidden</code>. Without a portal the dropdown is clipped.
+          Scroll inside to shift viewport space.
+        </p>
+        <div style={{ height: 60 }} />
+        <div style={{ position: 'relative', display: 'inline-block' }}>
+          <button
+            ref={triggerRef}
+            className="q-dropdown-trigger"
+            aria-haspopup="listbox"
+            aria-expanded={open}
+            onClick={() => setOpen((v) => !v)}
+          >
+            Open menu ▾
+          </button>
+          {!usePortal && dropdownNode}
+        </div>
+        <div style={{ height: 60 }} />
+      </div>
+
+      {usePortal && createPortal(dropdownNode, document.body)}
+
+      <div className="q-demo-stats">
+        <span>placement: <strong>{placement}</strong></span>
+        <span>portal: <strong>{usePortal ? 'yes' : 'no'}</strong></span>
+        <span>open: <strong>{open ? 'yes' : 'no'}</strong></span>
+      </div>
+    </div>
+  )
+}
+
 export function hasQuestionExample(questionId: string) {
-  return ['debounce', 'throttle', 'memoize', 'group-by-dictionary', 'flatten-array'].includes(questionId)
+  return ['debounce', 'throttle', 'memoize', 'group-by-dictionary', 'flatten-array', 'dropdown-portal-positioning'].includes(questionId)
 }
 
 export function QuestionExample({ questionId }: Props) {
@@ -304,6 +448,8 @@ export function QuestionExample({ questionId }: Props) {
       return <GroupByExample />
     case 'flatten-array':
       return <FlatArrayExample />
+    case 'dropdown-portal-positioning':
+      return <DropdownPortalExample />
     default:
       return null
   }

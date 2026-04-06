@@ -1,4 +1,4 @@
-@import "tailwindcss";
+﻿@import "tailwindcss";
 @import "tw-animate-css";
 @import "@fontsource-variable/geist";
 /*
@@ -72,7 +72,7 @@
  * Monaco (and its detached .context-view overlays) must keep native/control styling
  * so widgets, menus, and the suggest list render correctly.
  */
-/* Do not touch `textarea.inputarea` — it is Monaco’s real input surface. */
+/* Do not touch `textarea.inputarea` â€” it is Monacoâ€™s real input surface. */
 .monaco-editor button,
 .monaco-editor button:hover,
 .monaco-editor button:focus,
@@ -89,19 +89,91 @@
   font: inherit;
 }
 
-/* Completion / parameter hints: guard against invisible text if theme vars fail */
+/*
+ * Monacoâ€™s bundled suggest.css only matches `.monaco-editor .suggest-widget`.
+ * With fixedOverflowWidgets, the widget can render outside that subtree and loses
+ * flex/list layout â€” you get a large empty-looking box. Duplicate the essentials
+ * for `.suggest-widget.editor-widget` as well (same element also has editor-widget).
+ */
 .monaco-editor .suggest-widget,
-.monaco-editor .parameter-hints-widget {
-  color: #cccccc;
+.monaco-editor .parameter-hints-widget,
+.suggest-widget.editor-widget {
+  color: var(--vscode-editorSuggestWidget-foreground, #d4d4d4);
 }
-.monaco-editor .suggest-widget .monaco-list .monaco-list-row {
-  color: #d4d4d4;
+.monaco-editor .suggest-widget,
+.suggest-widget.editor-widget {
+  display: flex;
+  flex-direction: column;
+  width: 430px;
+  max-width: min(430px, calc(100vw - 24px));
+  z-index: 50;
+  border-radius: 3px;
+  border: 1px solid var(--vscode-editorSuggestWidget-border, #474747);
+  background-color: var(--vscode-editorSuggestWidget-background, #252526);
 }
-.monaco-editor .suggest-widget .monaco-list .monaco-list-row.focused {
-  color: #ffffff;
+.monaco-editor .suggest-widget > .tree,
+.suggest-widget.editor-widget > .tree {
+  height: 100%;
+  width: 100%;
+  min-height: 0;
+  flex: 1;
 }
-.monaco-editor .suggest-widget .monaco-list .monaco-list-row .monaco-icon-label .label-name {
+.monaco-editor .suggest-widget .monaco-list .monaco-list-row,
+.suggest-widget.editor-widget .monaco-list .monaco-list-row {
+  display: flex;
+  box-sizing: border-box;
+  padding-right: 10px;
+  white-space: nowrap;
+  cursor: pointer;
+  color: var(--vscode-editorSuggestWidget-foreground, #d4d4d4);
+}
+.monaco-editor .suggest-widget .monaco-list .monaco-list-row > .contents,
+.suggest-widget.editor-widget .monaco-list .monaco-list-row > .contents {
+  flex: 1;
+  height: 100%;
+  min-width: 0;
+  overflow: hidden;
+  padding-left: 2px;
+}
+.monaco-editor .suggest-widget .monaco-list .monaco-list-row > .contents > .main,
+.suggest-widget.editor-widget .monaco-list .monaco-list-row > .contents > .main {
+  display: flex;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: pre;
+  justify-content: space-between;
+}
+.monaco-editor .suggest-widget .monaco-list .monaco-list-row > .contents > .main > .left,
+.monaco-editor .suggest-widget .monaco-list .monaco-list-row > .contents > .main > .right,
+.suggest-widget.editor-widget .monaco-list .monaco-list-row > .contents > .main > .left,
+.suggest-widget.editor-widget .monaco-list .monaco-list-row > .contents > .main > .right {
+  display: flex;
+  min-width: 0;
+}
+.monaco-editor .suggest-widget .monaco-list .monaco-list-row:not(.focused) > .contents > .main .monaco-icon-label,
+.suggest-widget.editor-widget .monaco-list .monaco-list-row:not(.focused) > .contents > .main .monaco-icon-label {
+  color: var(--vscode-editorSuggestWidget-foreground, #d4d4d4);
+}
+.monaco-editor .suggest-widget .monaco-list .monaco-list-row.focused,
+.suggest-widget.editor-widget .monaco-list .monaco-list-row.focused {
+  color: var(--vscode-editorSuggestWidget-selectedForeground, #ffffff);
+  background-color: var(--vscode-editorSuggestWidget-selectedBackground, #04395e);
+}
+.monaco-editor .suggest-widget .monaco-list .monaco-list-row.focused .codicon,
+.suggest-widget.editor-widget .monaco-list .monaco-list-row.focused .codicon {
+  color: var(--vscode-editorSuggestWidget-selectedIconForeground, #ffffff);
+}
+.monaco-editor .suggest-widget .monaco-list .monaco-list-row .monaco-icon-label .label-name,
+.suggest-widget.editor-widget .monaco-list .monaco-list-row .monaco-icon-label .label-name {
   color: inherit;
+}
+/* Tailwind preflight uses `svg { display: block }`, which breaks icon+label rows in suggest */
+.suggest-widget.editor-widget svg,
+.monaco-editor .suggest-widget svg {
+  display: inline-block;
+  vertical-align: text-bottom;
+  flex-shrink: 0;
 }
 
 body {
@@ -121,7 +193,7 @@ body {
   min-height: 100vh;
 }
 
-/* ── NAV ── */
+/* â”€â”€ NAV â”€â”€ */
 .nav {
   background: var(--surface);
   border-bottom: 1px solid var(--border);
@@ -389,7 +461,7 @@ button.nav-mobile-drawer-close:hover {
   }
 }
 
-/* ── LAYOUT ── */
+/* â”€â”€ LAYOUT â”€â”€ */
 .main {
   flex: 1;
   min-width: 0;
@@ -419,7 +491,7 @@ button.nav-mobile-drawer-close:hover {
   text-decoration: underline;
 }
 
-/* ── HOME ── */
+/* â”€â”€ HOME â”€â”€ */
 .home-page {
   max-width: 920px;
   margin: 0 auto;
@@ -901,7 +973,7 @@ button.nav-mobile-drawer-close:hover {
   grid-template-columns: 1fr;
 }
 
-/* ── CARD ── */
+/* â”€â”€ CARD â”€â”€ */
 .card {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -932,7 +1004,7 @@ button.nav-mobile-drawer-close:hover {
   padding: 0.05rem 0.3rem;
 }
 
-/* ── BUTTONS ── */
+/* â”€â”€ BUTTONS â”€â”€ */
 button {
   background: var(--btn);
   border: none;
@@ -953,7 +1025,7 @@ button.secondary {
 }
 button.secondary:hover { background: var(--surface-hover); }
 
-/* ── INPUTS ── */
+/* â”€â”€ INPUTS â”€â”€ */
 input[type='text'],
 input[type='number'] {
   background: var(--surface-deep);
@@ -967,7 +1039,7 @@ input[type='number'] {
 }
 input:focus { border-color: var(--accent); }
 
-/* ── CONTROLS ── */
+/* â”€â”€ CONTROLS â”€â”€ */
 .controls {
   display: flex;
   flex-wrap: wrap;
@@ -975,7 +1047,7 @@ input:focus { border-color: var(--accent); }
   align-items: center;
 }
 
-/* ── PARAMS ── */
+/* â”€â”€ PARAMS â”€â”€ */
 .params {
   align-items: center;
   background: var(--surface-deep);
@@ -1002,7 +1074,7 @@ input:focus { border-color: var(--accent); }
   width: 64px;
 }
 
-/* ── STATS ── */
+/* â”€â”€ STATS â”€â”€ */
 .stat-row { display: flex; gap: 0.75rem; }
 .stat {
   background: var(--surface-deep);
@@ -1024,7 +1096,7 @@ input:focus { border-color: var(--accent); }
   text-transform: uppercase;
 }
 
-/* ── LOG ── */
+/* â”€â”€ LOG â”€â”€ */
 .log {
   background: var(--surface-deep);
   border: 1px solid var(--border);
@@ -1049,7 +1121,7 @@ input:focus { border-color: var(--accent); }
 .log-entry.warn  { color: var(--fire); }
 .log-entry.sep   { border-top: 1px solid var(--border); margin: 0.3rem 0; }
 
-/* ── CODE BLOCK ── */
+/* â”€â”€ CODE BLOCK â”€â”€ */
 .code-toggle {
   background: none;
   border: 1px solid var(--border);
@@ -1093,7 +1165,7 @@ input:focus { border-color: var(--accent); }
 .token.arrow      { color: var(--kw); }
 .token.template-string .token.interpolation-punctuation { color: var(--kw); }
 
-/* ── EXPLANATION ── */
+/* â”€â”€ EXPLANATION â”€â”€ */
 .explanation {
   border-top: 1px solid var(--border);
   display: flex;
@@ -1140,7 +1212,7 @@ input:focus { border-color: var(--accent); }
   padding: 0.05rem 0.3rem;
 }
 
-/* ── SANDBOX ── */
+/* â”€â”€ SANDBOX â”€â”€ */
 .sandbox-wrap {
   max-width: 1200px;
   margin: 1.5rem auto 0;
@@ -1228,7 +1300,7 @@ input:focus { border-color: var(--accent); }
 .sandbox-line.ret   { color: #4ade80; }
 .sandbox-line.sep   { border-top: 1px solid #1e293b; margin: 0.4rem 0; }
 
-/* ── LAZY LOAD ── */
+/* â”€â”€ LAZY LOAD â”€â”€ */
 .lazy-scroll {
   background: var(--surface-deep);
   border: 1px solid var(--border);
@@ -1270,7 +1342,7 @@ input:focus { border-color: var(--accent); }
 }
 .lazy-placeholder.hidden { opacity: 0; }
 
-/* ── THROTTLE BAR ── */
+/* â”€â”€ THROTTLE BAR â”€â”€ */
 .throttle-zone {
   align-items: center;
   background: var(--surface-deep);
@@ -1299,7 +1371,7 @@ input:focus { border-color: var(--accent); }
   width: 0%;
 }
 
-/* ── REACT PAGE ── */
+/* â”€â”€ REACT PAGE â”€â”€ */
 .demo-output {
   background: var(--surface-deep);
   border: 1px solid var(--border);
@@ -1343,7 +1415,7 @@ input:focus { border-color: var(--accent); }
   text-align: center;
 }
 
-/* ── QUESTIONS PAGE ── */
+/* â”€â”€ QUESTIONS PAGE â”€â”€ */
 .q-search-wrap {
   align-items: center;
   display: flex;
@@ -1631,6 +1703,156 @@ input:focus { border-color: var(--accent); }
   height: 100%;
   transition: width 0.08s linear;
 }
+/* ── Dropdown portal demo ──────────────────────────────────── */
+.q-dropdown-scroll-box {
+  background: var(--panel);
+  border: 1px dashed var(--border);
+  border-radius: 6px;
+  max-height: 160px;
+  overflow: hidden;
+  padding: 0.6rem 0.75rem;
+  position: relative;
+  text-align: center;
+}
+.q-dropdown-hint {
+  color: var(--text-faint);
+  font-size: 0.72rem;
+  line-height: 1.4;
+  margin: 0 0 0.4rem;
+}
+.q-dropdown-hint code {
+  background: var(--surface);
+  border-radius: 3px;
+  font-family: var(--mono);
+  padding: 0 3px;
+}
+.q-dropdown-trigger {
+  background: var(--accent);
+  border: none;
+  border-radius: 6px;
+  color: #fff;
+  cursor: pointer;
+  font-size: 0.8rem;
+  padding: 0.4rem 0.9rem;
+  transition: opacity 0.15s;
+  white-space: nowrap;
+}
+.q-dropdown-trigger:hover { opacity: 0.85; }
+
+.q-dropdown-menu {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 4px;
+}
+.q-dropdown-menu[data-placement='top'] {
+  animation: dropup 0.12s ease;
+}
+.q-dropdown-menu[data-placement='bottom'] {
+  animation: dropdown 0.12s ease;
+}
+@keyframes dropdown {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes dropup {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.q-dropdown-placement-badge {
+  color: var(--accent);
+  font-family: var(--mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.4px;
+  padding: 2px 6px 4px;
+  text-transform: uppercase;
+}
+.q-dropdown-item {
+  background: transparent;
+  border: none;
+  border-radius: 5px;
+  color: var(--text);
+  cursor: pointer;
+  font-size: 0.8rem;
+  padding: 0.35rem 0.6rem;
+  text-align: left;
+  transition: background 0.1s;
+}
+.q-dropdown-item:hover {
+  background: var(--surface-deep);
+}
+.q-demo-chip {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 0.72rem;
+  padding: 0.15rem 0.45rem;
+  transition: background 0.1s, color 0.1s;
+}
+.q-demo-chip.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+/* ── end dropdown portal demo ───────────────────────────────── */
+
+/* ── /react DropdownPortalDemo ──────────────────────────────── */
+.rdp-clip-box {
+  max-height: 140px;
+  overflow: hidden;
+  text-align: center;
+}
+.rdp-hint {
+  color: var(--text-faint);
+  font-size: 0.75rem;
+  margin: 0 0 0.2rem;
+}
+.rdp-hint code {
+  background: var(--surface);
+  border-radius: 3px;
+  font-family: var(--mono);
+  padding: 0 3px;
+}
+.rdp-menu {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 4px;
+}
+.rdp-menu[data-placement='bottom'] { animation: dropdown 0.12s ease; }
+.rdp-menu[data-placement='top']    { animation: dropup   0.12s ease; }
+.rdp-badge {
+  color: var(--accent);
+  font-family: var(--mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.4px;
+  padding: 2px 6px 4px;
+  text-transform: uppercase;
+}
+.rdp-item {
+  background: transparent;
+  border: none;
+  border-radius: 5px;
+  color: var(--text);
+  cursor: pointer;
+  font-size: 0.8rem;
+  padding: 0.35rem 0.6rem;
+  text-align: left;
+  transition: background 0.1s;
+}
+.rdp-item:hover { background: var(--surface-deep); }
+/* ── end /react DropdownPortalDemo ──────────────────────────── */
+
 .q-empty {
   color: var(--text-faint);
   font-size: 0.9rem;
@@ -1639,7 +1861,7 @@ input:focus { border-color: var(--accent); }
   text-align: center;
 }
 
-/* ── AI settings, upload, chat ── */
+/* â”€â”€ AI settings, upload, chat â”€â”€ */
 .q-ai-settings {
   margin: 0 auto 1rem;
   max-width: 1200px;
@@ -1659,6 +1881,34 @@ input:focus { border-color: var(--accent); }
   font-size: 0.78rem;
   line-height: 1.55;
   margin: 0;
+}
+.q-ai-subheading {
+  border-top: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  margin: 0.35rem 0 0;
+  padding-top: 0.75rem;
+  text-transform: uppercase;
+}
+.q-ai-settings-panel .q-ai-subheading:first-of-type {
+  border-top: none;
+  margin-top: 0;
+  padding-top: 0.25rem;
+}
+.q-ai-provider-row {
+  border-bottom: 1px solid var(--border);
+  flex-direction: column;
+  align-items: flex-start;
+  padding-bottom: 0.75rem;
+}
+.q-ai-code {
+  background: var(--surface-deep);
+  border-radius: 4px;
+  font-family: var(--mono);
+  font-size: 0.85em;
+  padding: 0.1em 0.35em;
 }
 .q-ai-label {
   color: var(--text-faint);
@@ -1961,6 +2211,50 @@ input:focus { border-color: var(--accent); }
   background: var(--surface-deep);
   color: var(--text-muted);
 }
+.q-chat-md-pre-wrap {
+  background: var(--surface-deep);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  margin: 0.45rem 0;
+  overflow: hidden;
+}
+.q-chat-md-pre-toolbar {
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  padding: 0.35rem 0.45rem;
+}
+.q-chat-md-pre-tool {
+  font-size: 0.72rem;
+  padding: 0.25rem 0.5rem;
+}
+.q-chat-md-pre-wrap .q-chat-md-pre {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  margin: 0;
+}
+.q-chat-md-pre-preview-error {
+  border-top: 1px solid var(--border);
+  color: var(--miss);
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  line-height: 1.4;
+  padding: 0.45rem 0.55rem;
+  white-space: pre-wrap;
+}
+.q-chat-md-pre-preview-frame-wrap {
+  border-top: 1px solid var(--border);
+  min-height: 140px;
+}
+.q-chat-md-pre-preview-frame {
+  border: none;
+  display: block;
+  min-height: 200px;
+  width: 100%;
+}
 .q-chat-md-pre {
   background: var(--surface-deep);
   border: 1px solid var(--border);
@@ -2080,7 +2374,7 @@ input:focus { border-color: var(--accent); }
   width: 100%;
 }
 
-/* VS Code–style shell around Monaco */
+/* VS Codeâ€“style shell around Monaco */
 .vscode-chrome {
   background: #1e1e1e;
   border: 1px solid #3c3c3c;
@@ -2835,7 +3129,7 @@ button.mock-voice-avatar-card.mock-voice-avatar-card--active {
   padding: 0.35rem 0.65rem;
 }
 
-/* ── MOCK V2 DASHBOARD ── */
+/* â”€â”€ MOCK V2 DASHBOARD â”€â”€ */
 .mockv2-page {
   box-sizing: border-box;
   max-width: 1400px;

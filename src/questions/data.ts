@@ -2200,6 +2200,107 @@ Prevention checklist:
 - Centralize logging for unexpected async failures.`,
   },
   {
+    id: 'dropdown-portal-positioning',
+    companies: ['Google', 'Meta', 'Airbnb', 'Stripe'],
+    title: 'Design robust dropdown positioning (top/bottom) with portals',
+    difficulty: 'hard',
+    category: 'System Design',
+    description:
+      'Design a dropdown/popover that chooses top or bottom placement based on available viewport space, avoids clipping, and renders in a portal when parent overflow would hide it.',
+    answerType: 'mixed',
+    tags: ['dropdown', 'portals', 'positioning', 'UX'],
+    answer: `## Why portals?
+
+When a trigger lives inside a container with \`overflow: hidden\` or \`overflow: auto\`, an absolutely-positioned child is clipped to that container's bounds. Portaling the dropdown to \`document.body\` sidesteps the stacking-context and clipping problem entirely.
+
+\`\`\`tsx
+// Minimal portal wrapper
+function Portal({ children }: { children: React.ReactNode }) {
+  return ReactDOM.createPortal(children, document.body)
+}
+\`\`\`
+
+## Placement algorithm
+
+Calculate available space **before** rendering and pick the side with more room:
+
+\`\`\`ts
+function getPlacement(triggerRect: DOMRect, dropdownHeight: number): 'top' | 'bottom' {
+  const spaceBelow = window.innerHeight - triggerRect.bottom
+  const spaceAbove = triggerRect.top
+  if (spaceBelow >= dropdownHeight) return 'bottom'
+  if (spaceAbove >= dropdownHeight) return 'top'
+  // Fallback: whichever side has more space
+  return spaceBelow >= spaceAbove ? 'bottom' : 'top'
+}
+\`\`\`
+
+## Positioning the portal element
+
+After choosing placement, compute \`position: fixed\` coordinates from the trigger's \`getBoundingClientRect()\`:
+
+\`\`\`ts
+function buildStyle(triggerRect: DOMRect, placement: 'top' | 'bottom'): React.CSSProperties {
+  return {
+    position: 'fixed',
+    left: triggerRect.left,
+    width: triggerRect.width,
+    ...(placement === 'bottom'
+      ? { top: triggerRect.bottom + 4 }   // 4px gap
+      : { bottom: window.innerHeight - triggerRect.top + 4 }),
+  }
+}
+\`\`\`
+
+## Keeping it in sync
+
+- **Scroll / resize**: re-run the rect calculation on \`scroll\` (capture phase) and \`resize\`. Use \`ResizeObserver\` on the trigger for layout shifts.
+- **Close on outside click**: attach a \`mousedown\` listener on \`document\` and close if the target is outside both the trigger and the dropdown.
+- **Keyboard**: close on \`Escape\`, trap focus inside the dropdown, return focus to the trigger on close.
+
+## Full hook
+
+\`\`\`ts
+function useDropdown(dropdownHeight = 200) {
+  const triggerRef = useRef<HTMLElement>(null)
+  const [open, setOpen] = useState(false)
+  const [style, setStyle] = useState<React.CSSProperties>({})
+
+  const update = useCallback(() => {
+    const rect = triggerRef.current?.getBoundingClientRect()
+    if (!rect) return
+    const placement = getPlacement(rect, dropdownHeight)
+    setStyle(buildStyle(rect, placement))
+  }, [dropdownHeight])
+
+  useEffect(() => {
+    if (!open) return
+    update()
+    window.addEventListener('scroll', update, true)
+    window.addEventListener('resize', update)
+    return () => {
+      window.removeEventListener('scroll', update, true)
+      window.removeEventListener('resize', update)
+    }
+  }, [open, update])
+
+  return { triggerRef, open, setOpen, style }
+}
+\`\`\`
+
+## Interview checklist
+
+| Concern | Technique |
+|---|---|
+| Overflow clipping | Portal to \`document.body\` with \`position: fixed\` |
+| Placement | \`getBoundingClientRect\` + compare \`spaceAbove\` vs \`spaceBelow\` |
+| Keeps in sync | \`scroll\` (capture) + \`resize\` listeners |
+| Outside-click close | \`mousedown\` on \`document\`, check \`contains\` |
+| Viewport edge | Clamp \`left\` so the panel never overflows left/right |
+| Accessibility | \`aria-expanded\`, \`aria-haspopup\`, focus trap, \`Escape\` to close |
+| Cleanup | Remove listeners + portal node on unmount |`,
+  },
+  {
     id: 'double-resolve-race-guard',
     companies: ['Stripe', 'TikTok', 'Apple'],
     title: 'Guard against double resolve/reject in wrappers',
