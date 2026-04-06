@@ -1,7 +1,7 @@
 import Editor, { type BeforeMount, type OnMount } from '@monaco-editor/react'
 import { useEffect, useRef, useState } from 'react'
 import type { Question } from './data'
-import { buildQuestionAmbientTypes, questionTsxFileName } from './mockCodeStarter'
+import { buildQuestionAmbientTypes, questionTsFileName } from './mockCodeStarter'
 import { configureMonacoInterviewTypeScript } from './monacoTsxInterview'
 
 const beforeMount: BeforeMount = (monaco) => {
@@ -13,13 +13,13 @@ export interface VsCodeStyleEditorProps {
   onChange: (value: string) => void
   /** Height of the editor area (number = px, or any CSS length for the wrapper) */
   height?: string | number
-  /** Tab label (e.g. debounce.tsx) */
+  /** Tab label (e.g. debounce.ts) */
   fileLabel?: string
   /** Window title in the fake title bar */
   windowTitle?: string
   readOnly?: boolean
   /**
-   * Full virtual path for the TypeScript worker (must end with .tsx for TSX / JSX IntelliSense).
+   * Full virtual path for the TypeScript worker (use `.tsx` + JSX only when you need React in-editor).
    * If omitted, derived from `question` or `fileLabel`.
    */
   modelPath?: string
@@ -36,9 +36,9 @@ function resolveModelPath(
     return modelPath.startsWith('file:///') ? modelPath : `file:///${modelPath.replace(/^\//, '')}`
   }
   if (question) {
-    return `file:///interview/${questionTsxFileName(question)}`
+    return `file:///interview/${questionTsFileName(question)}`
   }
-  const name = fileLabel.includes('.') ? fileLabel : `${fileLabel}.tsx`
+  const name = fileLabel.includes('.') ? fileLabel : `${fileLabel}.ts`
   return `file:///interview/${name.replace(/^\//, '')}`
 }
 
@@ -46,7 +46,7 @@ export default function VsCodeStyleEditor({
   value,
   onChange,
   height = 320,
-  fileLabel = 'Solution.tsx',
+  fileLabel = 'Solution.ts',
   windowTitle = 'Interview Prep',
   readOnly = false,
   modelPath,
@@ -55,10 +55,10 @@ export default function VsCodeStyleEditor({
   const surfaceHeight = typeof height === 'number' ? `${height}px` : height
   const resolvedPath = resolveModelPath(modelPath, question, fileLabel)
   const tabLabel = question
-    ? questionTsxFileName(question)
-    : fileLabel.endsWith('.tsx')
+    ? questionTsFileName(question)
+    : /\.(tsx?|jsx?)$/i.test(fileLabel)
       ? fileLabel
-      : `${fileLabel.replace(/\.ts$/i, '')}.tsx`
+      : `${fileLabel.replace(/\.(tsx?|jsx?)$/i, '')}.ts`
   const isTsx = resolvedPath.endsWith('.tsx') || tabLabel.endsWith('.tsx')
 
   const ambientDisposableRef = useRef<{ dispose: () => void } | null>(null)
@@ -117,14 +117,24 @@ export default function VsCodeStyleEditor({
           height="100%"
           theme="vs-dark"
           path={resolvedPath}
+          /**
+           * Monaco 0.55 only wires the TS worker to the language id `typescript` (there is no
+           * `typescriptreact` registration). TSX vs TS ScriptKind is determined by the model URI
+           * extension (.tsx / .ts), not the language id.
+           */
           defaultLanguage="typescript"
+          language="typescript"
           value={value}
           onChange={(v) => onChange(v ?? '')}
           beforeMount={beforeMount}
           onMount={onMount}
           options={{
             readOnly,
-            /** Suggest widget escapes parents with `overflow: hidden` (e.g. `.vscode-chrome`). */
+            /**
+             * fixedOverflowWidgets keeps the suggest widget DOM inside .monaco-editor (so
+             * Monaco's bundled suggest.css rules match), while rendering it position:fixed so
+             * it visually escapes the .vscode-chrome overflow:hidden clip.
+             */
             fixedOverflowWidgets: true,
             minimap: { enabled: !narrowViewport, scale: 0.85 },
             fontSize: narrowViewport ? 12 : 13,
@@ -142,10 +152,9 @@ export default function VsCodeStyleEditor({
             cursorBlinking: 'smooth',
             renderLineHighlight: 'line',
             bracketPairColorization: { enabled: true },
-            /** `comments: false` leaves an open-but-empty suggest box while typing in JSDoc / block comments. */
             quickSuggestions: { other: true, comments: true, strings: true },
             quickSuggestionsDelay: 50,
-            wordBasedSuggestions: 'all',
+            wordBasedSuggestions: 'allDocuments',
             suggestOnTriggerCharacters: true,
             acceptSuggestionOnEnter: 'on',
             tabCompletion: 'on',

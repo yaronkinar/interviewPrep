@@ -77,15 +77,15 @@ function pascalCase(name: string): string {
   return parts.map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join('')
 }
 
-/** Safe basename for a virtual .tsx file (Monaco model URI). */
-export function questionTsxFileBase(id: string): string {
+/** Safe basename for a virtual interview source file (Monaco model URI). */
+export function questionCodeFileBase(id: string): string {
   let s = id.replace(/[^a-zA-Z0-9_-]/g, '_').replace(/_+/g, '_')
   if (/^\d/.test(s)) s = `_${s}`
   return s || 'solution'
 }
 
-export function questionTsxFileName(q: Question): string {
-  return `${questionTsxFileBase(q.id)}.tsx`
+export function questionTsFileName(q: Question): string {
+  return `${questionCodeFileBase(q.id)}.ts`
 }
 
 /**
@@ -135,8 +135,8 @@ interface ${typesName} {
 
 function ${fnName}(/* parameters — align with ${typesName} and the problem above */): unknown {
   // Your implementation
-  // Example with TSX (this file is ${questionTsxFileName(q)}):
-  // return <div>{INTERVIEW_PROBLEM.title}</div>
+  // Example (this file is ${questionTsFileName(q)}):
+  // return INTERVIEW_PROBLEM.title
 }
 `
 }

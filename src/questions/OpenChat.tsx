@@ -1,7 +1,8 @@
 import { useCallback, useState } from 'react'
 import type { MessageParam } from '@anthropic-ai/sdk/resources/messages'
 import { useLocale } from '../i18n/LocaleContext'
-import { formatApiError, streamChatMessage } from './anthropicClient'
+import type { LlmProvider } from './llmConstants'
+import { formatApiError, streamLlmChat } from './llmStream'
 import ChatMarkdown from './ChatMarkdown'
 
 export type OpenChatMode = 'explain' | 'practice'
@@ -18,9 +19,10 @@ export interface ChatMessage {
 export interface OpenChatProps {
   apiKey: string
   model: string
+  llmProvider: LlmProvider
 }
 
-export default function OpenChat({ apiKey, model }: OpenChatProps) {
+export default function OpenChat({ apiKey, model, llmProvider }: OpenChatProps) {
   const { locale } = useLocale()
   const [open, setOpen] = useState(false)
   const [mode, setMode] = useState<OpenChatMode>('explain')
@@ -57,7 +59,8 @@ export default function OpenChat({ apiKey, model }: OpenChatProps) {
 
     let acc = ''
     try {
-      await streamChatMessage({
+      await streamLlmChat({
+        provider: llmProvider,
         apiKey: apiKey.trim(),
         model: model.trim(),
         system,
@@ -91,11 +94,11 @@ export default function OpenChat({ apiKey, model }: OpenChatProps) {
       {open && (
         <div className="q-chat-panel q-open-chat-panel">
           {!apiKey.trim() && (
-            <p className="q-chat-warn">Add an Anthropic API key above to enable chat.</p>
+            <p className="q-chat-warn">Add an API key in AI settings above to enable chat.</p>
           )}
           {apiKey.trim() && (
             <p className="q-chat-auto-hint">
-              Claude’s replies render as <strong>Markdown</strong>. Open the <strong>React sandbox</strong> tab to paste a
+              Assistant replies render as <strong>Markdown</strong>. Open the <strong>React sandbox</strong> tab to paste a
               reply and run TSX in the preview iframe.
             </p>
           )}

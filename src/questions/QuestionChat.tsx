@@ -2,7 +2,8 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { MessageParam } from '@anthropic-ai/sdk/resources/messages'
 import { useLocale } from '../i18n/LocaleContext'
 import type { Question } from './data'
-import { formatApiError, streamChatMessage } from './anthropicClient'
+import type { LlmProvider } from './llmConstants'
+import { formatApiError, streamLlmChat } from './llmStream'
 import ChatMarkdown from './ChatMarkdown'
 
 export type ChatMode = 'explain' | 'practice'
@@ -53,12 +54,13 @@ export interface QuestionChatProps {
   question: Question
   apiKey: string
   model: string
+  llmProvider: LlmProvider
 }
 
 const AUTO_EXPLAIN_USER =
   'Explain this interview question for me: what it is testing, how you would approach it in an interview (steps, not necessarily full code), and common pitfalls. Stay concise; do not give a complete solution unless I ask for it in a follow-up.'
 
-export default function QuestionChat({ question, apiKey, model }: QuestionChatProps) {
+export default function QuestionChat({ question, apiKey, model, llmProvider }: QuestionChatProps) {
   const { locale } = useLocale()
   const [open, setOpen] = useState(false)
   const [mode, setMode] = useState<ChatMode>('explain')
@@ -91,7 +93,8 @@ export default function QuestionChat({ question, apiKey, model }: QuestionChatPr
         content: m.content,
       }))
       let acc = ''
-      await streamChatMessage({
+      await streamLlmChat({
+        provider: llmProvider,
         apiKey: apiKey.trim(),
         model: model.trim(),
         system,
@@ -106,7 +109,7 @@ export default function QuestionChat({ question, apiKey, model }: QuestionChatPr
       setMessages((prev) => [...prev, { role: 'assistant', content: acc }])
       setStreaming('')
     },
-    [apiKey, model, question, locale],
+    [apiKey, model, question, locale, llmProvider],
   )
 
   useEffect(() => {
@@ -158,16 +161,16 @@ export default function QuestionChat({ question, apiKey, model }: QuestionChatPr
   return (
     <div className="q-chat-wrap">
       <button type="button" className="code-toggle" onClick={() => setOpen((o) => !o)}>
-        {open ? 'Hide' : 'Chat with Claude'}
+        {open ? 'Hide' : 'Chat with AI'}
       </button>
       {open && (
         <div className="q-chat-panel">
           {!apiKey.trim() && (
-            <p className="q-chat-warn">Add an Anthropic API key above to enable chat.</p>
+            <p className="q-chat-warn">Add an API key in AI settings above to enable chat.</p>
           )}
           {apiKey.trim() && (
             <p className="q-chat-auto-hint">
-              Claude receives the full question (title, category, difficulty, tags, companies, description). An explanation
+              The model receives the full question (title, category, difficulty, tags, companies, description). An explanation
               starts automatically when you open this panel with an empty thread. Replies render as <strong>Markdown</strong>{' '}
               below. Use the <strong>React sandbox</strong> tab to paste replies and preview TSX.
             </p>

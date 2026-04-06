@@ -18,10 +18,13 @@ import {
   type Category,
 } from './data'
 import { useLocale } from '../i18n/LocaleContext'
-import ApiKeySettings from './ApiKeySettings'
+import ApiKeySettings, { type AiSettingsSnapshot } from './ApiKeySettings'
 import ChatMarkdown from './ChatMarkdown'
-import { formatApiError, streamChatMessage } from './anthropicClient'
 import { DEFAULT_ANTHROPIC_MODEL } from './anthropicConstants'
+import { DEFAULT_GEMINI_MODEL } from './geminiConstants'
+import { DEFAULT_OPENAI_MODEL } from './openaiConstants'
+import type { LlmProvider } from './llmConstants'
+import { formatApiError, streamLlmChat } from './llmStream'
 import {
   loadCustomQuestionsFromStorage,
 } from './customQuestions'
@@ -152,6 +155,7 @@ interface MockInterviewSessionProps {
   includeRefAnswer: boolean
   apiKey: string
   model: string
+  llmProvider: LlmProvider
   elevenLabsApiKey: string
 }
 
@@ -161,6 +165,7 @@ function MockInterviewSession({
   includeRefAnswer,
   apiKey,
   model,
+  llmProvider,
   elevenLabsApiKey,
 }: MockInterviewSessionProps) {
   const { locale } = useLocale()
@@ -372,7 +377,8 @@ function MockInterviewSession({
         content: m.content,
       }))
       let acc = ''
-      await streamChatMessage({
+      await streamLlmChat({
+        provider: llmProvider,
         apiKey: apiKey.trim(),
         model: model.trim(),
         system,
@@ -387,7 +393,7 @@ function MockInterviewSession({
       setMessages((prev) => [...prev, { role: 'assistant', content: acc }])
       setStreaming('')
     },
-    [apiKey, model, question, style, includeRefAnswer, locale],
+    [apiKey, model, question, style, includeRefAnswer, locale, llmProvider],
   )
 
   useEffect(() => {
@@ -440,7 +446,7 @@ function MockInterviewSession({
           style === 'code_review'
             ? 'Here is my solution:'
             : 'As the candidate, here is my code:'
-        parts.push(`${intro}\n\n\`\`\`tsx\n${code}\n\`\`\``)
+        parts.push(`${intro}\n\n\`\`\`ts\n${code}\n\`\`\``)
       }
       if (notes) parts.push(notes)
       text = parts.join('\n\n')
@@ -484,7 +490,9 @@ function MockInterviewSession({
 
   return (
     <div className="q-chat-panel mock-interview-session mockv2-session">
-      {!apiKey.trim() && <p className="q-chat-warn">Add an Anthropic API key above to start the mock session.</p>}
+      {!apiKey.trim() && (
+        <p className="q-chat-warn">Add an API key in AI settings above to start the mock session.</p>
+      )}
       {apiKey.trim() && <p className="q-chat-auto-hint">{hint}</p>}
 
       <div
@@ -909,14 +917,33 @@ export default function MockInterviewPage() {
   const [style, setStyle] = useState<MockTrainingStyle>('understand')
   const [includeRefAnswer, setIncludeRefAnswer] = useState(false)
 
-  const [apiKey, setApiKey] = useState('')
+  const [aiSettings, setAiSettings] = useState<AiSettingsSnapshot>(() => ({
+    provider: 'anthropic',
+    anthropicApiKey: '',
+    anthropicModel: DEFAULT_ANTHROPIC_MODEL,
+    geminiApiKey: '',
+    geminiModel: DEFAULT_GEMINI_MODEL,
+    openaiApiKey: '',
+    openaiModel: DEFAULT_OPENAI_MODEL,
+  }))
   const [elevenLabsApiKey, setElevenLabsApiKey] = useState('')
-  const [anthropicModel, setAnthropicModel] = useState(DEFAULT_ANTHROPIC_MODEL)
 
-  const onCredentialsChange = useCallback((key: string, model: string) => {
-    setApiKey(key)
-    setAnthropicModel(model || DEFAULT_ANTHROPIC_MODEL)
+  const onAiSettingsChange = useCallback((s: AiSettingsSnapshot) => {
+    setAiSettings(s)
   }, [])
+
+  const sessionApiKey =
+    aiSettings.provider === 'gemini'
+      ? aiSettings.geminiApiKey
+      : aiSettings.provider === 'openai'
+        ? aiSettings.openaiApiKey
+        : aiSettings.anthropicApiKey
+  const sessionModel =
+    aiSettings.provider === 'gemini'
+      ? aiSettings.geminiModel
+      : aiSettings.provider === 'openai'
+        ? aiSettings.openaiModel
+        : aiSettings.anthropicModel
 
   const allQuestions = useMemo(() => [...QUESTIONS, ...customQuestions], [customQuestions])
 
@@ -1007,7 +1034,7 @@ export default function MockInterviewPage() {
         <section className="mockv2-main">
           <div className="mockv2-main-top">
             <h2 className="mockv2-title">Practice</h2>
-            <div className="mockv2-top-right">Anthropic-powered mock interview</div>
+            <div className="mockv2-top-right">Multi-provider mock interview (Claude, Gemini, OpenAI)</div>
           </div>
 
           <section className="mockv2-overview-grid">
@@ -1041,7 +1068,7 @@ export default function MockInterviewPage() {
 
           <section className="editorial-panel editorial-panel--tight">
             <ApiKeySettings
-              onCredentialsChange={onCredentialsChange}
+              onAiSettingsChange={onAiSettingsChange}
               onElevenLabsChange={setElevenLabsApiKey}
             />
           </section>
@@ -1181,7 +1208,7 @@ export default function MockInterviewPage() {
                 checked={includeRefAnswer}
                 onChange={(e) => setIncludeRefAnswer(e.target.checked)}
               />
-              Include reference answer in Claude&apos;s context (stronger feedback; may reduce discovery)
+              Include reference answer in the model&apos;s context (stronger feedback; may reduce discovery)
             </label>
 
             <h2 className="mock-interview-h2">3. Session</h2>
@@ -1191,8 +1218,9 @@ export default function MockInterviewPage() {
                 question={selectedQuestion}
                 style={style}
                 includeRefAnswer={includeRefAnswer}
-                apiKey={apiKey}
-                model={anthropicModel}
+                apiKey={sessionApiKey}
+                model={sessionModel}
+                llmProvider={aiSettings.provider}
                 elevenLabsApiKey={elevenLabsApiKey}
               />
             )}
