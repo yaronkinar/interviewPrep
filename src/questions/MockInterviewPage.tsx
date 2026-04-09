@@ -21,7 +21,7 @@ import { useLocale } from '../i18n/LocaleContext'
 import ApiKeySettings, { type AiSettingsSnapshot } from './ApiKeySettings'
 import ChatMarkdown from './ChatMarkdown'
 import { DEFAULT_ANTHROPIC_MODEL } from './anthropicConstants'
-import { DEFAULT_GEMINI_MODEL } from './geminiConstants'
+import { DEFAULT_GEMINI_MODEL, readDefaultGeminiKeyFromEnv } from './geminiConstants'
 import { DEFAULT_OPENAI_MODEL } from './openaiConstants'
 import type { LlmProvider } from './llmConstants'
 import { formatApiError, streamLlmChat } from './llmStream'
@@ -37,10 +37,22 @@ import {
 } from './mockInterviewPrompts'
 import {
   describeMockTimeBudget,
+  formatClockHms,
   formatCountdown,
   formatDurationLabel,
   getMockTimeLimitSeconds,
 } from './mockInterviewTimer'
+import {
+  Brain,
+  Code2,
+  MessageSquare,
+  Mic,
+  Play,
+  Plug,
+  Send,
+  Terminal,
+  User,
+} from 'lucide-react'
 import { buildMockCodeReviewStarter } from './mockCodeStarter'
 import { useSpeechDictation } from './useSpeechDictation'
 import { useInterviewerSpeech } from './useInterviewerSpeech'
@@ -51,12 +63,41 @@ import {
   pickFemaleVoice,
 } from './ttsVoiceUtils'
 import { DEFAULT_ELEVENLABS_VOICE_ID, ELEVENLABS_VOICES } from './elevenlabsVoices'
+import { readDefaultGoogleCloudTtsKeyFromEnv } from './googleCloudTtsConstants'
+import {
+  DEFAULT_GOOGLE_CLOUD_TTS_VOICE_NAME,
+  GOOGLE_CLOUD_TTS_VOICES,
+} from './googleCloudTtsVoices'
 import ScreenHeader from '../components/layout/ScreenHeader'
 import FilterRow from '../components/filters/FilterRow'
 import FilterChip from '../components/filters/FilterChip'
 import FilterSearchBar from '../components/filters/FilterSearchBar'
 
 const VsCodeStyleEditor = lazy(() => import('./VsCodeStyleEditor'))
+
+/** Renders plain text with https URLs turned into links (voice / TTS status lines). */
+function TextWithAutoLinks({ text }: { text: string }) {
+  const segments = text.split(/(https?:\/\/[^\s]+)/g)
+  return (
+    <>
+      {segments.map((segment, i) =>
+        /^https?:\/\//.test(segment) ? (
+          <a
+            key={i}
+            href={segment}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mock-voice-status-link"
+          >
+            {segment}
+          </a>
+        ) : (
+          <span key={i}>{segment}</span>
+        ),
+      )}
+    </>
+  )
+}
 
 function mockStyleUsesCodeEditor(s: MockTrainingStyle): boolean {
   return s === 'code_review' || s === 'interviewer'
@@ -157,6 +198,8 @@ interface MockInterviewSessionProps {
   model: string
   llmProvider: LlmProvider
   elevenLabsApiKey: string
+  googleCloudTtsApiKey: string
+  geminiApiKey: string
 }
 
 function MockInterviewSession({
@@ -167,6 +210,8 @@ function MockInterviewSession({
   model,
   llmProvider,
   elevenLabsApiKey,
+  googleCloudTtsApiKey,
+  geminiApiKey,
 }: MockInterviewSessionProps) {
   const { locale } = useLocale()
   const [messages, setMessages] = useState<ChatMessage[]>([])
@@ -183,6 +228,7 @@ function MockInterviewSession({
   const autoStartLockRef = useRef(false)
   const streamGenerationRef = useRef(0)
   const chatLogRef = useRef<HTMLDivElement>(null)
+  const composeRef = useRef<HTMLTextAreaElement>(null)
 
   const speechDisabled = !apiKey.trim() || loading
   const speech = useSpeechDictation({
@@ -194,8 +240,9 @@ function MockInterviewSession({
   const [speakInterviewer, setSpeakInterviewer] = useState(() => style === 'interviewer')
   const [ttsVoices, setTtsVoices] = useState<SpeechSynthesisVoice[]>([])
   const [selectedVoiceURI, setSelectedVoiceURI] = useState<string>('')
-  const [voiceEngine, setVoiceEngine] = useState<'browser' | 'elevenlabs'>('browser')
+  const [voiceEngine, setVoiceEngine] = useState<'browser' | 'elevenlabs' | 'google'>('browser')
   const [elevenLabsVoiceId, setElevenLabsVoiceId] = useState<string>(DEFAULT_ELEVENLABS_VOICE_ID)
+  const [googleTtsVoiceName, setGoogleTtsVoiceName] = useState<string>(DEFAULT_GOOGLE_CLOUD_TTS_VOICE_NAME)
   const [speechRate, setSpeechRate] = useState(0.95)
   const [disableBrowserFallback, setDisableBrowserFallback] = useState(false)
   const [voiceAvailability, setVoiceAvailability] = useState<Record<string, VoiceAvailability>>({})
@@ -204,6 +251,7 @@ function MockInterviewSession({
     stop: stopInterviewerSpeech,
     supported: interviewerTtsSupported,
     elevenlabsEnabled,
+    googleCloudTtsEnabled,
     speaking: interviewerSpeaking,
     activeEngine,
     lastError: voiceStatus,
@@ -216,6 +264,9 @@ function MockInterviewSession({
     engine: voiceEngine,
     elevenlabsApiKey: elevenLabsApiKey,
     elevenlabsVoiceId: elevenLabsVoiceId,
+    googleCloudTtsApiKey,
+    geminiApiKeyForTtsFallback: geminiApiKey,
+    googleTtsVoiceName,
     speechRate,
     disableBrowserFallback,
   })
@@ -396,6 +447,34 @@ function MockInterviewSession({
     [apiKey, model, question, style, includeRefAnswer, locale, llmProvider],
   )
 
+  const kickoffInterview = useCallback(async () => {
+    if (!apiKey.trim() || loading) return
+    if (messages.length > 0) {
+      chatLogRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
+      composeRef.current?.focus()
+      return
+    }
+    if (mockStyleUsesAutoStart(style)) {
+      chatLogRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
+      composeRef.current?.focus()
+      return
+    }
+    setError(null)
+    const userTurn: ChatMessage = { role: 'user', content: "I'm ready to begin the interview." }
+    setMessages([userTurn])
+    setLoading(true)
+    setStreaming('')
+    try {
+      await runStreamTurn([userTurn])
+    } catch (e) {
+      setError(formatApiError(e))
+      setStreaming('')
+      setMessages([])
+    } finally {
+      setLoading(false)
+    }
+  }, [apiKey, loading, messages.length, style, runStreamTurn])
+
   useEffect(() => {
     if (!apiKey.trim() || !mockStyleUsesAutoStart(style)) return
     if (messages.length > 0 || loading || autoStartLockRef.current) return
@@ -481,425 +560,595 @@ function MockInterviewSession({
           ? 'Reply as the candidate: use the VS Code–style editor for code, optional notes for what you would say out loud. Claude stays in interviewer character. Turn on Speak Claude\'s replies to hear each reply (browser text-to-speech).'
           : 'Ask follow-ups to go deeper on approach, trade-offs, or edge cases.'
 
-  const progressItems = [
-    'Introduction & Background',
-    question.title,
-    'Scaling the solution (current)',
-    'Complexity analysis',
-  ]
+  const modeLabel = MOCK_TRAINING_OPTIONS.find((opt) => opt.id === style)?.label ?? style
+  const localeLabel = locale === 'en' ? 'English (US)' : locale.toUpperCase()
+  const sessionClock = sessionStartedAt != null ? formatClockHms(elapsedSec) : '00:00:00'
+  const apiStable = Boolean(apiKey.trim()) && !error
+  const micLabel = !speech.supported ? 'Unavailable' : speech.listening ? 'Active' : 'Ready'
+  const micDotClass = !speech.supported
+    ? ' mis-status-dot--warn'
+    : speech.listening
+      ? ' mis-status-dot--on'
+      : ' mis-status-dot--idle'
 
-  return (
-    <div className="q-chat-panel mock-interview-session mockv2-session">
-      {!apiKey.trim() && (
-        <p className="q-chat-warn">Add an API key in AI settings above to start the mock session.</p>
-      )}
-      {apiKey.trim() && <p className="q-chat-auto-hint">{hint}</p>}
-
-      <div
-        className={`mock-session-timer${timeUp ? ' mock-session-timer--up' : ''}${timerUrgent ? ' mock-session-timer--urgent' : ''}`}
-        role="timer"
-        aria-live="polite"
-        aria-label={
-          sessionStartedAt == null
-            ? `Question time budget ${formatCountdown(timeLimitSec)}`
-            : timeUp
-              ? 'Time is up'
-              : `${formatCountdown(remainingSec)} remaining of ${formatCountdown(timeLimitSec)}`
-        }
-      >
-        <span className="mock-session-timer-label">Question timer</span>
-        <span className="mock-session-timer-budget">
-          Budget <strong>{formatDurationLabel(timeLimitSec)}</strong>
-          <span className="mock-session-timer-meta">({describeMockTimeBudget(question)})</span>
-        </span>
-        {sessionStartedAt != null ? (
-          <span className="mock-session-timer-remaining">
-            {timeUp ? (
-              <span className="mock-session-timer-zero">Time&apos;s up</span>
-            ) : (
-              <>
-                <span className="mock-session-timer-digits">{formatCountdown(remainingSec)}</span>
-                <span className="mock-session-timer-sub">left</span>
-              </>
-            )}
-          </span>
-        ) : (
-          <span className="mock-session-timer-idle">Starts when the thread begins</span>
-        )}
-      </div>
-      {timeUp && (
-        <p className="mock-session-timer-banner">
-          Budget used for this question—you can keep chatting or <strong>Reset session</strong> for a fresh timer.
+  const voiceAdvanced = (
+    <>
+      {!speech.supported && (
+        <p className="mock-voice-unavailable">
+          Voice-to-text is not available in this browser. Try Chrome, Edge, or Safari.
         </p>
       )}
-
-      <div className="q-chat-actions-top">
-        <button
-          type="button"
-          className="secondary"
-          onClick={clearThread}
-          disabled={messages.length === 0 && !streaming && !error}
-        >
-          Reset session
-        </button>
-      </div>
-
-      <div className="mockv2-session-grid">
-        <section className="mockv2-panel mockv2-panel--context">
-          <h3 className="mockv2-panel-title">Session context</h3>
-          <div className="mockv2-context-list">
-            <div className="mockv2-context-row">
-              <span className="mockv2-context-key">Target role</span>
-              <span className="mockv2-context-val">Frontend Engineer (Interview focus)</span>
-            </div>
-            <div className="mockv2-context-row">
-              <span className="mockv2-context-key">Question</span>
-              <span className="mockv2-context-val">{question.title}</span>
-            </div>
-            <div className="mockv2-context-row">
-              <span className="mockv2-context-key">Mode</span>
-              <span className="mockv2-context-val">
-                {MOCK_TRAINING_OPTIONS.find((opt) => opt.id === style)?.label ?? style}
-              </span>
-            </div>
-          </div>
-        </section>
-
-        <section className="mockv2-panel mockv2-panel--progress">
-          <h3 className="mockv2-panel-title">Interview progress</h3>
-          <div className="mockv2-progress-track" aria-hidden />
-          <ul className="mockv2-progress-list">
-            {progressItems.map((item, idx) => (
-              <li
-                key={item}
-                className={`mockv2-progress-item${
-                  idx < 2 ? ' done' : idx === 2 ? ' current' : ''
-                }`}
+      {(speech.supported || interviewerTtsSupported) && (
+        <div className="mock-voice-toolbar mis-voice-toolbar-inner">
+          {speech.supported && (
+            <>
+              <button
+                type="button"
+                className={`secondary mock-voice-btn${speech.listening ? ' mock-voice-btn--active' : ''}`}
+                onClick={() => {
+                  speech.clearError()
+                  speech.toggle()
+                }}
+                disabled={speechDisabled}
+                aria-pressed={speech.listening}
+                title={
+                  speech.listening
+                    ? 'Stop voice input'
+                    : 'Dictate with your microphone (browser speech-to-text)'
+                }
               >
-                {item}
-              </li>
-            ))}
-          </ul>
-        </section>
-      </div>
-
-      <div className="mockv2-transcript-head">
-        <span>Live transcript</span>
-        <span className="mockv2-live-pill">Live</span>
-      </div>
-      <div ref={chatLogRef} className="q-chat-log mockv2-transcript-log" aria-live="polite">
-        {messages.map((m, i) => (
-          <div key={i} className={`q-chat-bubble q-chat-bubble--${m.role}`}>
-            <span className="q-chat-role">{m.role === 'user' ? 'You' : 'Claude'}</span>
-            {m.role === 'assistant' ? (
-              <ChatMarkdown content={m.content} />
-            ) : (
-              <div className="q-chat-text">{m.content}</div>
-            )}
-          </div>
-        ))}
-        {(streaming || loading) && (
-          <div className="q-chat-bubble q-chat-bubble--assistant">
-            <span className="q-chat-role">Claude</span>
-            {streaming ? (
-              <ChatMarkdown content={streaming} />
-            ) : (
-              <div className="q-chat-text">
-                <span className="q-chat-typing">…</span>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-      {error && <div className="q-chat-error">{error}</div>}
-      <div className="q-chat-compose mockv2-compose">
-        {!speech.supported && (
-          <p className="mock-voice-unavailable">
-            Voice-to-text is not available in this browser. Try Chrome, Edge, or Safari.
-          </p>
-        )}
-        {(speech.supported || interviewerTtsSupported) && (
-          <div className="mock-voice-toolbar">
-            {speech.supported && (
-              <>
-                <button
-                  type="button"
-                  className={`secondary mock-voice-btn${speech.listening ? ' mock-voice-btn--active' : ''}`}
-                  onClick={() => {
-                    speech.clearError()
-                    speech.toggle()
-                  }}
-                  disabled={speechDisabled}
-                  aria-pressed={speech.listening}
-                  title={
-                    speech.listening
-                      ? 'Stop voice input'
-                      : 'Dictate with your microphone (browser speech-to-text)'
-                  }
-                >
-                  {speech.listening ? 'Stop voice' : 'Voice'}
-                </button>
-                {speech.listening && (
-                  <span className="mock-voice-live">Listening… speak now</span>
-                )}
-                {speech.error && (
-                  <span className="mock-voice-err" role="alert">
-                    {speech.error}{' '}
-                    <button type="button" className="mock-voice-dismiss" onClick={speech.clearError}>
-                      Dismiss
-                    </button>
-                  </span>
-                )}
-              </>
-            )}
-            {interviewerTtsSupported && (
-              <>
-                <div className="mock-voice-engine-row" role="radiogroup" aria-label="Voice engine">
-                  <span className="mock-voice-select-label">Voice engine</span>
-                  <label className="mock-voice-tts-label">
-                    <input
-                      type="radio"
-                      name="mock-voice-engine"
-                      checked={voiceEngine === 'browser'}
-                      onChange={() => {
-                        setVoiceEngine('browser')
-                        stopInterviewerSpeech()
-                      }}
-                    />
-                    Browser
-                  </label>
-                  <label className="mock-voice-tts-label">
-                    <input
-                      type="radio"
-                      name="mock-voice-engine"
-                      checked={voiceEngine === 'elevenlabs'}
-                      onChange={() => {
-                        setVoiceEngine('elevenlabs')
-                        stopInterviewerSpeech()
-                      }}
-                    />
-                    ElevenLabs {elevenlabsEnabled ? '' : '(fallback active)'}
-                  </label>
-                </div>
-                <label className="mock-voice-rate">
-                  <span className="mock-voice-select-label">Voice speed: {speechRate.toFixed(2)}x</span>
-                  <input
-                    type="range"
-                    min={0.8}
-                    max={1.15}
-                    step={0.05}
-                    value={speechRate}
-                    onChange={(e) => setSpeechRate(Number(e.target.value))}
-                  />
-                </label>
-                {voiceEngine === 'elevenlabs' && (
-                  <label className="mock-voice-tts-label">
-                    <input
-                      type="checkbox"
-                      checked={disableBrowserFallback}
-                      onChange={(e) => setDisableBrowserFallback(e.target.checked)}
-                    />
-                    Force ElevenLabs only (no fallback)
-                  </label>
-                )}
-                <span className="mock-voice-engine-status">
-                  Active engine: <strong>{activeEngine}</strong>
+                {speech.listening ? 'Stop voice' : 'Voice'}
+              </button>
+              {speech.listening && <span className="mock-voice-live">Listening… speak now</span>}
+              {speech.error && (
+                <span className="mock-voice-err" role="alert">
+                  {speech.error}{' '}
+                  <button type="button" className="mock-voice-dismiss" onClick={speech.clearError}>
+                    Dismiss
+                  </button>
                 </span>
+              )}
+            </>
+          )}
+          {interviewerTtsSupported && (
+            <>
+              <div className="mock-voice-engine-row" role="radiogroup" aria-label="Voice engine">
+                <span className="mock-voice-select-label">Voice engine</span>
+                <label className="mock-voice-tts-label">
+                  <input
+                    type="radio"
+                    name="mock-voice-engine"
+                    checked={voiceEngine === 'browser'}
+                    onChange={() => {
+                      setVoiceEngine('browser')
+                      stopInterviewerSpeech()
+                    }}
+                  />
+                  Browser
+                </label>
+                <label className="mock-voice-tts-label">
+                  <input
+                    type="radio"
+                    name="mock-voice-engine"
+                    checked={voiceEngine === 'elevenlabs'}
+                    onChange={() => {
+                      setVoiceEngine('elevenlabs')
+                      stopInterviewerSpeech()
+                    }}
+                  />
+                  ElevenLabs {elevenlabsEnabled ? '' : '(fallback active)'}
+                </label>
+                <label className="mock-voice-tts-label">
+                  <input
+                    type="radio"
+                    name="mock-voice-engine"
+                    checked={voiceEngine === 'google'}
+                    onChange={() => {
+                      setVoiceEngine('google')
+                      stopInterviewerSpeech()
+                    }}
+                  />
+                  Google Cloud TTS {googleCloudTtsEnabled ? '' : '(fallback active)'}
+                </label>
+              </div>
+              <label className="mock-voice-rate">
+                <span className="mock-voice-select-label">Voice speed: {speechRate.toFixed(2)}x</span>
+                <input
+                  type="range"
+                  min={0.8}
+                  max={1.15}
+                  step={0.05}
+                  value={speechRate}
+                  onChange={(e) => setSpeechRate(Number(e.target.value))}
+                />
+              </label>
+              {(voiceEngine === 'elevenlabs' || voiceEngine === 'google') && (
                 <label className="mock-voice-tts-label">
                   <input
                     type="checkbox"
-                    checked={speakInterviewer}
-                    onChange={(e) => {
-                      setSpeakInterviewer(e.target.checked)
-                      if (!e.target.checked) stopInterviewerSpeech()
-                    }}
-                    disabled={!apiKey.trim()}
+                    checked={disableBrowserFallback}
+                    onChange={(e) => setDisableBrowserFallback(e.target.checked)}
                   />
-                  Speak Claude&apos;s replies
+                  Force cloud voice only (no browser fallback)
                 </label>
-                {speakInterviewer && voiceEngine === 'browser' && ttsVoices.length > 0 && (
-                  <label className="mock-voice-select-wrap">
-                    <span className="mock-voice-select-label">Voice</span>
-                    <select
-                      className="mock-voice-select"
-                      value={selectedVoiceURI}
-                      onChange={(e) => setSelectedVoiceURI(e.target.value)}
-                    >
-                      {ttsVoices.map((v) => (
-                        <option key={v.voiceURI} value={v.voiceURI}>
-                          {labelVoiceOption(v, isLikelyFemaleVoice(v))}
-                        </option>
-                      ))}
-                    </select>
-                    <button
-                      type="button"
-                      className="secondary mock-voice-woman-btn"
-                      disabled={!womanVoiceAvailable}
-                      title={
-                        womanVoiceAvailable
-                          ? 'Pick a woman voice if your system exposes one (name-based guess)'
-                          : 'No woman-labelled voice detected — choose from the list or install OS voices'
-                      }
-                      onClick={() => {
-                        const v = pickFemaleVoice(ttsVoices, navigator.language)
-                        if (v) setSelectedVoiceURI(v.voiceURI)
-                      }}
-                    >
-                      Woman voice
-                    </button>
-                  </label>
-                )}
-                {speakInterviewer && voiceEngine === 'elevenlabs' && (
-                  <div className="mock-voice-elevenlabs-picker">
-                    <div className="mock-voice-elevenlabs-head">
-                      <span className="mock-voice-select-label">Premium voices</span>
-                      {scanningVoices && (
-                        <span className="mock-voice-elevenlabs-fallback">Scanning voices available on your plan…</span>
-                      )}
-                      {!elevenlabsEnabled && (
-                        <span className="mock-voice-elevenlabs-fallback">
-                          Add ElevenLabs key in API settings to enable premium audio.
-                        </span>
-                      )}
-                    </div>
-                    <div className="mock-voice-avatar-grid">
-                      {(availableVoices.length > 0 ? availableVoices : ELEVENLABS_VOICES).map((voice) => (
-                        <button
-                          key={voice.id}
-                          type="button"
-                          className={`mock-voice-avatar-card${
-                            elevenLabsVoiceId === voice.id ? ' mock-voice-avatar-card--active' : ''
-                          }${voice.requiresPaidPlan ? ' mock-voice-avatar-card--locked' : ''}`}
-                          onClick={() => {
-                            if (voice.requiresPaidPlan) return
-                            setElevenLabsVoiceId(voice.id)
-                          }}
-                          disabled={Boolean(voice.requiresPaidPlan)}
-                          title={
-                            voice.requiresPaidPlan
-                              ? 'Paid ElevenLabs plan required for API usage'
-                              : undefined
-                          }
-                        >
-                          <img src={voice.avatarPath} alt={`${voice.name} voice avatar`} />
-                          <span className="mock-voice-avatar-name">{voice.name}</span>
-                          <span className="mock-voice-avatar-meta">{voice.accent} - {voice.vibe}</span>
-                          {voice.requiresPaidPlan && (
-                            <span className="mock-voice-avatar-badge">Paid plan required</span>
-                          )}
-                        </button>
-                      ))}
-                    </div>
-                    <div className="mock-voice-selected">
-                      Selected: <strong>{selectedElevenLabsVoice.name}</strong> ({selectedElevenLabsVoice.vibe})
-                    </div>
-                  </div>
-                )}
-                {speakInterviewer && (
-                  <button
-                    type="button"
-                    className="secondary"
-                    onClick={() =>
-                      speakPreview(
-                        'This is a voice test. I will guide you through your interview answer with concise feedback.',
-                      )
-                    }
-                    disabled={!apiKey.trim()}
-                  >
-                    Play sample
-                  </button>
-                )}
-                {voiceEngine === 'elevenlabs' && (
-                  <button
-                    type="button"
-                    className="secondary"
-                    onClick={() => void diagnoseVoice()}
-                    disabled={!apiKey.trim()}
-                  >
-                    Diagnose voice
-                  </button>
-                )}
-                {interviewerSpeaking && (
-                  <button
-                    type="button"
-                    className="secondary mock-voice-btn mock-voice-btn--active"
-                    onClick={() => stopInterviewerSpeech()}
-                    title="Stop reading the reply aloud"
-                  >
-                    Stop speech
-                  </button>
-                )}
-              </>
-            )}
-          </div>
-        )}
-        {voiceStatus && <p className="mock-voice-status">{voiceStatus}</p>}
-        {mockStyleUsesCodeEditor(style) ? (
-          <>
-            <Suspense
-              fallback={
-                <div className="vscode-chrome vscode-chrome--loading" aria-busy>
-                  Loading editor…
-                </div>
-              }
-            >
-              <VsCodeStyleEditor
-                question={question}
-                value={codeDraft}
-                onChange={setCodeDraft}
-                height="min(42vh, 360px)"
-                windowTitle={
-                  style === 'code_review' ? 'Mock interview — code' : 'Mock interview — interviewer'
-                }
-              />
-            </Suspense>
-            <label className="mock-code-notes-label">
-              <span className="mock-code-notes-title">
-                {style === 'code_review' ? 'Notes (optional)' : 'Verbal notes (optional)'}
+              )}
+              <span className="mock-voice-engine-status">
+                Active engine: <strong>{activeEngine}</strong>
               </span>
-              <textarea
-                className="q-chat-input mock-interview-compose mock-code-notes-input"
-                rows={3}
-                placeholder={composePlaceholder}
-                value={input}
-                onChange={(e) => speech.onControlledInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey && (e.metaKey || e.ctrlKey)) {
+              <label className="mock-voice-tts-label">
+                <input
+                  type="checkbox"
+                  checked={speakInterviewer}
+                  onChange={(e) => {
+                    setSpeakInterviewer(e.target.checked)
+                    if (!e.target.checked) stopInterviewerSpeech()
+                  }}
+                  disabled={!apiKey.trim()}
+                />
+                Speak Claude&apos;s replies
+              </label>
+              {speakInterviewer && voiceEngine === 'browser' && ttsVoices.length > 0 && (
+                <label className="mock-voice-select-wrap">
+                  <span className="mock-voice-select-label">Voice</span>
+                  <select
+                    className="mock-voice-select"
+                    value={selectedVoiceURI}
+                    onChange={(e) => setSelectedVoiceURI(e.target.value)}
+                  >
+                    {ttsVoices.map((v) => (
+                      <option key={v.voiceURI} value={v.voiceURI}>
+                        {labelVoiceOption(v, isLikelyFemaleVoice(v))}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    className="secondary mock-voice-woman-btn"
+                    disabled={!womanVoiceAvailable}
+                    title={
+                      womanVoiceAvailable
+                        ? 'Pick a woman voice if your system exposes one (name-based guess)'
+                        : 'No woman-labelled voice detected — choose from the list or install OS voices'
+                    }
+                    onClick={() => {
+                      const v = pickFemaleVoice(ttsVoices, navigator.language)
+                      if (v) setSelectedVoiceURI(v.voiceURI)
+                    }}
+                  >
+                    Woman voice
+                  </button>
+                </label>
+              )}
+              {speakInterviewer && voiceEngine === 'google' && (
+                <label className="mock-voice-select-wrap">
+                  <span className="mock-voice-select-label">Google Neural2 voice</span>
+                  <select
+                    className="mock-voice-select"
+                    value={googleTtsVoiceName}
+                    onChange={(e) => setGoogleTtsVoiceName(e.target.value)}
+                  >
+                    {GOOGLE_CLOUD_TTS_VOICES.map((v) => (
+                      <option key={v.name} value={v.name}>
+                        {v.label}
+                      </option>
+                    ))}
+                  </select>
+                  {!googleCloudTtsEnabled && (
+                    <span className="mock-voice-elevenlabs-fallback">
+                      Add a Google Cloud TTS key in AI settings, or a Gemini key if your Google Cloud project has Cloud
+                      Text-to-Speech enabled on that key. Keys sync to the session as you type.
+                    </span>
+                  )}
+                </label>
+              )}
+              {speakInterviewer && voiceEngine === 'elevenlabs' && (
+                <div className="mock-voice-elevenlabs-picker">
+                  <div className="mock-voice-elevenlabs-head">
+                    <span className="mock-voice-select-label">Premium voices</span>
+                    {scanningVoices && (
+                      <span className="mock-voice-elevenlabs-fallback">Scanning voices available on your plan…</span>
+                    )}
+                    {!elevenlabsEnabled && (
+                      <span className="mock-voice-elevenlabs-fallback">
+                        Add ElevenLabs key in API settings to enable premium audio.
+                      </span>
+                    )}
+                  </div>
+                  <div className="mock-voice-avatar-grid">
+                    {(availableVoices.length > 0 ? availableVoices : ELEVENLABS_VOICES).map((voice) => (
+                      <button
+                        key={voice.id}
+                        type="button"
+                        className={`mock-voice-avatar-card${
+                          elevenLabsVoiceId === voice.id ? ' mock-voice-avatar-card--active' : ''
+                        }${voice.requiresPaidPlan ? ' mock-voice-avatar-card--locked' : ''}`}
+                        onClick={() => {
+                          if (voice.requiresPaidPlan) return
+                          setElevenLabsVoiceId(voice.id)
+                        }}
+                        disabled={Boolean(voice.requiresPaidPlan)}
+                        title={
+                          voice.requiresPaidPlan
+                            ? 'Paid ElevenLabs plan required for API usage'
+                            : undefined
+                        }
+                      >
+                        <img src={voice.avatarPath} alt={`${voice.name} voice avatar`} />
+                        <span className="mock-voice-avatar-name">{voice.name}</span>
+                        <span className="mock-voice-avatar-meta">
+                          {voice.accent} - {voice.vibe}
+                        </span>
+                        {voice.requiresPaidPlan && (
+                          <span className="mock-voice-avatar-badge">Paid plan required</span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="mock-voice-selected">
+                    Selected: <strong>{selectedElevenLabsVoice.name}</strong> ({selectedElevenLabsVoice.vibe})
+                  </div>
+                </div>
+              )}
+              {speakInterviewer && (
+                <button
+                  type="button"
+                  className="secondary"
+                  onClick={() =>
+                    speakPreview(
+                      'This is a voice test. I will guide you through your interview answer with concise feedback.',
+                    )
+                  }
+                  disabled={!apiKey.trim()}
+                >
+                  Play sample
+                </button>
+              )}
+              {(voiceEngine === 'elevenlabs' || voiceEngine === 'google') && (
+                <button
+                  type="button"
+                  className="secondary"
+                  onClick={() => void diagnoseVoice()}
+                  disabled={!apiKey.trim()}
+                >
+                  Diagnose voice
+                </button>
+              )}
+              {interviewerSpeaking && (
+                <button
+                  type="button"
+                  className="secondary mock-voice-btn mock-voice-btn--active"
+                  onClick={() => stopInterviewerSpeech()}
+                  title="Stop reading the reply aloud"
+                >
+                  Stop speech
+                </button>
+              )}
+            </>
+          )}
+        </div>
+      )}
+      {voiceStatus && (
+        <p className="mock-voice-status">
+          <TextWithAutoLinks text={voiceStatus} />
+        </p>
+      )}
+    </>
+  )
+
+  return (
+    <div className="q-chat-panel mock-interview-session mockv2-session mis-root">
+      {!apiKey.trim() && (
+        <p className="q-chat-warn mis-warn">Add an API key in AI settings above to start the mock session.</p>
+      )}
+      {apiKey.trim() && <p className="q-chat-auto-hint mis-hint">{hint}</p>}
+
+      <header className="mis-session-chrome">
+        <div className="mis-session-chrome-inner">
+          <div className="mis-locale-chip" aria-hidden>
+            <span className="mis-locale-chip-label">{localeLabel}</span>
+          </div>
+          <div
+            className={`mis-session-timer-block${timeUp ? ' mis-session-timer-block--up' : ''}${timerUrgent && !timeUp ? ' mis-session-timer-block--urgent' : ''}`}
+            role="timer"
+            aria-live="polite"
+            aria-label={
+              sessionStartedAt == null
+                ? `Question time budget ${formatCountdown(timeLimitSec)}`
+                : timeUp
+                  ? 'Time is up'
+                  : `${formatCountdown(remainingSec)} remaining of ${formatCountdown(timeLimitSec)}`
+            }
+          >
+            <span className="mis-session-timer-kicker">Question timer</span>
+            <span className="mis-session-timer-clock">{sessionClock}</span>
+            <span className="mis-session-timer-budget-inline" title={describeMockTimeBudget(question)}>
+              {timeUp ? (
+                <span>Time&apos;s up · budget {formatCountdown(timeLimitSec)}</span>
+              ) : sessionStartedAt != null ? (
+                <span>
+                  <strong>{formatCountdown(remainingSec)}</strong> left · budget{' '}
+                  <strong>{formatCountdown(timeLimitSec)}</strong>
+                </span>
+              ) : (
+                <span>
+                  Budget <strong>{formatDurationLabel(timeLimitSec)}</strong>
+                  <span className="mis-session-timer-meta"> ({describeMockTimeBudget(question)})</span>
+                </span>
+              )}
+            </span>
+          </div>
+          <button type="button" className="mis-btn-end" onClick={clearThread}>
+            Reset session
+          </button>
+        </div>
+      </header>
+
+      {timeUp && (
+        <p className="mis-timeup-banner">
+          Budget used for this question—you can keep chatting or reset for a fresh timer.
+        </p>
+      )}
+
+      <div className="mis-layout">
+        <div className="mis-col mis-col--left">
+          <section className="mis-card">
+            <h2 className="mis-card-title">Session context</h2>
+            <div className="mis-setup-rows">
+              <div className="mis-setup-row">
+                <span className="mis-setup-key">Target role</span>
+                <span className="mis-setup-pill mis-setup-pill--wide">Frontend Engineer (Interview focus)</span>
+              </div>
+              <div className="mis-setup-row mis-setup-row--stack">
+                <span className="mis-setup-key">Question</span>
+                <span className="mis-setup-val">{question.title}</span>
+              </div>
+              <div className="mis-setup-row">
+                <span className="mis-setup-key">Mode</span>
+                <span className="mis-setup-pill">{modeLabel}</span>
+              </div>
+            </div>
+            <div className="mis-setup-actions">
+              <button
+                type="button"
+                className="mis-btn-primary"
+                onClick={() => void kickoffInterview()}
+                disabled={!apiKey.trim() || loading}
+              >
+                Start session
+              </button>
+              <button
+                type="button"
+                className="mis-btn-secondary"
+                onClick={clearThread}
+                disabled={messages.length === 0 && !streaming && !error}
+              >
+                Reset session
+              </button>
+            </div>
+          </section>
+
+          <section className="mis-card">
+            <h2 className="mis-card-title">Voice &amp; AI</h2>
+            <div className="mis-status-rows">
+              <div className="mis-status-row">
+                <div className="mis-status-left">
+                  <Mic className="mis-status-icon" aria-hidden strokeWidth={2} size={20} />
+                  <span className="mis-status-label">Microphone</span>
+                </div>
+                <div className="mis-status-right">
+                  <span className={`mis-status-dot${micDotClass}`} />
+                  <span className="mis-status-tag">{micLabel}</span>
+                </div>
+              </div>
+              <div className="mis-status-row">
+                <div className="mis-status-left">
+                  <Plug className="mis-status-icon" aria-hidden strokeWidth={2} size={20} />
+                  <span className="mis-status-label">API connection</span>
+                </div>
+                <div className="mis-status-right">
+                  <span className={`mis-status-dot${apiStable ? ' mis-status-dot--on' : ' mis-status-dot--warn'}`} />
+                  <span className="mis-status-tag">{apiStable ? 'Stable' : apiKey.trim() ? 'Error' : 'Key needed'}</span>
+                </div>
+              </div>
+            </div>
+            <div
+              className={`mis-audio-orb${loading || interviewerSpeaking ? ' mis-audio-orb--pulse' : ''}`}
+              aria-hidden
+            >
+              <span className="mis-audio-orb-inner" />
+            </div>
+          </section>
+
+          <details className="mis-voice-details">
+            <summary>Voice &amp; speech settings</summary>
+            {voiceAdvanced}
+          </details>
+        </div>
+
+        <div className="mis-col mis-col--right">
+          <section className="mis-transcript-shell">
+            <div className="mis-transcript-head">
+              <div className="mis-transcript-head-left">
+                <MessageSquare className="mis-transcript-head-icon" aria-hidden size={20} strokeWidth={2} />
+                <h3 className="mis-transcript-title">Live transcript</h3>
+              </div>
+              <span className="mis-live-pill">Live</span>
+            </div>
+            <div ref={chatLogRef} className="q-chat-log mis-transcript-log" aria-live="polite">
+              {messages.map((m, i) => (
+                <div
+                  key={i}
+                  className={`mis-msg${m.role === 'user' ? ' mis-msg--user' : ' mis-msg--assistant'}`}
+                >
+                  <div className="mis-msg-avatar" aria-hidden>
+                    {m.role === 'user' ? (
+                      <User size={20} strokeWidth={2} />
+                    ) : (
+                      <Brain size={20} strokeWidth={2} />
+                    )}
+                  </div>
+                  <div className={`mis-msg-bubble q-chat-bubble q-chat-bubble--${m.role}`}>
+                    <span className="q-chat-role mis-msg-role">
+                      {m.role === 'user' ? 'You' : 'Claude'}
+                    </span>
+                    {m.role === 'assistant' ? (
+                      <ChatMarkdown content={m.content} />
+                    ) : (
+                      <div className="q-chat-text">{m.content}</div>
+                    )}
+                  </div>
+                </div>
+              ))}
+              {(streaming || loading) && (
+                <div className="mis-msg mis-msg--assistant">
+                  <div className="mis-msg-avatar" aria-hidden>
+                    <Brain size={20} strokeWidth={2} />
+                  </div>
+                  <div className="mis-msg-bubble q-chat-bubble q-chat-bubble--assistant">
+                    <span className="q-chat-role mis-msg-role">Claude</span>
+                    {streaming ? (
+                      <ChatMarkdown content={streaming} />
+                    ) : (
+                      <div className="q-chat-text">
+                        <span className="q-chat-typing">…</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+            <div className="mis-compose-wrap">
+              <div className="mis-compose-pill">
+                <textarea
+                  ref={composeRef}
+                  className="q-chat-input mis-compose-input"
+                  rows={mockStyleUsesCodeEditor(style) ? 2 : style === 'verbal_practice' ? 4 : 2}
+                  placeholder={composePlaceholder}
+                  value={input}
+                  onChange={(e) => speech.onControlledInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key !== 'Enter' || e.shiftKey) return
+                    if (mockStyleUsesCodeEditor(style)) {
+                      if (e.metaKey || e.ctrlKey) {
+                        e.preventDefault()
+                        void send()
+                      }
+                      return
+                    }
                     e.preventDefault()
                     void send()
-                  }
-                }}
-                disabled={!apiKey.trim() || loading}
-              />
-            </label>
-            <div className="mock-code-send-row">
-              <button type="button" className="secondary" onClick={() => void send()} disabled={!canSend}>
-                {style === 'code_review' ? 'Send for review' : 'Send reply'}
-              </button>
-              <span className="mock-code-send-hint">Tip: ⌃/⌘+Enter sends from the notes field.</span>
+                  }}
+                  disabled={!apiKey.trim() || loading}
+                />
+                <div className="mis-compose-actions">
+                  {speech.supported && (
+                    <button
+                      type="button"
+                      className={`mis-icon-btn${speech.listening ? ' mis-icon-btn--active' : ''}`}
+                      onClick={() => {
+                        speech.clearError()
+                        speech.toggle()
+                      }}
+                      disabled={speechDisabled}
+                      aria-pressed={speech.listening}
+                      title={
+                        speech.listening
+                          ? 'Stop voice input'
+                          : 'Dictate with your microphone (browser speech-to-text)'
+                      }
+                    >
+                      <Mic size={20} strokeWidth={2} />
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    className="mis-send-btn"
+                    onClick={() => void send()}
+                    disabled={!canSend}
+                    title="Send"
+                  >
+                    <Send size={20} strokeWidth={2} />
+                  </button>
+                </div>
+              </div>
+              {mockStyleUsesCodeEditor(style) && (
+                <p className="mis-compose-hint">Tip: ⌃/⌘+Enter sends from the notes field.</p>
+              )}
             </div>
-          </>
-        ) : (
-          <>
-            <textarea
-              className="q-chat-input mock-interview-compose"
-              rows={style === 'verbal_practice' ? 6 : 3}
-              placeholder={composePlaceholder}
-              value={input}
-              onChange={(e) => speech.onControlledInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault()
-                  void send()
-                }
-              }}
-              disabled={!apiKey.trim() || loading}
-            />
-            <button type="button" className="secondary" onClick={() => void send()} disabled={!canSend}>
-              Send
-            </button>
-          </>
-        )}
+          </section>
+
+          {error && <div className="q-chat-error mis-console-error">{error}</div>}
+
+          {mockStyleUsesCodeEditor(style) && (
+            <section className="mis-code-shell">
+              <div className="mis-code-head">
+                <div className="mis-code-head-left">
+                  <Code2 className="mis-code-head-icon" aria-hidden size={22} strokeWidth={2} />
+                  <div>
+                    <h3 className="mis-code-title">{question.title}</h3>
+                    <p className="mis-code-sub">
+                      {question.category} · {describeMockTimeBudget(question)}
+                    </p>
+                  </div>
+                </div>
+                <span className={`mis-diff-pill mis-diff-pill--${question.difficulty}`}>
+                  {question.difficulty}
+                </span>
+              </div>
+              <div className="mis-editor-wrap">
+                <Suspense
+                  fallback={
+                    <div className="vscode-chrome vscode-chrome--loading" aria-busy>
+                      Loading editor…
+                    </div>
+                  }
+                >
+                  <VsCodeStyleEditor
+                    question={question}
+                    value={codeDraft}
+                    onChange={setCodeDraft}
+                    height="min(42vh, 360px)"
+                    windowTitle={
+                      style === 'code_review' ? 'Mock interview — code' : 'Mock interview — interviewer'
+                    }
+                  />
+                </Suspense>
+                <div className="mis-editor-actions">
+                  <button
+                    type="button"
+                    className="mis-editor-fab"
+                    onClick={() => setCodeDraft(buildMockCodeReviewStarter(question))}
+                  >
+                    Reset
+                  </button>
+                  <button type="button" className="mis-editor-run" disabled title="Not available in this trainer">
+                    <Play size={18} strokeWidth={2} aria-hidden />
+                    Run tests
+                  </button>
+                </div>
+              </div>
+              <div className="mis-terminal">
+                <div className="mis-terminal-head">
+                  <Terminal size={16} strokeWidth={2} aria-hidden />
+                  <span>Output console</span>
+                </div>
+                <div className="mis-terminal-body">
+                  <p className="mis-terminal-muted">&gt; Editor ready. Send a message to get interviewer feedback.</p>
+                </div>
+              </div>
+            </section>
+          )}
+        </div>
+      </div>
+
+      <div className="mis-coach-float">
+        <div className="mis-coach-avatar" aria-hidden>
+          SJ
+        </div>
+        <div>
+          <p className="mis-coach-name">Sarah Jenkins</p>
+          <p className="mis-coach-meta">Senior Engineering Manager</p>
+        </div>
       </div>
     </div>
   )
@@ -921,12 +1170,13 @@ export default function MockInterviewPage() {
     provider: 'anthropic',
     anthropicApiKey: '',
     anthropicModel: DEFAULT_ANTHROPIC_MODEL,
-    geminiApiKey: '',
+    geminiApiKey: readDefaultGeminiKeyFromEnv(),
     geminiModel: DEFAULT_GEMINI_MODEL,
     openaiApiKey: '',
     openaiModel: DEFAULT_OPENAI_MODEL,
   }))
   const [elevenLabsApiKey, setElevenLabsApiKey] = useState('')
+  const [googleCloudTtsApiKey, setGoogleCloudTtsApiKey] = useState(() => readDefaultGoogleCloudTtsKeyFromEnv())
 
   const onAiSettingsChange = useCallback((s: AiSettingsSnapshot) => {
     setAiSettings(s)
@@ -1070,6 +1320,7 @@ export default function MockInterviewPage() {
             <ApiKeySettings
               onAiSettingsChange={onAiSettingsChange}
               onElevenLabsChange={setElevenLabsApiKey}
+              onGoogleCloudTtsChange={setGoogleCloudTtsApiKey}
             />
           </section>
 
@@ -1222,6 +1473,8 @@ export default function MockInterviewPage() {
                 model={sessionModel}
                 llmProvider={aiSettings.provider}
                 elevenLabsApiKey={elevenLabsApiKey}
+                googleCloudTtsApiKey={googleCloudTtsApiKey}
+                geminiApiKey={aiSettings.geminiApiKey}
               />
             )}
           </section>

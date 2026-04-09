@@ -27,6 +27,15 @@ export function formatCountdown(totalSeconds: number): string {
   return `${m}:${r.toString().padStart(2, '0')}`
 }
 
+/** Wall-clock style for session timers (e.g. 00:24:12). */
+export function formatClockHms(totalSeconds: number): string {
+  const s = Math.max(0, Math.floor(totalSeconds))
+  const h = Math.floor(s / 3600)
+  const m = Math.floor((s % 3600) / 60)
+  const r = s % 60
+  return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${r.toString().padStart(2, '0')}`
+}
+
 export function formatDurationLabel(totalSeconds: number): string {
   const m = Math.round(totalSeconds / 60)
   if (m < 60) return `${m} min`

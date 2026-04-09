@@ -149,14 +149,14 @@ export default function Sandbox() {
             beforeMount={beforeMount}
             onMount={(editor) => {
               editorRef.current = editor
-              editor.addCommand(
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                (window as any).monaco?.KeyMod.CtrlCmd | (window as any).monaco?.KeyCode.Enter ?? 2097,
-                run
-              )
+              const monacoGlobal = (window as { monaco?: { KeyMod: { CtrlCmd: number }; KeyCode: { Enter: number } } }).monaco
+              const keybinding = monacoGlobal
+                ? monacoGlobal.KeyMod.CtrlCmd | monacoGlobal.KeyCode.Enter
+                : 2097
+              editor.addCommand(keybinding, run)
+              editor.onDidFocusEditorWidget(() => setFocused(true))
+              editor.onDidBlurEditorWidget(() => setFocused(false))
             }}
-            onFocus={() => setFocused(true)}
-            onBlur={() => setFocused(false)}
             options={{
               fontSize: 13,
               fontFamily: "'Cascadia Code', 'Fira Code', 'Consolas', monospace",

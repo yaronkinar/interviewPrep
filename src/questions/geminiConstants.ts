@@ -1,3 +1,5 @@
+import { readViteGoogleDevApiKeyFromEnv } from './googleViteEnv'
+
 export const DEFAULT_GEMINI_MODEL = 'gemini-2.0-flash'
 
 export const GEMINI_API_KEY_SESSION_KEY = 'interviews:geminiApiKeySession'
@@ -13,8 +15,9 @@ export function normalizeGeminiModel(stored: string | null | undefined): string 
 /** Optional default from Vite env when the user has not saved a key in the browser. */
 export function readDefaultGeminiKeyFromEnv(): string {
   try {
-    const v = import.meta.env.VITE_GEMINI_API_KEY
-    return typeof v === 'string' && v.trim() ? v.trim() : ''
+    const g = import.meta.env.VITE_GEMINI_API_KEY
+    if (typeof g === 'string' && g.trim()) return g.trim()
+    return readViteGoogleDevApiKeyFromEnv()
   } catch {
     return ''
   }

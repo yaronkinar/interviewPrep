@@ -32,6 +32,6 @@ export function applyThemeToDocument(theme: Theme): void {
   document.documentElement.dataset.theme = theme
   const meta = document.querySelector('meta[name="theme-color"]')
   if (meta) {
-    meta.setAttribute('content', theme === 'light' ? '#f1f5f9' : '#0f1117')
+    meta.setAttribute('content', theme === 'light' ? '#f6fafe' : '#0c1222')
   }
 }

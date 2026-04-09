@@ -5,6 +5,8 @@ export type HomeStrings = {
   metaTitle: string
   heroTitle: string
   heroLead: string
+  /** Short hero chip above the title; omit in a locale to hide */
+  heroKicker?: string
   sectionAbout: string
   aboutBody: string
   sectionHow: string
@@ -44,6 +46,7 @@ const en: AppStrings = {
     heroTitle: 'Interview Prep',
     heroLead:
       'Practice JavaScript patterns, React concepts, company-style questions, and AI mock interviews — all in your browser.',
+    heroKicker: 'Browser-based interview practice',
     sectionAbout: 'What this site is',
     aboutBody:
       'This is a focused training ground for technical interviews. You can read and run interactive examples, try coding exercises in a sandbox, review company-specific Q&A, and run a voice-friendly mock interview powered by Claude when you add your API key.',

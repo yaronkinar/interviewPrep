@@ -9,9 +9,9 @@ export default function ReactSandboxPage() {
   const ui = getUiStrings(locale)
 
   return (
-    <div className="editorial-page">
-      <ScreenHeader title={ui.pages.sandboxTitle} lead={ui.pages.sandboxLead} />
-      <section className="editorial-panel editorial-panel--tight">
+    <div className="editorial-page editorial-page--sandbox">
+      <ScreenHeader title={ui.pages.sandboxTitle} lead={ui.pages.sandboxLead} className="screen-header--stitch-sandbox" />
+      <section className="editorial-panel editorial-panel--tight sandbox-code-shell">
         <ContentSection className="content-section--tight editorial-content">
           <div className="sandbox-page-body">
             <ChatReactPreview />

@@ -1,2 +1,4 @@
 node_modules/
 dist/
+design/stitch/
+.env

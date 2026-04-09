@@ -18,3 +18,13 @@ export const ANTHROPIC_API_KEY_LOCAL_KEY = 'interviews:anthropicApiKeyLocal'
 export const ANTHROPIC_KEY_PERSIST_MODE_KEY = 'interviews:anthropicKeyPersist' // 'session' | 'local'
 
 export const ANTHROPIC_MODEL_STORAGE_KEY = 'interviews:anthropicModel'
+
+/** Optional default from Vite env when the user has not saved a key in the browser. */
+export function readDefaultAnthropicKeyFromEnv(): string {
+  try {
+    const v = import.meta.env.VITE_ANTHROPIC_API_KEY
+    return typeof v === 'string' && v.trim() ? v.trim() : ''
+  } catch {
+    return ''
+  }
+}

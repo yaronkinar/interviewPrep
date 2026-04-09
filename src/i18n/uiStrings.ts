@@ -44,6 +44,9 @@ type UiStrings = {
     solveGuideTitle: string
     solveGuideSteps: string[]
     searchPlaceholder: string
+    clearSearch: string
+    /** Shown above a contextual excerpt when the questions list is filtered by search */
+    searchMatchPreviewLabel: string
     clearFilters: string
     questionsCountSuffix: string
     customCountSuffix: string
@@ -51,6 +54,50 @@ type UiStrings = {
     difficulty: string
     category: string
     emptyState: string
+    /** Company Q&A (Stitch) hero + sidebar */
+    heroKicker: string
+    heroLead: string
+    sidebarPartnersTitle: string
+    sidebarTopicsTitle: string
+    featuredPrefix: string
+    /** Use {count} for number of questions */
+    viewAllQuestionsCta: string
+    /** Search rail (Stitch Company Q&A) */
+    toolbarAllCategories: string
+    toolbarRecent: string
+    toolbarSearch: string
+    archivedSolution: string
+    revealFull: string
+    collapseCard: string
+    /** React Questions Stitch list (editorial cards + rail) */
+    heroTitleLine1: string
+    companyTagsLabel: string
+    filterDifficultyAll: string
+    difficultyFoundational: string
+    difficultyIntermediate: string
+    difficultyArchitectural: string
+    filterCategoryPlaceholder: string
+    filterCategoryAll: string
+    filterCompanyAll: string
+    /** Use {count} */
+    displayingQuestions: string
+    thinkingProcessLabel: string
+    editorialExplanationLabel: string
+    saveQuestion: string
+    savedQuestion: string
+    shareAnalysis: string
+    fullDocumentation: string
+    loadMoreCta: string
+    loadMoreFooter: string
+    learningPathsTitle: string
+    learningCurrentLabel: string
+    /** Use {visible} and {total} */
+    stitchRailProgress: string
+    learningUpNextLabel: string
+    learningUpNextHint: string
+    learningProKicker: string
+    learningProTitle: string
+    learningLaunchEditor: string
   }
   js: {
     common: {
@@ -172,7 +219,9 @@ const en: UiStrings = {
       'Implement in small steps and narrate decisions out loud.',
       'Validate with quick examples, then mention follow-ups.',
     ],
-    searchPlaceholder: 'Search questions, topics, tags...',
+    searchPlaceholder: 'Search questions, topics, companies, categories, tags...',
+    clearSearch: 'Clear search',
+    searchMatchPreviewLabel: 'Preview',
     clearFilters: 'Clear filters',
     questionsCountSuffix: 'questions',
     customCountSuffix: 'custom',
@@ -180,6 +229,45 @@ const en: UiStrings = {
     difficulty: 'Difficulty',
     category: 'Category',
     emptyState: 'No questions match the current filters.',
+    heroKicker: 'Advanced Frontend Curriculum',
+    heroTitleLine1: 'Mastering',
+    heroLead:
+      'A curated collection of professional-grade interview questions. From core JavaScript to system design, rigorously analyzed for the modern engineer.',
+    sidebarPartnersTitle: 'Tier 1 Partners',
+    sidebarTopicsTitle: 'Topic clusters',
+    featuredPrefix: 'Featured:',
+    viewAllQuestionsCta: 'View all {count} questions',
+    toolbarAllCategories: 'All categories',
+    toolbarRecent: 'Recent',
+    toolbarSearch: 'Search',
+    archivedSolution: 'Archived solution',
+    revealFull: 'Reveal full',
+    collapseCard: 'Show less',
+    companyTagsLabel: 'Company tags',
+    filterDifficultyAll: 'All difficulties',
+    difficultyFoundational: 'Foundational',
+    difficultyIntermediate: 'Intermediate',
+    difficultyArchitectural: 'Architectural',
+    filterCategoryPlaceholder: 'Categories',
+    filterCategoryAll: 'All categories',
+    filterCompanyAll: 'All companies',
+    displayingQuestions: 'Displaying {count} questions',
+    thinkingProcessLabel: 'Thinking process',
+    editorialExplanationLabel: 'Editorial explanation',
+    saveQuestion: 'Save question',
+    savedQuestion: 'Saved',
+    shareAnalysis: 'Share',
+    fullDocumentation: 'Full documentation',
+    loadMoreCta: 'Load more questions',
+    loadMoreFooter: 'End of curated list',
+    learningPathsTitle: 'Learning paths',
+    learningCurrentLabel: 'Current focus',
+    stitchRailProgress: 'Showing {visible} of {total}',
+    learningUpNextLabel: 'Up next',
+    learningUpNextHint: 'Tighten filters or load more to continue.',
+    learningProKicker: 'Pro tip',
+    learningProTitle: 'Run these questions in the live sandbox',
+    learningLaunchEditor: 'Launch editor',
   },
   js: {
     common: {
@@ -319,7 +407,9 @@ const he: UiStrings = {
       'ממשו בצעדים קטנים והסבירו החלטות בקול.',
       'אמתו עם דוגמאות מהירות ואז ציינו המשכים אפשריים.',
     ],
-    searchPlaceholder: 'חפש שאלות, נושאים, תגיות...',
+    searchPlaceholder: 'חפש שאלות, נושאים, חברות, קטגוריות, תגיות...',
+    clearSearch: 'נקה חיפוש',
+    searchMatchPreviewLabel: 'תצוגה מקדימה',
     clearFilters: 'נקה סינונים',
     questionsCountSuffix: 'שאלות',
     customCountSuffix: 'מותאם',
@@ -327,6 +417,45 @@ const he: UiStrings = {
     difficulty: 'רמת קושי',
     category: 'קטגוריה',
     emptyState: 'אין שאלות שמתאימות לסינון הנוכחי.',
+    heroKicker: 'תוכנית לימודים מתקדמת לפרונטאנד',
+    heroTitleLine1: 'שליטה ב',
+    heroLead:
+      'אוסף נבחר של שאלות ראיון ברמה מקצועית. מג׳אווהסקריפט ליבה ועד ארכיטקטורה — מנותח לעומק למהנדסים מודרניים.',
+    sidebarPartnersTitle: 'שותפי דרג א׳',
+    sidebarTopicsTitle: 'אשכולות נושא',
+    featuredPrefix: 'מומלצים:',
+    viewAllQuestionsCta: 'הצג את כל {count} השאלות',
+    toolbarAllCategories: 'כל הקטגוריות',
+    toolbarRecent: 'אחרונות',
+    toolbarSearch: 'חיפוש',
+    archivedSolution: 'פתרון בארכיון',
+    revealFull: 'הצג הכל',
+    collapseCard: 'הצג פחות',
+    companyTagsLabel: 'תגיות חברות',
+    filterDifficultyAll: 'כל רמות הקושי',
+    difficultyFoundational: 'יסודי',
+    difficultyIntermediate: 'בינוני',
+    difficultyArchitectural: 'ארכיטקטורה',
+    filterCategoryPlaceholder: 'קטגוריות',
+    filterCategoryAll: 'כל הקטגוריות',
+    filterCompanyAll: 'כל החברות',
+    displayingQuestions: 'מוצגות {count} שאלות',
+    thinkingProcessLabel: 'תהליך חשיבה',
+    editorialExplanationLabel: 'הסבר עריכתי',
+    saveQuestion: 'שמור שאלה',
+    savedQuestion: 'נשמר',
+    shareAnalysis: 'שיתוף',
+    fullDocumentation: 'תיעוד מלא',
+    loadMoreCta: 'טען עוד שאלות',
+    loadMoreFooter: 'סוף הרשימה הנבחרת',
+    learningPathsTitle: 'מסלולי למידה',
+    learningCurrentLabel: 'מיקוד נוכחי',
+    stitchRailProgress: 'מוצגות {visible} מתוך {total}',
+    learningUpNextLabel: 'הבא בתור',
+    learningUpNextHint: 'הדקו סינון או טענו עוד כדי להמשיך.',
+    learningProKicker: 'טיפ מקצועי',
+    learningProTitle: 'הריצו את השאלות בארגז החול החי',
+    learningLaunchEditor: 'פתחו עורך',
   },
   js: en.js,
 }
@@ -961,10 +1090,10 @@ export function getUiStrings(locale: Locale): UiStrings {
     questions: { ...en.questions, ...(override?.questions ?? {}) },
     js: {
       common: { ...en.js.common, ...(jsOverride?.common ?? {}) },
-      debounce: { ...en.js.debounce, ...(jsOverride?.debounce ?? {}) },
-      memoize: { ...en.js.memoize, ...(jsOverride?.memoize ?? {}) },
-      throttle: { ...en.js.throttle, ...(jsOverride?.throttle ?? {}) },
-      lazy: { ...en.js.lazy, ...(jsOverride?.lazy ?? {}) },
+      debounce: { ...en.js.debounce, ...(jsOverride?.debounce ?? {}) } as UiStrings['js']['debounce'],
+      memoize: { ...en.js.memoize, ...(jsOverride?.memoize ?? {}) } as UiStrings['js']['memoize'],
+      throttle: { ...en.js.throttle, ...(jsOverride?.throttle ?? {}) } as UiStrings['js']['throttle'],
+      lazy: { ...en.js.lazy, ...(jsOverride?.lazy ?? {}) } as UiStrings['js']['lazy'],
       sandbox: { ...en.js.sandbox, ...(jsOverride?.sandbox ?? {}) },
     },
   }

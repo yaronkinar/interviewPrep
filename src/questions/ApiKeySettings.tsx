@@ -6,6 +6,7 @@ import {
   ANTHROPIC_MODEL_STORAGE_KEY,
   DEFAULT_ANTHROPIC_MODEL,
   normalizeAnthropicModel,
+  readDefaultAnthropicKeyFromEnv,
 } from './anthropicConstants'
 import {
   GEMINI_API_KEY_LOCAL_KEY,
@@ -24,6 +25,11 @@ import {
   normalizeOpenaiModel,
   readDefaultOpenaiKeyFromEnv,
 } from './openaiConstants'
+import {
+  GOOGLE_CLOUD_TTS_API_KEY_LOCAL_KEY,
+  GOOGLE_CLOUD_TTS_API_KEY_SESSION_KEY,
+  readDefaultGoogleCloudTtsKeyFromEnv,
+} from './googleCloudTtsConstants'
 
 export type KeyPersistMode = 'session' | 'local'
 
@@ -190,6 +196,7 @@ function persistProvider(provider: LlmProvider): void {
 export interface ApiKeySettingsProps {
   onAiSettingsChange: (s: AiSettingsSnapshot) => void
   onElevenLabsChange?: (apiKey: string) => void
+  onGoogleCloudTtsChange?: (apiKey: string) => void
 }
 
 const ELEVENLABS_API_KEY_SESSION_KEY = 'interviews:elevenlabsApiKeySession'
@@ -221,7 +228,37 @@ function persistElevenLabsKey(mode: KeyPersistMode, key: string): void {
   }
 }
 
-export default function ApiKeySettings({ onAiSettingsChange, onElevenLabsChange }: ApiKeySettingsProps) {
+function loadStoredGoogleCloudTtsKey(mode: KeyPersistMode): string {
+  try {
+    if (mode === 'local') {
+      return localStorage.getItem(GOOGLE_CLOUD_TTS_API_KEY_LOCAL_KEY) ?? ''
+    }
+    return sessionStorage.getItem(GOOGLE_CLOUD_TTS_API_KEY_SESSION_KEY) ?? ''
+  } catch {
+    return ''
+  }
+}
+
+function persistGoogleCloudTtsKey(mode: KeyPersistMode, key: string): void {
+  try {
+    sessionStorage.removeItem(GOOGLE_CLOUD_TTS_API_KEY_SESSION_KEY)
+    localStorage.removeItem(GOOGLE_CLOUD_TTS_API_KEY_LOCAL_KEY)
+    if (!key) return
+    if (mode === 'local') {
+      localStorage.setItem(GOOGLE_CLOUD_TTS_API_KEY_LOCAL_KEY, key)
+    } else {
+      sessionStorage.setItem(GOOGLE_CLOUD_TTS_API_KEY_SESSION_KEY, key)
+    }
+  } catch {
+    // ignore
+  }
+}
+
+export default function ApiKeySettings({
+  onAiSettingsChange,
+  onElevenLabsChange,
+  onGoogleCloudTtsChange,
+}: ApiKeySettingsProps) {
   const [open, setOpen] = useState(false)
   const [persistMode, setPersistMode] = useState<KeyPersistMode>(loadPersistMode)
   const [provider, setProvider] = useState<LlmProvider>(loadProvider)
@@ -232,6 +269,7 @@ export default function ApiKeySettings({ onAiSettingsChange, onElevenLabsChange 
   const [openaiKeyInput, setOpenaiKeyInput] = useState('')
   const [openaiModel, setOpenaiModel] = useState(loadOpenaiModel)
   const [elevenLabsKeyInput, setElevenLabsKeyInput] = useState('')
+  const [googleCloudTtsKeyInput, setGoogleCloudTtsKeyInput] = useState('')
 
   function emit(patch: Partial<AiSettingsSnapshot> = {}) {
     const base: AiSettingsSnapshot = {
@@ -249,7 +287,10 @@ export default function ApiKeySettings({ onAiSettingsChange, onElevenLabsChange 
   useEffect(() => {
     const mode = loadPersistMode()
     setPersistMode(mode)
-    const ak = loadStoredAnthropicKey(mode)
+    let ak = loadStoredAnthropicKey(mode)
+    if (!ak) {
+      ak = readDefaultAnthropicKeyFromEnv()
+    }
     let gk = loadStoredGeminiKey(mode)
     if (!gk) {
       gk = readDefaultGeminiKeyFromEnv()
@@ -263,6 +304,11 @@ export default function ApiKeySettings({ onAiSettingsChange, onElevenLabsChange 
     setOpenaiKeyInput(ok)
     const elevenLabsKey = loadStoredElevenLabsKey(mode)
     setElevenLabsKeyInput(elevenLabsKey)
+    let gct = loadStoredGoogleCloudTtsKey(mode)
+    if (!gct) {
+      gct = readDefaultGoogleCloudTtsKeyFromEnv()
+    }
+    setGoogleCloudTtsKeyInput(gct)
     const am = loadAnthropicModel()
     const gm = loadGeminiModel()
     const om = loadOpenaiModel()
@@ -281,6 +327,7 @@ export default function ApiKeySettings({ onAiSettingsChange, onElevenLabsChange 
       openaiModel: om,
     })
     onElevenLabsChange?.(elevenLabsKey)
+    onGoogleCloudTtsChange?.(gct)
     // eslint-disable-next-line react-hooks/exhaustive-deps -- sync parent once on mount from storage
   }, [])
 
@@ -297,6 +344,7 @@ export default function ApiKeySettings({ onAiSettingsChange, onElevenLabsChange 
       // ignore
     }
     persistElevenLabsKey(persistMode, elevenLabsKeyInput.trim())
+    persistGoogleCloudTtsKey(persistMode, googleCloudTtsKeyInput.trim())
     const am = anthropicModel.trim() || DEFAULT_ANTHROPIC_MODEL
     const gm = geminiModel.trim() || DEFAULT_GEMINI_MODEL
     const om = openaiModel.trim() || DEFAULT_OPENAI_MODEL
@@ -309,6 +357,7 @@ export default function ApiKeySettings({ onAiSettingsChange, onElevenLabsChange 
       openaiModel: om,
     })
     onElevenLabsChange?.(elevenLabsKeyInput.trim())
+    onGoogleCloudTtsChange?.(googleCloudTtsKeyInput.trim())
   }
 
   function clearAnthropicKey() {
@@ -335,6 +384,12 @@ export default function ApiKeySettings({ onAiSettingsChange, onElevenLabsChange 
     onElevenLabsChange?.('')
   }
 
+  function clearGoogleCloudTtsKey() {
+    setGoogleCloudTtsKeyInput('')
+    persistGoogleCloudTtsKey(persistMode, '')
+    onGoogleCloudTtsChange?.('')
+  }
+
   function onProviderPick(next: LlmProvider) {
     setProvider(next)
     try {
@@ -348,6 +403,7 @@ export default function ApiKeySettings({ onAiSettingsChange, onElevenLabsChange 
   const hasAnthropicKey = Boolean(anthropicKeyInput.trim())
   const hasGeminiKey = Boolean(geminiKeyInput.trim())
   const hasOpenaiKey = Boolean(openaiKeyInput.trim())
+  const hasGoogleCloudTtsKey = Boolean(googleCloudTtsKeyInput.trim())
 
   return (
     <section className="q-ai-settings">
@@ -364,8 +420,10 @@ export default function ApiKeySettings({ onAiSettingsChange, onElevenLabsChange 
             Keys are used only from this browser to call the provider you select. They are not sent to our servers.
             Storing keys in the browser carries XSS risk if this tab runs untrusted scripts—prefer <strong>Session</strong>{' '}
             when possible. Never commit keys to git. For local dev you can set{' '}
-            <code className="q-ai-code">VITE_GEMINI_API_KEY</code> or <code className="q-ai-code">VITE_OPENAI_API_KEY</code>{' '}
-            to prefill keys (still exposed in the client bundle if you build with them).
+            <code className="q-ai-code">VITE_ANTHROPIC_API_KEY</code>, <code className="q-ai-code">VITE_GEMINI_API_KEY</code>, or{' '}
+            <code className="q-ai-code">VITE_OPENAI_API_KEY</code>, or{' '}
+            <code className="q-ai-code">VITE_GOOGLE_CLOUD_TTS_API_KEY</code>, or{' '}
+            <code className="q-ai-code">VITE_GOOGLE_API_KEY</code> for one key that prefills both Gemini and TTS in dev (still exposed in the client bundle if you build with them).
           </p>
 
           <div className="q-ai-persist-row q-ai-provider-row">
@@ -430,7 +488,11 @@ export default function ApiKeySettings({ onAiSettingsChange, onElevenLabsChange 
               className="q-ai-input"
               placeholder="AIza…"
               value={geminiKeyInput}
-              onChange={(e) => setGeminiKeyInput(e.target.value)}
+              onChange={(e) => {
+                const v = e.target.value
+                setGeminiKeyInput(v)
+                emit({ geminiApiKey: v.trim() })
+              }}
               autoComplete="off"
             />
           </label>
@@ -469,14 +531,40 @@ export default function ApiKeySettings({ onAiSettingsChange, onElevenLabsChange 
           </label>
 
           <h3 className="q-ai-subheading">Voice (optional)</h3>
+          <p className="q-ai-settings-note">
+            <strong>Google Cloud TTS</strong> uses a Google Cloud API key with the{' '}
+            <strong>Cloud Text-to-Speech API</strong> enabled (this is separate from the Gemini / AI Studio key unless you enable both on the same key).
+            Browser calls require the key’s <strong>API restrictions</strong> to allow Cloud Text-to-Speech, and{' '}
+            <strong>HTTP referrer</strong> restrictions (if any) to include your dev URL (e.g.{' '}
+            <code className="q-ai-code">http://localhost:5173/*</code>).
+          </p>
           <label className="q-ai-label">
-            ElevenLabs API key (voice quality upgrade)
+            Google Cloud TTS API key (Neural2 voices in mock interview)
+            <input
+              type="password"
+              className="q-ai-input"
+              placeholder="AIza… (Cloud Console key)"
+              value={googleCloudTtsKeyInput}
+              onChange={(e) => {
+                const v = e.target.value
+                setGoogleCloudTtsKeyInput(v)
+                onGoogleCloudTtsChange?.(v.trim())
+              }}
+              autoComplete="off"
+            />
+          </label>
+          <label className="q-ai-label">
+            ElevenLabs API key (alternative premium voice)
             <input
               type="password"
               className="q-ai-input"
               placeholder="xi-…"
               value={elevenLabsKeyInput}
-              onChange={(e) => setElevenLabsKeyInput(e.target.value)}
+              onChange={(e) => {
+                const v = e.target.value
+                setElevenLabsKeyInput(v)
+                onElevenLabsChange?.(v.trim())
+              }}
               autoComplete="off"
             />
           </label>
@@ -522,6 +610,14 @@ export default function ApiKeySettings({ onAiSettingsChange, onElevenLabsChange 
               disabled={!elevenLabsKeyInput.trim()}
             >
               Clear ElevenLabs key
+            </button>
+            <button
+              type="button"
+              className="secondary"
+              onClick={clearGoogleCloudTtsKey}
+              disabled={!hasGoogleCloudTtsKey}
+            >
+              Clear Google Cloud TTS key
             </button>
           </div>
         </div>

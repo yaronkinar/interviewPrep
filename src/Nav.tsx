@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Moon, Sun } from 'lucide-react'
 import { Link, NavLink } from 'react-router-dom'
 import {
   Sheet,
@@ -78,6 +79,7 @@ export default function Nav() {
 
   return (
     <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
+      <div className="nav-shell">
       <nav className={`nav${rtl ? ' nav--rtl' : ''}`} dir={rtl ? 'rtl' : 'ltr'}>
         <div className="nav-inner">
           <SheetTrigger asChild>
@@ -108,7 +110,7 @@ export default function Nav() {
                 title={ui.theme.useLight}
                 onClick={() => setTheme('light')}
               >
-                ☀️
+                <Sun size={18} strokeWidth={2} aria-hidden />
               </button>
               <button
                 type="button"
@@ -118,7 +120,7 @@ export default function Nav() {
                 title={ui.theme.useDark}
                 onClick={() => setTheme('dark')}
               >
-                🌙
+                <Moon size={18} strokeWidth={2} aria-hidden />
               </button>
             </div>
             <div className="nav-locale">
@@ -145,6 +147,7 @@ export default function Nav() {
           </div>
         </div>
       </nav>
+      </div>
       <SheetContent
         id="nav-mobile-drawer"
         side={rtl ? 'right' : 'left'}

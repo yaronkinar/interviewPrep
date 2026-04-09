@@ -19,7 +19,7 @@ export default function HomePage() {
   return (
     <div className="home-page editorial-page" dir={contentDir}>
       <div className="home-hero">
-        <ScreenHeader title={h.heroTitle} lead={h.heroLead} align="start" />
+        <ScreenHeader title={h.heroTitle} lead={h.heroLead} kicker={h.heroKicker} align="start" />
       </div>
 
       <section className="home-section editorial-panel" aria-labelledby="about-heading">
