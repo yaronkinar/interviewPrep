@@ -18,6 +18,8 @@ import {
   type Category,
 } from './data'
 import { useLocale } from '../i18n/LocaleContext'
+import { getUiStrings, type UiStrings } from '../i18n/uiStrings'
+import type { MockInterviewStrings } from '../i18n/mockInterviewStrings'
 import ApiKeySettings, { type AiSettingsSnapshot } from './ApiKeySettings'
 import ChatMarkdown from './ChatMarkdown'
 import { DEFAULT_ANTHROPIC_MODEL } from './anthropicConstants'
@@ -29,7 +31,6 @@ import {
   loadCustomQuestionsFromStorage,
 } from './customQuestions'
 import {
-  MOCK_TRAINING_OPTIONS,
   type MockTrainingStyle,
   buildMockSystemPrompt,
   getMockAutoStartUserMessage,
@@ -97,6 +98,40 @@ function TextWithAutoLinks({ text }: { text: string }) {
       )}
     </>
   )
+}
+
+const MOCK_STYLE_ORDER: MockTrainingStyle[] = ['understand', 'verbal_practice', 'interviewer', 'code_review']
+
+function fillMockTemplate(s: string, vars: Record<string, string>) {
+  return s.replace(/\{(\w+)\}/g, (_, k: string) => vars[k] ?? '')
+}
+
+function trainingStyleCopy(str: MockInterviewStrings, id: MockTrainingStyle): { label: string; blurb: string } {
+  switch (id) {
+    case 'understand':
+      return { label: str.trainUnderstandLabel, blurb: str.trainUnderstandBlurb }
+    case 'verbal_practice':
+      return { label: str.trainVerbalLabel, blurb: str.trainVerbalBlurb }
+    case 'interviewer':
+      return { label: str.trainInterviewerLabel, blurb: str.trainInterviewerBlurb }
+    case 'code_review':
+      return { label: str.trainCodeReviewLabel, blurb: str.trainCodeReviewBlurb }
+    default:
+      return { label: id, blurb: '' }
+  }
+}
+
+function difficultyUiLabel(str: MockInterviewStrings, d: Difficulty): string {
+  switch (d) {
+    case 'easy':
+      return str.difficultyEasy
+    case 'medium':
+      return str.difficultyMedium
+    case 'hard':
+      return str.difficultyHard
+    default:
+      return d
+  }
 }
 
 function mockStyleUsesCodeEditor(s: MockTrainingStyle): boolean {
@@ -200,6 +235,7 @@ interface MockInterviewSessionProps {
   elevenLabsApiKey: string
   googleCloudTtsApiKey: string
   geminiApiKey: string
+  ui: UiStrings
 }
 
 function MockInterviewSession({
@@ -212,8 +248,10 @@ function MockInterviewSession({
   elevenLabsApiKey,
   googleCloudTtsApiKey,
   geminiApiKey,
+  ui,
 }: MockInterviewSessionProps) {
   const { locale } = useLocale()
+  const mock = ui.mockInterview
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [input, setInput] = useState('')
   const [codeDraft, setCodeDraft] = useState(() =>
@@ -378,14 +416,12 @@ function MockInterviewSession({
       ? codeDraft.trim().length > 0 || input.trim().length > 0
       : input.trim().length > 0)
 
-  const composePlaceholder =
-    style === 'verbal_practice'
-      ? 'Type or use Voice to dictate what you would say in the interview, then send for feedback…'
-      : style === 'code_review'
-        ? 'Optional notes, questions, or context (sent together with the editor code)…'
-        : style === 'interviewer'
-          ? 'Verbal answer or extra context (optional — sent with the code above)…'
-          : 'Follow-up message…'
+  const composePlaceholder = useMemo(() => {
+    if (style === 'verbal_practice') return mock.placeholderVerbal
+    if (style === 'code_review') return mock.placeholderCodeReview
+    if (style === 'interviewer') return mock.placeholderInterviewer
+    return mock.placeholderDefault
+  }, [style, mock])
 
   const clearThread = useCallback(() => {
     stopInterviewerSpeech()
@@ -423,9 +459,9 @@ function MockInterviewSession({
     async (thread: ChatMessage[]) => {
       const gen = streamGenerationRef.current
       const system = buildMockSystemPrompt(question, style, includeRefAnswer)
-      const apiMessages: MessageParam[] = thread.map((m) => ({
-        role: m.role,
-        content: m.content,
+      const apiMessages: MessageParam[] = thread.map((turn) => ({
+        role: turn.role,
+        content: turn.content,
       }))
       let acc = ''
       await streamLlmChat({
@@ -460,7 +496,7 @@ function MockInterviewSession({
       return
     }
     setError(null)
-    const userTurn: ChatMessage = { role: 'user', content: "I'm ready to begin the interview." }
+    const userTurn: ChatMessage = { role: 'user', content: mock.readyToBeginUserMessage }
     setMessages([userTurn])
     setLoading(true)
     setStreaming('')
@@ -473,7 +509,7 @@ function MockInterviewSession({
     } finally {
       setLoading(false)
     }
-  }, [apiKey, loading, messages.length, style, runStreamTurn])
+  }, [apiKey, loading, messages.length, style, runStreamTurn, mock.readyToBeginUserMessage])
 
   useEffect(() => {
     if (!apiKey.trim() || !mockStyleUsesAutoStart(style)) return
@@ -522,9 +558,7 @@ function MockInterviewSession({
       const notes = input.trim()
       if (code) {
         const intro =
-          style === 'code_review'
-            ? 'Here is my solution:'
-            : 'As the candidate, here is my code:'
+          style === 'code_review' ? mock.codePreambleCodeReview : mock.codePreambleInterviewer
         parts.push(`${intro}\n\n\`\`\`ts\n${code}\n\`\`\``)
       }
       if (notes) parts.push(notes)
@@ -551,20 +585,24 @@ function MockInterviewSession({
     }
   }
 
-  const hint =
-    style === 'verbal_practice'
-      ? 'Send your spoken-style answer; Claude will reply with structured feedback.'
-        : style === 'code_review'
-        ? 'Edit code in the VS Code–style editor below, add optional notes, then send for review. Follow-ups can be notes-only or include updated code.'
-        : style === 'interviewer'
-          ? 'Reply as the candidate: use the VS Code–style editor for code, optional notes for what you would say out loud. Claude stays in interviewer character. Turn on Speak Claude\'s replies to hear each reply (browser text-to-speech).'
-          : 'Ask follow-ups to go deeper on approach, trade-offs, or edge cases.'
+  const hint = useMemo(() => {
+    if (style === 'verbal_practice') return mock.hintVerbal
+    if (style === 'code_review') return mock.hintCodeReview
+    if (style === 'interviewer') return mock.hintInterviewer
+    return mock.hintUnderstand
+  }, [style, mock])
 
-  const modeLabel = MOCK_TRAINING_OPTIONS.find((opt) => opt.id === style)?.label ?? style
-  const localeLabel = locale === 'en' ? 'English (US)' : locale.toUpperCase()
+  const modeLabel = useMemo(() => trainingStyleCopy(mock, style).label, [mock, style])
+  const localeLabel = useMemo(() => {
+    try {
+      return new Intl.DisplayNames([locale], { type: 'language' }).of(locale) ?? locale
+    } catch {
+      return locale.toUpperCase()
+    }
+  }, [locale])
   const sessionClock = sessionStartedAt != null ? formatClockHms(elapsedSec) : '00:00:00'
   const apiStable = Boolean(apiKey.trim()) && !error
-  const micLabel = !speech.supported ? 'Unavailable' : speech.listening ? 'Active' : 'Ready'
+  const micLabel = !speech.supported ? mock.micUnavailable : speech.listening ? mock.micActive : mock.micReady
   const micDotClass = !speech.supported
     ? ' mis-status-dot--warn'
     : speech.listening
@@ -574,9 +612,7 @@ function MockInterviewSession({
   const voiceAdvanced = (
     <>
       {!speech.supported && (
-        <p className="mock-voice-unavailable">
-          Voice-to-text is not available in this browser. Try Chrome, Edge, or Safari.
-        </p>
+        <p className="mock-voice-unavailable">{mock.voiceToTextUnavailable}</p>
       )}
       {(speech.supported || interviewerTtsSupported) && (
         <div className="mock-voice-toolbar mis-voice-toolbar-inner">
@@ -591,20 +627,16 @@ function MockInterviewSession({
                 }}
                 disabled={speechDisabled}
                 aria-pressed={speech.listening}
-                title={
-                  speech.listening
-                    ? 'Stop voice input'
-                    : 'Dictate with your microphone (browser speech-to-text)'
-                }
+                title={speech.listening ? mock.stopVoiceInputTitle : mock.dictateVoiceTitle}
               >
-                {speech.listening ? 'Stop voice' : 'Voice'}
+                {speech.listening ? mock.stopVoice : mock.voiceButton}
               </button>
-              {speech.listening && <span className="mock-voice-live">Listening… speak now</span>}
+              {speech.listening && <span className="mock-voice-live">{mock.listeningNow}</span>}
               {speech.error && (
                 <span className="mock-voice-err" role="alert">
                   {speech.error}{' '}
                   <button type="button" className="mock-voice-dismiss" onClick={speech.clearError}>
-                    Dismiss
+                    {mock.dismiss}
                   </button>
                 </span>
               )}
@@ -612,8 +644,8 @@ function MockInterviewSession({
           )}
           {interviewerTtsSupported && (
             <>
-              <div className="mock-voice-engine-row" role="radiogroup" aria-label="Voice engine">
-                <span className="mock-voice-select-label">Voice engine</span>
+              <div className="mock-voice-engine-row" role="radiogroup" aria-label={mock.voiceEngineLabel}>
+                <span className="mock-voice-select-label">{mock.voiceEngineLabel}</span>
                 <label className="mock-voice-tts-label">
                   <input
                     type="radio"
@@ -624,7 +656,7 @@ function MockInterviewSession({
                       stopInterviewerSpeech()
                     }}
                   />
-                  Browser
+                  {mock.engineBrowser}
                 </label>
                 <label className="mock-voice-tts-label">
                   <input
@@ -636,7 +668,8 @@ function MockInterviewSession({
                       stopInterviewerSpeech()
                     }}
                   />
-                  ElevenLabs {elevenlabsEnabled ? '' : '(fallback active)'}
+                  {mock.engineElevenLabs}
+                  {elevenlabsEnabled ? '' : ` ${mock.engineElevenLabsFallback}`}
                 </label>
                 <label className="mock-voice-tts-label">
                   <input
@@ -648,11 +681,14 @@ function MockInterviewSession({
                       stopInterviewerSpeech()
                     }}
                   />
-                  Google Cloud TTS {googleCloudTtsEnabled ? '' : '(fallback active)'}
+                  {mock.engineGoogle}
+                  {googleCloudTtsEnabled ? '' : ` ${mock.engineGoogleFallback}`}
                 </label>
               </div>
               <label className="mock-voice-rate">
-                <span className="mock-voice-select-label">Voice speed: {speechRate.toFixed(2)}x</span>
+                <span className="mock-voice-select-label">
+                  {mock.voiceSpeedLabel} {speechRate.toFixed(2)}x
+                </span>
                 <input
                   type="range"
                   min={0.8}
@@ -669,11 +705,11 @@ function MockInterviewSession({
                     checked={disableBrowserFallback}
                     onChange={(e) => setDisableBrowserFallback(e.target.checked)}
                   />
-                  Force cloud voice only (no browser fallback)
+                  {mock.forceCloudOnly}
                 </label>
               )}
               <span className="mock-voice-engine-status">
-                Active engine: <strong>{activeEngine}</strong>
+                {mock.activeEnginePrefix} <strong>{activeEngine}</strong>
               </span>
               <label className="mock-voice-tts-label">
                 <input
@@ -685,11 +721,11 @@ function MockInterviewSession({
                   }}
                   disabled={!apiKey.trim()}
                 />
-                Speak Claude&apos;s replies
+                {mock.speakClaudeReplies}
               </label>
               {speakInterviewer && voiceEngine === 'browser' && ttsVoices.length > 0 && (
                 <label className="mock-voice-select-wrap">
-                  <span className="mock-voice-select-label">Voice</span>
+                  <span className="mock-voice-select-label">{mock.voicePickerLabel}</span>
                   <select
                     className="mock-voice-select"
                     value={selectedVoiceURI}
@@ -705,23 +741,19 @@ function MockInterviewSession({
                     type="button"
                     className="secondary mock-voice-woman-btn"
                     disabled={!womanVoiceAvailable}
-                    title={
-                      womanVoiceAvailable
-                        ? 'Pick a woman voice if your system exposes one (name-based guess)'
-                        : 'No woman-labelled voice detected — choose from the list or install OS voices'
-                    }
+                    title={womanVoiceAvailable ? mock.womanVoiceTitleOk : mock.womanVoiceTitleNo}
                     onClick={() => {
                       const v = pickFemaleVoice(ttsVoices, navigator.language)
                       if (v) setSelectedVoiceURI(v.voiceURI)
                     }}
                   >
-                    Woman voice
+                    {mock.womanVoice}
                   </button>
                 </label>
               )}
               {speakInterviewer && voiceEngine === 'google' && (
                 <label className="mock-voice-select-wrap">
-                  <span className="mock-voice-select-label">Google Neural2 voice</span>
+                  <span className="mock-voice-select-label">{mock.googleVoiceLabel}</span>
                   <select
                     className="mock-voice-select"
                     value={googleTtsVoiceName}
@@ -734,24 +766,19 @@ function MockInterviewSession({
                     ))}
                   </select>
                   {!googleCloudTtsEnabled && (
-                    <span className="mock-voice-elevenlabs-fallback">
-                      Add a Google Cloud TTS key in AI settings, or a Gemini key if your Google Cloud project has Cloud
-                      Text-to-Speech enabled on that key. Keys sync to the session as you type.
-                    </span>
+                    <span className="mock-voice-elevenlabs-fallback">{mock.googleTtsKeyHint}</span>
                   )}
                 </label>
               )}
               {speakInterviewer && voiceEngine === 'elevenlabs' && (
                 <div className="mock-voice-elevenlabs-picker">
                   <div className="mock-voice-elevenlabs-head">
-                    <span className="mock-voice-select-label">Premium voices</span>
+                    <span className="mock-voice-select-label">{mock.premiumVoices}</span>
                     {scanningVoices && (
-                      <span className="mock-voice-elevenlabs-fallback">Scanning voices available on your plan…</span>
+                      <span className="mock-voice-elevenlabs-fallback">{mock.scanningVoices}</span>
                     )}
                     {!elevenlabsEnabled && (
-                      <span className="mock-voice-elevenlabs-fallback">
-                        Add ElevenLabs key in API settings to enable premium audio.
-                      </span>
+                      <span className="mock-voice-elevenlabs-fallback">{mock.addElevenLabsHint}</span>
                     )}
                   </div>
                   <div className="mock-voice-avatar-grid">
@@ -767,25 +794,25 @@ function MockInterviewSession({
                           setElevenLabsVoiceId(voice.id)
                         }}
                         disabled={Boolean(voice.requiresPaidPlan)}
-                        title={
-                          voice.requiresPaidPlan
-                            ? 'Paid ElevenLabs plan required for API usage'
-                            : undefined
-                        }
+                        title={voice.requiresPaidPlan ? mock.paidPlanVoiceTitle : undefined}
                       >
-                        <img src={voice.avatarPath} alt={`${voice.name} voice avatar`} />
+                        <img
+                          src={voice.avatarPath}
+                          alt={fillMockTemplate(mock.voiceAvatarAlt, { name: voice.name })}
+                        />
                         <span className="mock-voice-avatar-name">{voice.name}</span>
                         <span className="mock-voice-avatar-meta">
                           {voice.accent} - {voice.vibe}
                         </span>
                         {voice.requiresPaidPlan && (
-                          <span className="mock-voice-avatar-badge">Paid plan required</span>
+                          <span className="mock-voice-avatar-badge">{mock.paidPlanBadge}</span>
                         )}
                       </button>
                     ))}
                   </div>
                   <div className="mock-voice-selected">
-                    Selected: <strong>{selectedElevenLabsVoice.name}</strong> ({selectedElevenLabsVoice.vibe})
+                    {mock.selectedVoiceLine}{' '}
+                    <strong>{selectedElevenLabsVoice.name}</strong> ({selectedElevenLabsVoice.vibe})
                   </div>
                 </div>
               )}
@@ -793,14 +820,10 @@ function MockInterviewSession({
                 <button
                   type="button"
                   className="secondary"
-                  onClick={() =>
-                    speakPreview(
-                      'This is a voice test. I will guide you through your interview answer with concise feedback.',
-                    )
-                  }
+                  onClick={() => void speakPreview(mock.voiceTestPhrase)}
                   disabled={!apiKey.trim()}
                 >
-                  Play sample
+                  {mock.playSample}
                 </button>
               )}
               {(voiceEngine === 'elevenlabs' || voiceEngine === 'google') && (
@@ -810,7 +833,7 @@ function MockInterviewSession({
                   onClick={() => void diagnoseVoice()}
                   disabled={!apiKey.trim()}
                 >
-                  Diagnose voice
+                  {mock.diagnoseVoice}
                 </button>
               )}
               {interviewerSpeaking && (
@@ -818,9 +841,9 @@ function MockInterviewSession({
                   type="button"
                   className="secondary mock-voice-btn mock-voice-btn--active"
                   onClick={() => stopInterviewerSpeech()}
-                  title="Stop reading the reply aloud"
+                  title={mock.stopSpeechTitle}
                 >
-                  Stop speech
+                  {mock.stopSpeech}
                 </button>
               )}
             </>
@@ -837,9 +860,7 @@ function MockInterviewSession({
 
   return (
     <div className="q-chat-panel mock-interview-session mockv2-session mis-root">
-      {!apiKey.trim() && (
-        <p className="q-chat-warn mis-warn">Add an API key in AI settings above to start the mock session.</p>
-      )}
+      {!apiKey.trim() && <p className="q-chat-warn mis-warn">{mock.apiKeyWarn}</p>}
       {apiKey.trim() && <p className="q-chat-auto-hint mis-hint">{hint}</p>}
 
       <header className="mis-session-chrome">
@@ -853,57 +874,64 @@ function MockInterviewSession({
             aria-live="polite"
             aria-label={
               sessionStartedAt == null
-                ? `Question time budget ${formatCountdown(timeLimitSec)}`
+                ? fillMockTemplate(mock.timerAriaBudget, { total: formatCountdown(timeLimitSec) })
                 : timeUp
-                  ? 'Time is up'
-                  : `${formatCountdown(remainingSec)} remaining of ${formatCountdown(timeLimitSec)}`
+                  ? mock.timerAriaTimeUp
+                  : fillMockTemplate(mock.timerAriaRemaining, {
+                      remaining: formatCountdown(remainingSec),
+                      total: formatCountdown(timeLimitSec),
+                    })
             }
           >
-            <span className="mis-session-timer-kicker">Question timer</span>
+            <span className="mis-session-timer-kicker">{mock.timerKicker}</span>
             <span className="mis-session-timer-clock">{sessionClock}</span>
             <span className="mis-session-timer-budget-inline" title={describeMockTimeBudget(question)}>
               {timeUp ? (
-                <span>Time&apos;s up · budget {formatCountdown(timeLimitSec)}</span>
+                <span>
+                  {fillMockTemplate(mock.timesUpInline, { total: formatCountdown(timeLimitSec) })}
+                </span>
               ) : sessionStartedAt != null ? (
                 <span>
-                  <strong>{formatCountdown(remainingSec)}</strong> left · budget{' '}
-                  <strong>{formatCountdown(timeLimitSec)}</strong>
+                  {fillMockTemplate(mock.leftBudgetInline, {
+                    remaining: formatCountdown(remainingSec),
+                    total: formatCountdown(timeLimitSec),
+                  })}
                 </span>
               ) : (
                 <span>
-                  Budget <strong>{formatDurationLabel(timeLimitSec)}</strong>
-                  <span className="mis-session-timer-meta"> ({describeMockTimeBudget(question)})</span>
+                  {fillMockTemplate(mock.budgetLine, { duration: formatDurationLabel(timeLimitSec) })}
+                  <span className="mis-session-timer-meta">
+                    {mock.timerMetaOpen}
+                    {describeMockTimeBudget(question)}
+                    {mock.timerMetaClose}
+                  </span>
                 </span>
               )}
             </span>
           </div>
           <button type="button" className="mis-btn-end" onClick={clearThread}>
-            Reset session
+            {mock.resetSession}
           </button>
         </div>
       </header>
 
-      {timeUp && (
-        <p className="mis-timeup-banner">
-          Budget used for this question—you can keep chatting or reset for a fresh timer.
-        </p>
-      )}
+      {timeUp && <p className="mis-timeup-banner">{mock.timeUpBanner}</p>}
 
       <div className="mis-layout">
         <div className="mis-col mis-col--left">
           <section className="mis-card">
-            <h2 className="mis-card-title">Session context</h2>
+            <h2 className="mis-card-title">{mock.sessionContextTitle}</h2>
             <div className="mis-setup-rows">
               <div className="mis-setup-row">
-                <span className="mis-setup-key">Target role</span>
-                <span className="mis-setup-pill mis-setup-pill--wide">Frontend Engineer (Interview focus)</span>
+                <span className="mis-setup-key">{mock.setupTargetRole}</span>
+                <span className="mis-setup-pill mis-setup-pill--wide">{mock.setupTargetRoleValue}</span>
               </div>
               <div className="mis-setup-row mis-setup-row--stack">
-                <span className="mis-setup-key">Question</span>
+                <span className="mis-setup-key">{mock.setupQuestion}</span>
                 <span className="mis-setup-val">{question.title}</span>
               </div>
               <div className="mis-setup-row">
-                <span className="mis-setup-key">Mode</span>
+                <span className="mis-setup-key">{mock.setupMode}</span>
                 <span className="mis-setup-pill">{modeLabel}</span>
               </div>
             </div>
@@ -914,7 +942,7 @@ function MockInterviewSession({
                 onClick={() => void kickoffInterview()}
                 disabled={!apiKey.trim() || loading}
               >
-                Start session
+                {mock.startSession}
               </button>
               <button
                 type="button"
@@ -922,18 +950,18 @@ function MockInterviewSession({
                 onClick={clearThread}
                 disabled={messages.length === 0 && !streaming && !error}
               >
-                Reset session
+                {mock.resetSession}
               </button>
             </div>
           </section>
 
           <section className="mis-card">
-            <h2 className="mis-card-title">Voice &amp; AI</h2>
+            <h2 className="mis-card-title">{mock.voiceAiTitle}</h2>
             <div className="mis-status-rows">
               <div className="mis-status-row">
                 <div className="mis-status-left">
                   <Mic className="mis-status-icon" aria-hidden strokeWidth={2} size={20} />
-                  <span className="mis-status-label">Microphone</span>
+                  <span className="mis-status-label">{mock.microphone}</span>
                 </div>
                 <div className="mis-status-right">
                   <span className={`mis-status-dot${micDotClass}`} />
@@ -943,11 +971,13 @@ function MockInterviewSession({
               <div className="mis-status-row">
                 <div className="mis-status-left">
                   <Plug className="mis-status-icon" aria-hidden strokeWidth={2} size={20} />
-                  <span className="mis-status-label">API connection</span>
+                  <span className="mis-status-label">{mock.apiConnection}</span>
                 </div>
                 <div className="mis-status-right">
                   <span className={`mis-status-dot${apiStable ? ' mis-status-dot--on' : ' mis-status-dot--warn'}`} />
-                  <span className="mis-status-tag">{apiStable ? 'Stable' : apiKey.trim() ? 'Error' : 'Key needed'}</span>
+                  <span className="mis-status-tag">
+                    {apiStable ? mock.apiStable : apiKey.trim() ? mock.apiError : mock.apiKeyNeeded}
+                  </span>
                 </div>
               </div>
             </div>
@@ -960,7 +990,7 @@ function MockInterviewSession({
           </section>
 
           <details className="mis-voice-details">
-            <summary>Voice &amp; speech settings</summary>
+            <summary>{mock.voiceDetailsSummary}</summary>
             {voiceAdvanced}
           </details>
         </div>
@@ -970,31 +1000,31 @@ function MockInterviewSession({
             <div className="mis-transcript-head">
               <div className="mis-transcript-head-left">
                 <MessageSquare className="mis-transcript-head-icon" aria-hidden size={20} strokeWidth={2} />
-                <h3 className="mis-transcript-title">Live transcript</h3>
+                <h3 className="mis-transcript-title">{mock.liveTranscript}</h3>
               </div>
-              <span className="mis-live-pill">Live</span>
+              <span className="mis-live-pill">{mock.livePill}</span>
             </div>
             <div ref={chatLogRef} className="q-chat-log mis-transcript-log" aria-live="polite">
-              {messages.map((m, i) => (
+              {messages.map((msg, i) => (
                 <div
                   key={i}
-                  className={`mis-msg${m.role === 'user' ? ' mis-msg--user' : ' mis-msg--assistant'}`}
+                  className={`mis-msg${msg.role === 'user' ? ' mis-msg--user' : ' mis-msg--assistant'}`}
                 >
                   <div className="mis-msg-avatar" aria-hidden>
-                    {m.role === 'user' ? (
+                    {msg.role === 'user' ? (
                       <User size={20} strokeWidth={2} />
                     ) : (
                       <Brain size={20} strokeWidth={2} />
                     )}
                   </div>
-                  <div className={`mis-msg-bubble q-chat-bubble q-chat-bubble--${m.role}`}>
+                  <div className={`mis-msg-bubble q-chat-bubble q-chat-bubble--${msg.role}`}>
                     <span className="q-chat-role mis-msg-role">
-                      {m.role === 'user' ? 'You' : 'Claude'}
+                      {msg.role === 'user' ? ui.common.you : mock.roleClaude}
                     </span>
-                    {m.role === 'assistant' ? (
-                      <ChatMarkdown content={m.content} />
+                    {msg.role === 'assistant' ? (
+                      <ChatMarkdown content={msg.content} />
                     ) : (
-                      <div className="q-chat-text">{m.content}</div>
+                      <div className="q-chat-text">{msg.content}</div>
                     )}
                   </div>
                 </div>
@@ -1005,7 +1035,7 @@ function MockInterviewSession({
                     <Brain size={20} strokeWidth={2} />
                   </div>
                   <div className="mis-msg-bubble q-chat-bubble q-chat-bubble--assistant">
-                    <span className="q-chat-role mis-msg-role">Claude</span>
+                    <span className="q-chat-role mis-msg-role">{mock.roleClaude}</span>
                     {streaming ? (
                       <ChatMarkdown content={streaming} />
                     ) : (
@@ -1051,11 +1081,7 @@ function MockInterviewSession({
                       }}
                       disabled={speechDisabled}
                       aria-pressed={speech.listening}
-                      title={
-                        speech.listening
-                          ? 'Stop voice input'
-                          : 'Dictate with your microphone (browser speech-to-text)'
-                      }
+                      title={speech.listening ? mock.stopVoiceInputTitle : mock.dictateVoiceTitle}
                     >
                       <Mic size={20} strokeWidth={2} />
                     </button>
@@ -1065,14 +1091,14 @@ function MockInterviewSession({
                     className="mis-send-btn"
                     onClick={() => void send()}
                     disabled={!canSend}
-                    title="Send"
+                    title={ui.common.send}
                   >
                     <Send size={20} strokeWidth={2} />
                   </button>
                 </div>
               </div>
               {mockStyleUsesCodeEditor(style) && (
-                <p className="mis-compose-hint">Tip: ⌃/⌘+Enter sends from the notes field.</p>
+                <p className="mis-compose-hint">{mock.composeHint}</p>
               )}
             </div>
           </section>
@@ -1092,14 +1118,14 @@ function MockInterviewSession({
                   </div>
                 </div>
                 <span className={`mis-diff-pill mis-diff-pill--${question.difficulty}`}>
-                  {question.difficulty}
+                  {difficultyUiLabel(mock, question.difficulty)}
                 </span>
               </div>
               <div className="mis-editor-wrap">
                 <Suspense
                   fallback={
                     <div className="vscode-chrome vscode-chrome--loading" aria-busy>
-                      Loading editor…
+                      {mock.loadingEditor}
                     </div>
                   }
                 >
@@ -1109,7 +1135,9 @@ function MockInterviewSession({
                     onChange={setCodeDraft}
                     height="min(42vh, 360px)"
                     windowTitle={
-                      style === 'code_review' ? 'Mock interview — code' : 'Mock interview — interviewer'
+                      style === 'code_review'
+                        ? mock.editorWindowCodeReview
+                        : mock.editorWindowInterviewer
                     }
                   />
                 </Suspense>
@@ -1119,35 +1147,30 @@ function MockInterviewSession({
                     className="mis-editor-fab"
                     onClick={() => setCodeDraft(buildMockCodeReviewStarter(question))}
                   >
-                    Reset
+                    {mock.resetEditor}
                   </button>
-                  <button type="button" className="mis-editor-run" disabled title="Not available in this trainer">
+                  <button
+                    type="button"
+                    className="mis-editor-run"
+                    disabled
+                    title={mock.runTestsDisabledTitle}
+                  >
                     <Play size={18} strokeWidth={2} aria-hidden />
-                    Run tests
+                    {mock.runTests}
                   </button>
                 </div>
               </div>
               <div className="mis-terminal">
                 <div className="mis-terminal-head">
                   <Terminal size={16} strokeWidth={2} aria-hidden />
-                  <span>Output console</span>
+                  <span>{mock.outputConsole}</span>
                 </div>
                 <div className="mis-terminal-body">
-                  <p className="mis-terminal-muted">&gt; Editor ready. Send a message to get interviewer feedback.</p>
+                  <p className="mis-terminal-muted">{mock.terminalReady}</p>
                 </div>
               </div>
             </section>
           )}
-        </div>
-      </div>
-
-      <div className="mis-coach-float">
-        <div className="mis-coach-avatar" aria-hidden>
-          SJ
-        </div>
-        <div>
-          <p className="mis-coach-name">Sarah Jenkins</p>
-          <p className="mis-coach-meta">Senior Engineering Manager</p>
         </div>
       </div>
     </div>
@@ -1155,6 +1178,10 @@ function MockInterviewSession({
 }
 
 export default function MockInterviewPage() {
+  const { locale } = useLocale()
+  const ui = useMemo(() => getUiStrings(locale), [locale])
+  const mi = ui.mockInterview
+
   const [search, setSearch] = useState('')
   const [company, setCompany] = useState<string | null>(null)
   const [difficulty, setDifficulty] = useState<Difficulty | null>(null)
@@ -1244,74 +1271,73 @@ export default function MockInterviewPage() {
 
   return (
     <div className="editorial-page editorial-page--mock mockv2-page">
-      <ScreenHeader title="Mock interview" lead="Practice in a realistic interview dashboard." />
+      <ScreenHeader title={mi.pageTitle} lead={mi.pageLead} />
 
       <div className="mockv2-layout">
         <aside className="mockv2-sidebar">
           <div className="mockv2-brand">
-            <div className="mockv2-brand-title">Interview Bot</div>
-            <div className="mockv2-brand-status">v3.2 Active</div>
+            <div className="mockv2-brand-title">{mi.sidebarBrandTitle}</div>
+            <div className="mockv2-brand-status">{mi.sidebarBrandStatus}</div>
           </div>
           <nav className="mockv2-side-nav" aria-label="Mock interview sections">
             <button type="button" className="mockv2-side-link">
               <span className="mockv2-side-link-icon" aria-hidden>⚙</span>
-              <span className="mockv2-side-link-label">Setup</span>
+              <span className="mockv2-side-link-label">{mi.navSetup}</span>
             </button>
             <button type="button" className="mockv2-side-link">
               <span className="mockv2-side-link-icon" aria-hidden>📚</span>
-              <span className="mockv2-side-link-label">Library</span>
+              <span className="mockv2-side-link-label">{mi.navLibrary}</span>
             </button>
             <button type="button" className="mockv2-side-link">
               <span className="mockv2-side-link-icon" aria-hidden>📈</span>
-              <span className="mockv2-side-link-label">Analytics</span>
+              <span className="mockv2-side-link-label">{mi.navAnalytics}</span>
             </button>
             <button type="button" className="mockv2-side-link active" aria-current="page">
               <span className="mockv2-side-link-icon" aria-hidden>💬</span>
-              <span className="mockv2-side-link-label">Practice</span>
+              <span className="mockv2-side-link-label">{mi.navPractice}</span>
             </button>
             <button type="button" className="mockv2-side-link">
               <span className="mockv2-side-link-icon" aria-hidden>🛠</span>
-              <span className="mockv2-side-link-label">Settings</span>
+              <span className="mockv2-side-link-label">{mi.navSettings}</span>
             </button>
           </nav>
           <div className="mockv2-sidebar-footer">
             <button type="button" className="mockv2-start-btn">
-              Start session
+              {mi.sidebarStartSession}
             </button>
           </div>
         </aside>
 
         <section className="mockv2-main">
           <div className="mockv2-main-top">
-            <h2 className="mockv2-title">Practice</h2>
-            <div className="mockv2-top-right">Multi-provider mock interview (Claude, Gemini, OpenAI)</div>
+            <h2 className="mockv2-title">{mi.mainPracticeTitle}</h2>
+            <div className="mockv2-top-right">{mi.mainSubtitle}</div>
           </div>
 
           <section className="mockv2-overview-grid">
             <article className="mockv2-overview-card">
-              <div className="mockv2-overview-label">Current interviewer</div>
+              <div className="mockv2-overview-label">{mi.overviewInterviewerLabel}</div>
               <div className="mockv2-interviewer-row">
                 <div className="mockv2-avatar" aria-hidden>
                   SJ
                 </div>
                 <div>
-                  <div className="mockv2-interviewer-name">Sarah Jenkins</div>
-                  <div className="mockv2-interviewer-role">Senior Engineering Manager</div>
+                  <div className="mockv2-interviewer-name">{mi.interviewerName}</div>
+                  <div className="mockv2-interviewer-role">{mi.interviewerRole}</div>
                 </div>
               </div>
               <div className="mockv2-listening-strip">
-                <span>Live voice feedback</span>
-                <span>Listening</span>
+                <span>{mi.listeningLeft}</span>
+                <span>{mi.listeningRight}</span>
               </div>
             </article>
 
             <article className="mockv2-overview-card">
-              <div className="mockv2-overview-label">Session context</div>
+              <div className="mockv2-overview-label">{mi.overviewSessionContext}</div>
+              <p className="mockv2-overview-text">{mi.overviewTargetRoleLine}</p>
               <p className="mockv2-overview-text">
-                Target role: Fullstack Engineer (System design focus)
-              </p>
-              <p className="mockv2-overview-text">
-                Focus area: {selectedQuestion?.category ?? 'Interview practice'}
+                {mi.overviewFocusPrefix}{' '}
+                {selectedQuestion?.category ?? mi.interviewPracticeFallback}
               </p>
             </article>
           </section>
@@ -1325,18 +1351,18 @@ export default function MockInterviewPage() {
           </section>
 
           <section className="mock-interview-setup editorial-panel mockv2-setup">
-            <h2 className="mock-interview-h2">1. Choose a question</h2>
+            <h2 className="mock-interview-h2">{mi.step1Title}</h2>
             <FilterSearchBar
               className="mock-interview-search"
-              placeholder="Search title, description, tags…"
+              placeholder={mi.searchPlaceholder}
               value={search}
               onChange={setSearch}
               showClear={Boolean(hasFilters)}
               onClear={clearFilters}
-              clearLabel="Clear filters"
+              clearLabel={ui.questions.clearFilters}
             />
 
-            <FilterRow label="Company" className="mock-interview-filters">
+            <FilterRow label={ui.questions.company} className="mock-interview-filters">
               {COMPANIES.map((c) => (
                 <FilterChip
                   key={c.id}
@@ -1349,7 +1375,7 @@ export default function MockInterviewPage() {
               ))}
             </FilterRow>
 
-            <FilterRow label="Difficulty" className="mock-interview-filters">
+            <FilterRow label={ui.questions.difficulty} className="mock-interview-filters">
               {(['easy', 'medium', 'hard'] as Difficulty[]).map((d) => (
                 <FilterChip
                   key={d}
@@ -1357,12 +1383,12 @@ export default function MockInterviewPage() {
                   style={{ '--chip-color': DIFFICULTY_COLOR[d] } as CSSProperties}
                   onClick={() => setDifficulty(difficulty === d ? null : d)}
                 >
-                  {d}
+                  {difficultyUiLabel(mi, d)}
                 </FilterChip>
               ))}
             </FilterRow>
 
-            <FilterRow label="Category" className="mock-interview-filters">
+            <FilterRow label={ui.questions.category} className="mock-interview-filters">
               {CATEGORIES.map((cat) => (
                 <FilterChip
                   key={cat}
@@ -1375,10 +1401,10 @@ export default function MockInterviewPage() {
             </FilterRow>
 
             {filtered.length === 0 ? (
-              <p className="q-empty">No questions match. Clear filters or search.</p>
+              <p className="q-empty">{mi.emptyQuestions}</p>
             ) : (
               <label className="mock-interview-select-label">
-                <span className="mock-interview-select-title">Question</span>
+                <span className="mock-interview-select-title">{mi.questionSelectLabel}</span>
                 <select
                   className="mock-interview-select"
                   value={selectedQuestion?.id ?? ''}
@@ -1386,7 +1412,7 @@ export default function MockInterviewPage() {
                 >
                   {filtered.map((q) => (
                     <option key={q.id} value={q.id}>
-                      [{q.difficulty}] {q.title}
+                      [{difficultyUiLabel(mi, q.difficulty)}] {q.title}
                     </option>
                   ))}
                 </select>
@@ -1398,7 +1424,7 @@ export default function MockInterviewPage() {
                 <div className="mock-interview-preview-meta">
                   <span className="q-category-label">{selectedQuestion.category}</span>
                   <span className="q-difficulty" style={{ color: DIFFICULTY_COLOR[selectedQuestion.difficulty] }}>
-                    {selectedQuestion.difficulty}
+                    {difficultyUiLabel(mi, selectedQuestion.difficulty)}
                   </span>
                 </div>
                 <div className="q-title">{selectedQuestion.title}</div>
@@ -1406,10 +1432,10 @@ export default function MockInterviewPage() {
                 {selectedGuide && (
                   <div className="mock-interview-solve-guide">
                     <p className="mock-interview-solve-focus">
-                      <strong>What this question tests:</strong> {selectedGuide.focus}
+                      <strong>{mi.solveWhatTests}</strong> {selectedGuide.focus}
                     </p>
                     <p className="mock-interview-solve-title">
-                      <strong>How to solve (interview flow):</strong>
+                      <strong>{mi.solveHowToSolve}</strong>
                     </p>
                     <ol className="mock-interview-solve-steps">
                       {selectedGuide.steps.map((step) => (
@@ -1428,29 +1454,33 @@ export default function MockInterviewPage() {
                   </div>
                 )}
                 <p className="mock-interview-timer-hint">
-                  Session timer: <strong>{formatDurationLabel(getMockTimeLimitSeconds(selectedQuestion))}</strong> —{' '}
-                  {describeMockTimeBudget(selectedQuestion)}.
+                  {mi.sessionTimerPrefix}{' '}
+                  <strong>{formatDurationLabel(getMockTimeLimitSeconds(selectedQuestion))}</strong>{' '}
+                  {mi.sessionTimerMid} {describeMockTimeBudget(selectedQuestion)}.
                 </p>
               </div>
             )}
 
-            <h2 className="mock-interview-h2">2. How do you want to train?</h2>
+            <h2 className="mock-interview-h2">{mi.step2Title}</h2>
             <div className="mock-style-grid">
-              {MOCK_TRAINING_OPTIONS.map((opt) => (
-                <label
-                  key={opt.id}
-                  className={`mock-style-card${style === opt.id ? ' mock-style-card--active' : ''}`}
-                >
-                  <input
-                    type="radio"
-                    name="mock-training-style"
-                    checked={style === opt.id}
-                    onChange={() => setStyle(opt.id)}
-                  />
-                  <span className="mock-style-card-title">{opt.label}</span>
-                  <span className="mock-style-card-blurb">{opt.blurb}</span>
-                </label>
-              ))}
+              {MOCK_STYLE_ORDER.map((optId) => {
+                const { label, blurb } = trainingStyleCopy(mi, optId)
+                return (
+                  <label
+                    key={optId}
+                    className={`mock-style-card${style === optId ? ' mock-style-card--active' : ''}`}
+                  >
+                    <input
+                      type="radio"
+                      name="mock-training-style"
+                      checked={style === optId}
+                      onChange={() => setStyle(optId)}
+                    />
+                    <span className="mock-style-card-title">{label}</span>
+                    <span className="mock-style-card-blurb">{blurb}</span>
+                  </label>
+                )
+              })}
             </div>
 
             <label className="q-chat-checkbox mock-interview-ref">
@@ -1459,10 +1489,10 @@ export default function MockInterviewPage() {
                 checked={includeRefAnswer}
                 onChange={(e) => setIncludeRefAnswer(e.target.checked)}
               />
-              Include reference answer in the model&apos;s context (stronger feedback; may reduce discovery)
+              {mi.includeRefAnswer}
             </label>
 
-            <h2 className="mock-interview-h2">3. Session</h2>
+            <h2 className="mock-interview-h2">{mi.step3Title}</h2>
             {selectedQuestion && (
               <MockInterviewSession
                 key={`${selectedQuestion.id}-${style}`}
@@ -1475,6 +1505,7 @@ export default function MockInterviewPage() {
                 elevenLabsApiKey={elevenLabsApiKey}
                 googleCloudTtsApiKey={googleCloudTtsApiKey}
                 geminiApiKey={aiSettings.geminiApiKey}
+                ui={ui}
               />
             )}
           </section>

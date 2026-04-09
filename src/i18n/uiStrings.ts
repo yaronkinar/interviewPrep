@@ -1,6 +1,7 @@
 import type { Locale } from './locale'
+import { mockInterviewEn, mockInterviewHe, type MockInterviewStrings } from './mockInterviewStrings'
 
-type UiStrings = {
+export type UiStrings = {
   nav: {
     openMenu: string
     closeMenu: string
@@ -160,6 +161,7 @@ type UiStrings = {
       outputLabel: string
     }
   }
+  mockInterview: MockInterviewStrings
 }
 
 type DeepPartial<T> = {
@@ -352,6 +354,7 @@ const en: UiStrings = {
       outputLabel: '// output',
     },
   },
+  mockInterview: mockInterviewEn,
 }
 
 const he: UiStrings = {
@@ -458,6 +461,7 @@ const he: UiStrings = {
     learningLaunchEditor: 'פתחו עורך',
   },
   js: en.js,
+  mockInterview: mockInterviewHe,
 }
 
 const OVERRIDES: Partial<Record<Locale, Partial<UiStrings>>> = {
@@ -1096,6 +1100,7 @@ export function getUiStrings(locale: Locale): UiStrings {
       lazy: { ...en.js.lazy, ...(jsOverride?.lazy ?? {}) } as UiStrings['js']['lazy'],
       sandbox: { ...en.js.sandbox, ...(jsOverride?.sandbox ?? {}) },
     },
+    mockInterview: { ...en.mockInterview, ...(override?.mockInterview ?? {}) },
   }
 }
 
