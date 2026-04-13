@@ -13,6 +13,7 @@ import {
   GEMINI_API_KEY_SESSION_KEY,
   GEMINI_MODEL_STORAGE_KEY,
   DEFAULT_GEMINI_MODEL,
+  GEMINI_MODEL_SUGGESTIONS,
   normalizeGeminiModel,
   readDefaultGeminiKeyFromEnv,
 } from './geminiConstants'
@@ -501,10 +502,16 @@ export default function ApiKeySettings({
             <input
               type="text"
               className="q-ai-input q-ai-input-mono"
+              list="interviews-gemini-model-suggestions"
               value={geminiModel}
               onChange={(e) => setGeminiModel(e.target.value)}
               placeholder={DEFAULT_GEMINI_MODEL}
             />
+            <datalist id="interviews-gemini-model-suggestions">
+              {GEMINI_MODEL_SUGGESTIONS.map((id) => (
+                <option key={id} value={id} />
+              ))}
+            </datalist>
           </label>
 
           <h3 className="q-ai-subheading">OpenAI (ChatGPT)</h3>

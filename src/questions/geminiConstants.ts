@@ -2,6 +2,15 @@ import { readViteGoogleDevApiKeyFromEnv } from './googleViteEnv'
 
 export const DEFAULT_GEMINI_MODEL = 'gemini-2.0-flash'
 
+/** Gemma 4 on the Gemini API — https://ai.google.dev/gemma/docs/core/gemma_on_gemini_api */
+export const GEMINI_GEMMA_4_MODEL_IDS = ['gemma-4-31b-it', 'gemma-4-26b-a4b-it'] as const
+
+/** Suggested model IDs for the settings field (free text still allowed). */
+export const GEMINI_MODEL_SUGGESTIONS: readonly string[] = [
+  DEFAULT_GEMINI_MODEL,
+  ...GEMINI_GEMMA_4_MODEL_IDS,
+]
+
 export const GEMINI_API_KEY_SESSION_KEY = 'interviews:geminiApiKeySession'
 export const GEMINI_API_KEY_LOCAL_KEY = 'interviews:geminiApiKeyLocal'
 export const GEMINI_MODEL_STORAGE_KEY = 'interviews:geminiModel'

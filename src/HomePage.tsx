@@ -14,6 +14,7 @@ export default function HomePage() {
     { key: 'sandbox' as const, to: PATH_FOR_PAGE.sandbox, title: h.cards.sandbox.title, body: h.cards.sandbox.body, cta: strings.nav.sandbox },
     { key: 'mock' as const, to: PATH_FOR_PAGE.mock, title: h.cards.mock.title, body: h.cards.mock.body, cta: strings.nav.mock },
     { key: 'questions' as const, to: PATH_FOR_PAGE.questions, title: h.cards.questions.title, body: h.cards.questions.body, cta: strings.nav.questions },
+    { key: 'cv' as const, to: PATH_FOR_PAGE.cv, title: h.cards.cv.title, body: h.cards.cv.body, cta: strings.nav.cv },
   ]
 
   return (

@@ -749,6 +749,364 @@ button.nav-mobile-drawer-close:hover {
 [data-theme='dark'] .editorial-panel {
   box-shadow: 0 8px 28px rgba(0, 0, 0, 0.22);
 }
+
+/* CV analysis */
+.editorial-page--cv .cv-analysis-form-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin: 0 0 0.75rem;
+}
+.editorial-page--cv .cv-analysis-label {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 600;
+  margin-bottom: 0.35rem;
+  color: var(--text-muted);
+}
+.editorial-page--cv .cv-analysis-hint {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin: -0.15rem 0 0.4rem;
+  line-height: 1.45;
+}
+.editorial-page--cv .cv-analysis-cv-editor-preview {
+  display: grid;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+@media (min-width: 56rem) {
+  .editorial-page--cv .cv-analysis-cv-editor-preview {
+    align-items: stretch;
+    grid-template-columns: 1fr 1fr;
+  }
+}
+.editorial-page--cv .cv-analysis-cv-editor-col .cv-analysis-textarea--cv-main {
+  margin-bottom: 0;
+}
+.editorial-page--cv .cv-analysis-cv-preview-col .cv-analysis-label {
+  margin-bottom: 0.35rem;
+}
+.editorial-page--cv .cv-analysis-preview-pane {
+  background: var(--surface-deep);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  max-height: min(70vh, 28rem);
+  min-height: 12rem;
+  overflow: auto;
+  padding: 0.65rem 0.75rem;
+}
+.editorial-page--cv .cv-analysis-preview-image-wrap {
+  background: color-mix(in srgb, var(--text) 4%, var(--surface-deep));
+  border-radius: 6px;
+  flex-shrink: 0;
+  line-height: 0;
+  max-height: min(42vh, 20rem);
+  overflow: auto;
+  text-align: center;
+}
+.editorial-page--cv .cv-analysis-preview-image {
+  display: inline-block;
+  height: auto;
+  max-width: 100%;
+  vertical-align: middle;
+}
+.editorial-page--cv .cv-analysis-preview-body {
+  color: var(--text);
+  font-size: 0.88rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.editorial-page--cv .cv-analysis-preview-body--below-image {
+  border-top: 1px solid var(--border);
+  flex: 1 1 auto;
+  margin: 0;
+  min-height: 4rem;
+  padding-top: 0.65rem;
+}
+.editorial-page--cv .cv-analysis-preview-empty {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  line-height: 1.45;
+  margin: 0;
+}
+.editorial-page--cv .cv-analysis-textarea {
+  background: var(--surface-deep);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 0.88rem;
+  line-height: 1.5;
+  margin-bottom: 1rem;
+  min-height: 6rem;
+  padding: 0.65rem 0.75rem;
+  resize: vertical;
+  width: 100%;
+}
+.editorial-page--cv .cv-analysis-textarea:focus {
+  border-color: var(--accent);
+  outline: none;
+}
+.editorial-page--cv .cv-analysis-textarea--job {
+  min-height: 4rem;
+}
+.editorial-page--cv .cv-analysis-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+.editorial-page--cv .cv-analysis-result-bubble {
+  margin-top: 0.5rem;
+}
+.editorial-page--cv .cv-analysis-privacy {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  line-height: 1.45;
+  margin: 1rem 0 0;
+}
+.editorial-page--cv .cv-analysis-settings .q-ai-settings {
+  margin-bottom: 0;
+}
+.editorial-page--cv .cv-analysis-file-input {
+  border: 0;
+  clip: rect(0, 0, 0, 0);
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  padding: 0;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
+}
+.editorial-page--cv .cv-analysis-upload-row {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.75rem;
+  margin-bottom: 0.35rem;
+}
+.editorial-page--cv .cv-analysis-upload-meta {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+.editorial-page--cv .cv-analysis-hint--upload {
+  margin-bottom: 0.65rem;
+  margin-top: 0;
+}
+.editorial-page--cv .cv-analysis-upload-error {
+  margin-bottom: 0.65rem;
+}
+.editorial-page--cv .cv-analysis-drop-zone {
+  align-items: center;
+  background: color-mix(in srgb, var(--surface-deep) 92%, transparent);
+  border: 2px dashed color-mix(in srgb, var(--border) 95%, var(--accent) 5%);
+  border-radius: 10px;
+  display: flex;
+  justify-content: center;
+  margin-bottom: 0.75rem;
+  min-height: 3.25rem;
+  padding: 0.85rem 1rem;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease,
+    box-shadow 0.15s ease;
+}
+.editorial-page--cv .cv-analysis-drop-zone--active {
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface-deep));
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 25%, transparent);
+}
+.editorial-page--cv .cv-analysis-drop-zone--disabled {
+  opacity: 0.55;
+  pointer-events: none;
+}
+.editorial-page--cv .cv-analysis-drop-zone-text {
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  font-weight: 600;
+  margin: 0;
+  text-align: center;
+}
+.editorial-page--cv .cv-analysis-drop-zone--active .cv-analysis-drop-zone-text {
+  color: var(--text);
+}
+
+.editorial-page--cv .cv-analysis-score-card {
+  margin-bottom: 1rem;
+}
+.editorial-page--cv .cv-analysis-score-card-inner {
+  background: color-mix(in srgb, var(--accent) 8%, var(--surface-deep));
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--border));
+  border-radius: 12px;
+  padding: 1rem 1.15rem;
+}
+.editorial-page--cv .cv-analysis-score-heading {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  margin: 0 0 0.35rem;
+  text-transform: uppercase;
+}
+.editorial-page--cv .cv-analysis-score-row {
+  align-items: baseline;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.1rem 0.35rem;
+}
+.editorial-page--cv .cv-analysis-score-value {
+  color: var(--accent);
+  font-size: clamp(2.25rem, 6vw, 2.85rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+.editorial-page--cv .cv-analysis-score-outof {
+  color: var(--text-muted);
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+.editorial-page--cv .cv-analysis-score-summary {
+  color: var(--text);
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.35;
+  margin: 0.5rem 0 0;
+}
+.editorial-page--cv .cv-analysis-score-disclaimer {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  line-height: 1.4;
+  margin: 0.55rem 0 0;
+}
+
+.editorial-page--cv .cv-analysis-job-url-row {
+  align-items: stretch;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+.editorial-page--cv .cv-analysis-job-url-input {
+  background: var(--surface-deep);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  flex: 1 1 12rem;
+  font-size: 0.88rem;
+  min-width: 0;
+  padding: 0.55rem 0.7rem;
+}
+.editorial-page--cv .cv-analysis-job-url-input:focus {
+  border-color: var(--accent);
+  outline: none;
+}
+
+.editorial-page--cv .cv-analysis-dimensions {
+  margin-bottom: 1rem;
+}
+.editorial-page--cv .cv-analysis-dimensions-heading {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  margin: 0 0 0.5rem;
+  text-transform: uppercase;
+}
+.editorial-page--cv .cv-analysis-dimensions-grid {
+  display: grid;
+  gap: 0.65rem;
+  grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
+}
+.editorial-page--cv .cv-analysis-dim-head {
+  align-items: baseline;
+  display: flex;
+  justify-content: space-between;
+  gap: 0.35rem;
+  margin-bottom: 0.25rem;
+}
+.editorial-page--cv .cv-analysis-dim-label {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+.editorial-page--cv .cv-analysis-dim-value {
+  color: var(--accent);
+  font-size: 0.95rem;
+  font-weight: 800;
+}
+.editorial-page--cv .cv-analysis-dim-track {
+  background: color-mix(in srgb, var(--border) 55%, var(--surface-deep));
+  border-radius: 999px;
+  height: 0.45rem;
+  overflow: hidden;
+}
+.editorial-page--cv .cv-analysis-dim-fill {
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--accent) 88%, #2f7fff),
+    color-mix(in srgb, var(--accent) 55%, var(--surface-deep))
+  );
+  border-radius: 999px;
+  height: 100%;
+  min-width: 0;
+  transition: width 0.2s ease;
+}
+
+.editorial-page--cv .cv-analysis-next-steps {
+  margin-bottom: 1rem;
+}
+.editorial-page--cv .cv-analysis-next-steps-title {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  margin: 0 0 0.5rem;
+  text-transform: uppercase;
+}
+.editorial-page--cv .cv-analysis-next-steps-list {
+  list-style: decimal;
+  margin: 0;
+  padding-inline-start: 1.25rem;
+}
+.editorial-page--cv .cv-analysis-next-step {
+  margin-bottom: 0.65rem;
+  padding-inline-start: 0.15rem;
+}
+.editorial-page--cv .cv-analysis-next-step-head {
+  align-items: baseline;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.5rem;
+}
+.editorial-page--cv .cv-analysis-next-step-title {
+  color: var(--text);
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+.editorial-page--cv .cv-analysis-next-step-chip {
+  background: color-mix(in srgb, var(--accent) 14%, var(--surface-deep));
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border));
+  border-radius: 999px;
+  color: var(--text-muted);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 0.12rem 0.45rem;
+  text-transform: uppercase;
+}
+.editorial-page--cv .cv-analysis-next-step-detail {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  line-height: 1.45;
+  margin: 0.25rem 0 0;
+}
+
 .editorial-panel--tight {
   padding-block: 0.85rem;
 }

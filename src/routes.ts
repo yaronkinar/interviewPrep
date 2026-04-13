@@ -8,6 +8,7 @@ export const PATH_FOR_PAGE: Record<Page, string> = {
   sandbox: '/sandbox',
   mock: '/mock',
   questions: '/questions',
+  cv: '/cv',
 }
 
 const PATH_TO_PAGE: Record<string, Page> = {
@@ -17,6 +18,7 @@ const PATH_TO_PAGE: Record<string, Page> = {
   '/sandbox': 'sandbox',
   '/mock': 'mock',
   '/questions': 'questions',
+  '/cv': 'cv',
 }
 
 /** Map current pathname to a `Page` (trailing slash normalized). Unknown paths → `null`. */

@@ -17,17 +17,296 @@ export type HomeStrings = {
     sandbox: { title: string; body: string }
     mock: { title: string; body: string }
     questions: { title: string; body: string }
+    cv: { title: string; body: string }
   }
   cta: string
+}
+
+export type CvPageStrings = {
+  title: string
+  lead: string
+  sectionHeading: string
+  cvLabel: string
+  cvPlaceholder: string
+  /** Read-only pane showing the same text as the editor (extracted or pasted). */
+  cvPreviewHeading: string
+  cvPreviewPlaceholder: string
+  /** Alt text for first-page PDF raster preview */
+  cvPreviewImageAlt: string
+  jobLabel: string
+  jobPlaceholder: string
+  jobHelp: string
+  analyze: string
+  analyzing: string
+  resultTitle: string
+  privacyNote: string
+  reset: string
+  assistantLabel: string
+  apiKeyHint: string
+  uploadLabel: string
+  uploadHint: string
+  uploadButton: string
+  uploadParsing: string
+  uploadEmpty: string
+  uploadUnsupported: string
+  uploadTooLarge: string
+  uploadReadError: string
+  dropZoneHint: string
+  dropZoneActive: string
+  scoreHeading: string
+  scoreOutOf: string
+  scoreDisclaimer: string
+  nextStepsHeading: string
+  dimensionsHeading: string
+  dimAts: string
+  dimFit: string
+  dimClarity: string
+  catAts: string
+  catFit: string
+  catContent: string
+  catOther: string
+  jobUrlLabel: string
+  jobUrlPlaceholder: string
+  jobUrlOpen: string
+  jobUrlInvalid: string
+  jobPasteHint: string
+  /** User-message section headers sent to the model (match site language). */
+  promptSectionCv: string
+  promptSectionJobUrl: string
+  promptSectionJobText: string
+  promptJobUrlNone: string
+  promptNoJobPostingText: string
+}
+
+/** LLM user-message section labels — one set per UI locale (merged in getStrings). */
+export type CvPagePromptSections = Pick<
+  CvPageStrings,
+  | 'promptSectionCv'
+  | 'promptSectionJobUrl'
+  | 'promptSectionJobText'
+  | 'promptJobUrlNone'
+  | 'promptNoJobPostingText'
+>
+
+const CV_PAGE_PROMPT_BY_LOCALE: Record<Locale, CvPagePromptSections> = {
+  en: {
+    promptSectionCv: '--- CV / résumé ---',
+    promptSectionJobUrl: '--- Job posting URL ---',
+    promptSectionJobText: '--- Target role or job posting text ---',
+    promptJobUrlNone: '(none)',
+    promptNoJobPostingText:
+      '(No job posting text provided — give general job-search feedback; for CV_DIMENSIONS "fit", estimate general role/market alignment from the CV alone.)',
+  },
+  he: {
+    promptSectionCv: '--- קורות חיים ---',
+    promptSectionJobUrl: '--- קישור למשרה ---',
+    promptSectionJobText: '--- תפקיד יעד או טקסט מודעת משרה ---',
+    promptJobUrlNone: '(אין)',
+    promptNoJobPostingText:
+      '(לא סופק טקסט מודעת משרה — תנו משוב כללי לחיפוש עבודה; בשדה "fit" ב-CV_DIMENSIONS העריכו התאמה כללית לשוק/תפקיד מתוך קורות החיים בלבד.)',
+  },
+  es: {
+    promptSectionCv: '--- CV / currículum ---',
+    promptSectionJobUrl: '--- URL de la oferta ---',
+    promptSectionJobText: '--- Puesto objetivo o texto de la oferta ---',
+    promptJobUrlNone: '(ninguna)',
+    promptNoJobPostingText:
+      '(Sin texto de oferta — retroalimentación general; en CV_DIMENSIONS "fit" estime la alineación con el mercado solo a partir del CV.)',
+  },
+  fr: {
+    promptSectionCv: '--- CV ---',
+    promptSectionJobUrl: '--- URL de l’offre ---',
+    promptSectionJobText: '--- Poste visé ou texte de l’offre ---',
+    promptJobUrlNone: '(aucune)',
+    promptNoJobPostingText:
+      '(Aucun texte d’offre — retour général sur la recherche ; pour CV_DIMENSIONS "fit", estimez l’adéquation marché/rôle à partir du CV seul.)',
+  },
+  de: {
+    promptSectionCv: '--- Lebenslauf / CV ---',
+    promptSectionJobUrl: '--- Stellenanzeigen-URL ---',
+    promptSectionJobText: '--- Zielrolle oder Anzeigentext ---',
+    promptJobUrlNone: '(keine)',
+    promptNoJobPostingText:
+      '(Kein Anzeigentext — allgemeines Feedback zur Jobsuche; bei CV_DIMENSIONS "fit" allgemeine Rollen-/Marktpassung allein aus dem CV schätzen.)',
+  },
+  pt: {
+    promptSectionCv: '--- CV / currículo ---',
+    promptSectionJobUrl: '--- URL da vaga ---',
+    promptSectionJobText: '--- Cargo alvo ou texto da vaga ---',
+    promptJobUrlNone: '(nenhuma)',
+    promptNoJobPostingText:
+      '(Sem texto da vaga — feedback geral; em CV_DIMENSIONS "fit", estime o alinhamento com mercado/cargo só com o CV.)',
+  },
+  ja: {
+    promptSectionCv: '--- 履歴書・職務経歴書 ---',
+    promptSectionJobUrl: '--- 求人情報URL ---',
+    promptSectionJobText: '--- 希望職種または求人本文 ---',
+    promptJobUrlNone: '（なし）',
+    promptNoJobPostingText:
+      '（求人本文なし — 一般的な転職アドバイスを。CV_DIMENSIONS の "fit" は履歴書のみから市場・職種適合を推定。）',
+  },
+  zh: {
+    promptSectionCv: '--- 简历 / 履历 ---',
+    promptSectionJobUrl: '--- 职位链接 ---',
+    promptSectionJobText: '--- 目标职位或职位描述正文 ---',
+    promptJobUrlNone: '（无）',
+    promptNoJobPostingText:
+      '（未提供职位描述正文 — 请给出通用求职反馈；CV_DIMENSIONS 的 "fit" 请仅根据简历估计与市场/岗位的匹配度。）',
+  },
+  ar: {
+    promptSectionCv: '--- السيرة الذاتية ---',
+    promptSectionJobUrl: '--- رابط الوظيفة ---',
+    promptSectionJobText: '--- الدور المستهدف أو نص الإعلان ---',
+    promptJobUrlNone: '(لا يوجد)',
+    promptNoJobPostingText:
+      '(لم يُقدَّم نص الإعلان — أعطِ ملاحظات عامة عن البحث عن عمل؛ في CV_DIMENSIONS "fit" قدِّر الانطباع العام عن السوق/الدور من السيرة وحدها.)',
+  },
+  ru: {
+    promptSectionCv: '--- Резюме / CV ---',
+    promptSectionJobUrl: '--- Ссылка на вакансию ---',
+    promptSectionJobText: '--- Целевая роль или текст вакансии ---',
+    promptJobUrlNone: '(нет)',
+    promptNoJobPostingText:
+      '(Текст вакансии не дан — дайте общий совет по поиску работы; для CV_DIMENSIONS "fit" оцените соответствие рынку/роли только по резюме.)',
+  },
+  hi: {
+    promptSectionCv: '--- बायोडाटा / रिज़्यूमे ---',
+    promptSectionJobUrl: '--- नौकरी का लिंक ---',
+    promptSectionJobText: '--- लक्ष्य पद या नौकरी विवरण ---',
+    promptJobUrlNone: '(कोई नहीं)',
+    promptNoJobPostingText:
+      '(नौकरी विवरण नहीं — सामान्य जॉब सर्च फीडबैक दें; CV_DIMENSIONS "fit" में केवल रिज़्यूमे से बाज़ार/भूमिका संरेखण अनुमानित करें।)',
+  },
+  pl: {
+    promptSectionCv: '--- CV / życiorys ---',
+    promptSectionJobUrl: '--- Link do ogłoszenia ---',
+    promptSectionJobText: '--- Docelowa rola lub treść ogłoszenia ---',
+    promptJobUrlNone: '(brak)',
+    promptNoJobPostingText:
+      '(Brak treści ogłoszenia — ogólny feedback; w CV_DIMENSIONS "fit" oceń dopasowanie do rynku/roli tylko z CV.)',
+  },
+  ko: {
+    promptSectionCv: '--- 이력서 / 경력기술서 ---',
+    promptSectionJobUrl: '--- 채용 공고 URL ---',
+    promptSectionJobText: '--- 지원 직무 또는 공고 본문 ---',
+    promptJobUrlNone: '(없음)',
+    promptNoJobPostingText:
+      '(공고 본문 없음 — 일반 구직 피드백 제공; CV_DIMENSIONS "fit"은 이력서만으로 시장/직무 적합도를 추정.)',
+  },
 }
 
 export type AppStrings = {
   nav: Record<Page, string>
   home: HomeStrings
+  cvPage: CvPageStrings
   /** Text before the linked author name in the footer; omit per-locale to fall back to English. */
   siteCreditPrefix?: string
   /** Linked author display name; omit per-locale to fall back to English. */
   siteCreditName?: string
+}
+
+const CV_PAGE_EN: CvPageStrings = {
+  title: 'CV analysis for job search',
+  lead:
+    'Paste your résumé or CV text below, or upload a PDF or Word (.docx) file — text is extracted in your browser. Optionally add a target role or job posting for tailored feedback. Text is sent only to the AI provider you select in settings and is not stored on this site.',
+  sectionHeading: 'Your CV and optional job context',
+  cvLabel: 'CV / résumé text',
+  cvPlaceholder: 'Paste the full text of your CV here…',
+  cvPreviewHeading: 'Preview',
+  cvPreviewPlaceholder: 'Text you paste or extract from a file will show here as plain text.',
+  cvPreviewImageAlt: 'First page of uploaded PDF (visual preview)',
+  jobLabel: 'Target role or job description (optional)',
+  jobPlaceholder: 'e.g. “Senior frontend engineer” or paste a job posting…',
+  jobHelp: 'When provided, the analysis emphasizes fit, gaps, and keywords for that role.',
+  analyze: 'Analyze CV',
+  analyzing: 'Analyzing…',
+  resultTitle: 'Analysis',
+  privacyNote:
+    'Tip: Remove sensitive details you do not want processed (phone, full address) before pasting. This tool offers guidance only and does not guarantee hiring outcomes.',
+  reset: 'Clear inputs',
+  assistantLabel: 'Assistant',
+  apiKeyHint: 'Add an API key in the AI settings above to run analysis.',
+  uploadLabel: 'Upload PDF or Word',
+  uploadHint: '.pdf or .docx — extracted locally in your browser (the file is not sent to this site until you run analysis).',
+  uploadButton: 'Choose file',
+  uploadParsing: 'Reading file…',
+  uploadEmpty: 'No text could be extracted. Try another export or paste the text manually.',
+  uploadUnsupported: 'Use PDF or Word .docx. Older .doc files are not supported in the browser.',
+  uploadTooLarge: 'File is too large (max 12 MB).',
+  uploadReadError: 'Could not read this file.',
+  dropZoneHint: 'Drag and drop a PDF or .docx file here',
+  dropZoneActive: 'Release to load',
+  scoreHeading: 'Overall score',
+  scoreOutOf: '/100',
+  scoreDisclaimer: 'Indicative only — not an employer or ATS verdict.',
+  nextStepsHeading: 'Your next steps',
+  dimensionsHeading: 'Score breakdown',
+  dimAts: 'ATS & keywords',
+  dimFit: 'Job fit',
+  dimClarity: 'Clarity & impact',
+  catAts: 'ATS',
+  catFit: 'Fit',
+  catContent: 'Content',
+  catOther: 'Other',
+  jobUrlLabel: 'Job posting link (optional)',
+  jobUrlPlaceholder: 'https://…',
+  jobUrlOpen: 'Open link',
+  jobUrlInvalid: 'Enter a valid http(s) URL or leave this field empty.',
+  jobPasteHint:
+    'This app cannot load most job sites in the browser. Open the link in another tab, copy the posting text, and paste it below for a role-specific comparison.',
+  ...CV_PAGE_PROMPT_BY_LOCALE.en,
+}
+
+const CV_PAGE_HE: CvPageStrings = {
+  title: 'ניתוח קורות חיים לחיפוש עבודה',
+  lead:
+    'הדביקו למטה את טקסט קורות החיים או העלו קובץ PDF או Word (.docx) — הטקסט נחלץ בדפדפן. אפשר להוסיף תפקיד יעד או מודעת משרה למשוב ממוקד. הטקסט נשלח רק לספק ה-AI שבחרתם בהגדרות ואינו נשמר באתר.',
+  sectionHeading: 'קורות החיים והקשר למשרה (אופציונלי)',
+  cvLabel: 'טקסט קורות חיים / קורות חיים',
+  cvPlaceholder: 'הדביקו כאן את מלוא קורות החיים…',
+  cvPreviewHeading: 'תצוגה מקדימה',
+  cvPreviewPlaceholder: 'טקסט שתדביקו או שיימשך מהקובץ יוצג כאן כטקסט פשוט.',
+  cvPreviewImageAlt: 'עמוד ראשון של קובץ PDF שהועלה (תצוגה ויזואלית)',
+  jobLabel: 'תפקיד יעד או תיאור משרה (אופציונלי)',
+  jobPlaceholder: 'למשל "מפתח פרונטנד בכיר" או הדבקת מודעת משרה…',
+  jobHelp: 'כשממלאים, הניתוח מתמקד בהתאמה, פערים ומילות מפתח לתפקיד.',
+  analyze: 'נתח קורות חיים',
+  analyzing: 'מנתח…',
+  resultTitle: 'ניתוח',
+  privacyNote:
+    'טיפ: הסירו פרטים רגישים שאינכם רוצים לעבד (טלפון, כתובת מלאה) לפני ההדבקה. הכלי מספק הנחיה בלבד ואינו מבטיח תוצאות בגיוס.',
+  reset: 'נקה שדות',
+  assistantLabel: 'עוזר',
+  apiKeyHint: 'הוסיפו מפתח API בהגדרות הבינה המלאכותית למעלה כדי להריץ ניתוח.',
+  uploadLabel: 'העלאת PDF או Word',
+  uploadHint: '.pdf או .docx — החילוץ מתבצע מקומית בדפדפן (הקובץ לא נשלח לאתר עד שמריצים ניתוח).',
+  uploadButton: 'בחירת קובץ',
+  uploadParsing: 'קורא קובץ…',
+  uploadEmpty: 'לא ניתן היה לחלץ טקסט. נסו ייצוא אחר או הדביקו את הטקסט ידנית.',
+  uploadUnsupported: 'השתמשו ב-PDF או Word ‎.docx. קבצי ‎.doc ישנים אינם נתמכים בדפדפן.',
+  uploadTooLarge: 'הקובץ גדול מדי (מקסימום 12 מ״ב).',
+  uploadReadError: 'לא ניתן לקרוא את הקובץ.',
+  dropZoneHint: 'גררו לכאן קובץ PDF או ‎.docx',
+  dropZoneActive: 'שחררו לטעינה',
+  scoreHeading: 'ציון כולל',
+  scoreOutOf: '/100',
+  scoreDisclaimer: 'להמחשה בלבד — לא ציון מטעם מעסיק או ממערכת ATS.',
+  nextStepsHeading: 'הצעדים הבאים שלכם',
+  dimensionsHeading: 'פירוט ציונים',
+  dimAts: 'ATS ומילות מפתח',
+  dimFit: 'התאמה למשרה',
+  dimClarity: 'בהירות והשפעה',
+  catAts: 'ATS',
+  catFit: 'התאמה',
+  catContent: 'תוכן',
+  catOther: 'אחר',
+  jobUrlLabel: 'קישור למשרה (אופציונלי)',
+  jobUrlPlaceholder: 'https://…',
+  jobUrlOpen: 'פתיחת הקישור',
+  jobUrlInvalid: 'הזינו כתובת http(s) תקינה או השאירו ריק.',
+  jobPasteHint:
+    'האפליקציה אינה יכולה לטעון את רוב אתרי הגיוס בדפדפן. פתחו את הקישור בלשונית אחרת, העתיקו את טקסט המשרה והדביקו למטה להשוואה ממוקדת.',
+  ...CV_PAGE_PROMPT_BY_LOCALE.he,
 }
 
 const en: AppStrings = {
@@ -40,6 +319,7 @@ const en: AppStrings = {
     sandbox: 'React sandbox',
     mock: 'Mock interview',
     questions: 'Company Q&A',
+    cv: 'CV analysis',
   },
   home: {
     metaTitle: 'Interview Prep — practice in the browser',
@@ -73,9 +353,14 @@ const en: AppStrings = {
         title: 'Company Q&A',
         body: 'Browse categorized questions and answers tailored for company-style interviews.',
       },
+      cv: {
+        title: 'CV analysis',
+        body: 'Paste your résumé, optionally add a target job, and get structured feedback for your search using your chosen AI provider.',
+      },
     },
     cta: 'Choose a section from the navigation above to get started.',
   },
+  cvPage: CV_PAGE_EN,
 }
 
 const he: AppStrings = {
@@ -88,6 +373,7 @@ const he: AppStrings = {
     sandbox: 'ארגז חול React',
     mock: 'ראיון דמה',
     questions: 'שאלות ותשובות',
+    cv: 'ניתוח קורות חיים',
   },
   home: {
     metaTitle: 'הכנה לראיונות — תרגול בדפדפן',
@@ -120,9 +406,14 @@ const he: AppStrings = {
         title: 'שאלות ותשובות',
         body: 'עיינו בשאלות ותשובות מסווגות לראיונות בסגנון חברות.',
       },
+      cv: {
+        title: 'ניתוח קורות חיים',
+        body: 'הדביקו את קורות החיים, אפשר להוסיף משרה יעד, וקבלו משוב מובנה לחיפוש העבודה עם ספק ה-AI שבחרתם.',
+      },
     },
     cta: 'בחרו אזור מהתפריט למעלה כדי להתחיל.',
   },
+  cvPage: CV_PAGE_HE,
 }
 
 const es: AppStrings = {
@@ -133,6 +424,7 @@ const es: AppStrings = {
     sandbox: 'Sandbox React',
     mock: 'Simulacro',
     questions: 'P&R empresas',
+    cv: 'Análisis de CV',
   },
   home: {
     metaTitle: 'Preparación para entrevistas — práctica en el navegador',
@@ -165,9 +457,14 @@ const es: AppStrings = {
         title: 'P&R empresas',
         body: 'Navega preguntas y respuestas categorizadas para entrevistas tipo empresa.',
       },
+      cv: {
+        title: 'CV analysis',
+        body: 'Paste your résumé, optionally add a target job, and get structured feedback for your search using your chosen AI provider.',
+      },
     },
     cta: 'Elige una sección en la barra superior para empezar.',
   },
+  cvPage: CV_PAGE_EN,
 }
 
 const fr: AppStrings = {
@@ -178,6 +475,7 @@ const fr: AppStrings = {
     sandbox: 'Bac à sable React',
     mock: 'Entretien blanc',
     questions: 'Q&R entreprises',
+    cv: 'Analyse CV',
   },
   home: {
     metaTitle: 'Préparation entretiens — pratique dans le navigateur',
@@ -210,9 +508,14 @@ const fr: AppStrings = {
         title: 'Q&R entreprises',
         body: 'Parcourez des questions et réponses classées pour entretiens type entreprise.',
       },
+      cv: {
+        title: 'CV analysis',
+        body: 'Paste your résumé, optionally add a target job, and get structured feedback for your search using your chosen AI provider.',
+      },
     },
     cta: 'Choisissez une section dans la barre du haut pour commencer.',
   },
+  cvPage: CV_PAGE_EN,
 }
 
 const de: AppStrings = {
@@ -223,6 +526,7 @@ const de: AppStrings = {
     sandbox: 'React-Sandbox',
     mock: 'Probegespräch',
     questions: 'Firmen-F&A',
+    cv: 'Lebenslauf-Analyse',
   },
   home: {
     metaTitle: 'Interview Prep — Übung im Browser',
@@ -255,9 +559,14 @@ const de: AppStrings = {
         title: 'Firmen-F&A',
         body: 'Durchsuche kategorisierte Fragen und Antworten für firmenähnliche Interviews.',
       },
+      cv: {
+        title: 'CV analysis',
+        body: 'Paste your résumé, optionally add a target job, and get structured feedback for your search using your chosen AI provider.',
+      },
     },
     cta: 'Wähle oben in der Navigation einen Bereich, um zu starten.',
   },
+  cvPage: CV_PAGE_EN,
 }
 
 const pt: AppStrings = {
@@ -268,6 +577,7 @@ const pt: AppStrings = {
     sandbox: 'Sandbox React',
     mock: 'Simulado',
     questions: 'P&R empresas',
+    cv: 'Análise de CV',
   },
   home: {
     metaTitle: 'Preparação para entrevistas — prática no navegador',
@@ -300,9 +610,14 @@ const pt: AppStrings = {
         title: 'P&R empresas',
         body: 'Navegue perguntas e respostas categorizadas para entrevistas estilo empresa.',
       },
+      cv: {
+        title: 'CV analysis',
+        body: 'Paste your résumé, optionally add a target job, and get structured feedback for your search using your chosen AI provider.',
+      },
     },
     cta: 'Escolha uma seção na barra acima para começar.',
   },
+  cvPage: CV_PAGE_EN,
 }
 
 const ja: AppStrings = {
@@ -313,6 +628,7 @@ const ja: AppStrings = {
     sandbox: 'React サンドボックス',
     mock: '模擬面接',
     questions: '企業 Q&A',
+    cv: '履歴書の分析',
   },
   home: {
     metaTitle: '面接対策 — ブラウザで練習',
@@ -345,9 +661,14 @@ const ja: AppStrings = {
         title: '企業 Q&A',
         body: '企業面接向けに分類された質問と回答を閲覧できます。',
       },
+      cv: {
+        title: 'CV analysis',
+        body: 'Paste your résumé, optionally add a target job, and get structured feedback for your search using your chosen AI provider.',
+      },
     },
     cta: '上のナビからセクションを選んで始めてください。',
   },
+  cvPage: CV_PAGE_EN,
 }
 
 const zh: AppStrings = {
@@ -358,6 +679,7 @@ const zh: AppStrings = {
     sandbox: 'React 沙箱',
     mock: '模拟面试',
     questions: '公司问答',
+    cv: '简历分析',
   },
   home: {
     metaTitle: '面试准备 — 在浏览器中练习',
@@ -390,9 +712,14 @@ const zh: AppStrings = {
         title: '公司问答',
         body: '浏览按类别整理的公司风格面试问答。',
       },
+      cv: {
+        title: 'CV analysis',
+        body: 'Paste your résumé, optionally add a target job, and get structured feedback for your search using your chosen AI provider.',
+      },
     },
     cta: '请从上方导航选择要开始的区域。',
   },
+  cvPage: CV_PAGE_EN,
 }
 
 const ar: AppStrings = {
@@ -403,6 +730,7 @@ const ar: AppStrings = {
     sandbox: 'بيئة React',
     mock: 'مقابلة تجريبية',
     questions: 'أسئلة الشركات',
+    cv: 'تحليل السيرة الذاتية',
   },
   home: {
     metaTitle: 'التحضير للمقابلات — تمرّن في المتصفح',
@@ -435,9 +763,14 @@ const ar: AppStrings = {
         title: 'أسئلة الشركات',
         body: 'تصفّح أسئلة وأجوبة مصنّفة لأسلوب مقابلات الشركات.',
       },
+      cv: {
+        title: 'CV analysis',
+        body: 'Paste your résumé, optionally add a target job, and get structured feedback for your search using your chosen AI provider.',
+      },
     },
     cta: 'اختر قسماً من شريط التنقل أعلاه للبدء.',
   },
+  cvPage: CV_PAGE_EN,
 }
 
 const ru: AppStrings = {
@@ -448,6 +781,7 @@ const ru: AppStrings = {
     sandbox: 'Песочница React',
     mock: 'Пробное интервью',
     questions: 'Вопросы компаний',
+    cv: 'Анализ резюме',
   },
   home: {
     metaTitle: 'Подготовка к собеседованиям — в браузере',
@@ -480,9 +814,14 @@ const ru: AppStrings = {
         title: 'Вопросы компаний',
         body: 'Категоризированные вопросы и ответы в стиле компаний.',
       },
+      cv: {
+        title: 'CV analysis',
+        body: 'Paste your résumé, optionally add a target job, and get structured feedback for your search using your chosen AI provider.',
+      },
     },
     cta: 'Выберите раздел в верхней навигации, чтобы начать.',
   },
+  cvPage: CV_PAGE_EN,
 }
 
 const hi: AppStrings = {
@@ -493,6 +832,7 @@ const hi: AppStrings = {
     sandbox: 'React सैंडबॉक्स',
     mock: 'मॉक इंटरव्यू',
     questions: 'कंपनी Q&A',
+    cv: 'CV विश्लेषण',
   },
   home: {
     metaTitle: 'इंटरव्यू तैयारी — ब्राउज़र में अभ्यास',
@@ -525,9 +865,14 @@ const hi: AppStrings = {
         title: 'कंपनी Q&A',
         body: 'कंपनी-शैली इंटरव्यू के लिए वर्गीकृत प्रश्न और उत्तर।',
       },
+      cv: {
+        title: 'CV analysis',
+        body: 'Paste your résumé, optionally add a target job, and get structured feedback for your search using your chosen AI provider.',
+      },
     },
     cta: 'शुरू करने के लिए ऊपर नेविगेशन से एक खंड चुनें।',
   },
+  cvPage: CV_PAGE_EN,
 }
 
 const pl: AppStrings = {
@@ -538,6 +883,7 @@ const pl: AppStrings = {
     sandbox: 'Piaskownica React',
     mock: 'Mock interview',
     questions: 'Pytania firm',
+    cv: 'Analiza CV',
   },
   home: {
     metaTitle: 'Przygotowanie do rozmów — w przeglądarce',
@@ -570,9 +916,14 @@ const pl: AppStrings = {
         title: 'Pytania firm',
         body: 'Przeglądaj pytania i odpowiedzi pogrupowane pod rozmowy w stylu firm.',
       },
+      cv: {
+        title: 'CV analysis',
+        body: 'Paste your résumé, optionally add a target job, and get structured feedback for your search using your chosen AI provider.',
+      },
     },
     cta: 'Wybierz sekcję w górnym menu, aby zacząć.',
   },
+  cvPage: CV_PAGE_EN,
 }
 
 const ko: AppStrings = {
@@ -583,6 +934,7 @@ const ko: AppStrings = {
     sandbox: 'React 샌드박스',
     mock: '모의 면접',
     questions: '기업 Q&A',
+    cv: '이력서 분석',
   },
   home: {
     metaTitle: '면접 준비 — 브라우저에서 연습',
@@ -615,9 +967,14 @@ const ko: AppStrings = {
         title: '기업 Q&A',
         body: '기업 면접 스타일로 분류된 질문과 답을 둘러봅니다.',
       },
+      cv: {
+        title: 'CV analysis',
+        body: 'Paste your résumé, optionally add a target job, and get structured feedback for your search using your chosen AI provider.',
+      },
     },
     cta: '위에서 시작할 섹션을 선택하세요.',
   },
+  cvPage: CV_PAGE_EN,
 }
 
 export const STRINGS_BY_LOCALE: Record<Locale, AppStrings> = {
@@ -642,5 +999,6 @@ export function getStrings(locale: Locale): AppStrings {
     ...s,
     siteCreditPrefix: s.siteCreditPrefix ?? en.siteCreditPrefix,
     siteCreditName: s.siteCreditName ?? en.siteCreditName,
+    cvPage: { ...s.cvPage, ...CV_PAGE_PROMPT_BY_LOCALE[locale] },
   }
 }

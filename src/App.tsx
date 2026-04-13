@@ -9,6 +9,7 @@ import { ThemeProvider } from './theme/ThemeContext'
 import JsPage from './js/index'
 import ReactPage from './react/index'
 import ReactSandboxPage from './ReactSandboxPage'
+import CvAnalysisPage from './questions/CvAnalysisPage'
 import MockInterviewPage from './questions/MockInterviewPage'
 import QuestionsPage from './questions/QuestionsPage'
 import type { Page } from './page'
@@ -52,6 +53,8 @@ function AppShell() {
   useEffect(() => {
     if (page === 'home') {
       document.title = strings.home.metaTitle
+    } else if (page === 'cv') {
+      document.title = `${strings.cvPage.title} — Interview Prep`
     } else if (page) {
       document.title = 'Interview Prep'
     }
@@ -78,6 +81,7 @@ function AppShell() {
           <Route path="/sandbox" element={<ReactSandboxPage />} />
           <Route path="/mock" element={<MockInterviewPage />} />
           <Route path="/questions" element={<QuestionsPage />} />
+          <Route path="/cv" element={<CvAnalysisPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
