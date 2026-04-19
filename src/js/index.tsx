@@ -2,6 +2,7 @@ import MemoizeCard from './MemoizeCard'
 import DebounceCard from './DebounceCard'
 import ThrottleCard from './ThrottleCard'
 import LazyLoadCard from './LazyLoadCard'
+import FindVsFilterCard from './FindVsFilterCard'
 import Sandbox from './Sandbox'
 import { useLocale } from '../i18n/LocaleContext'
 import { getUiStrings } from '../i18n/uiStrings'
@@ -32,6 +33,7 @@ export default function JsPage() {
           <ExpandableCard><ThrottleCard /></ExpandableCard>
           <ExpandableCard><MemoizeCard /></ExpandableCard>
           <ExpandableCard><LazyLoadCard /></ExpandableCard>
+          <ExpandableCard><FindVsFilterCard /></ExpandableCard>
         </div>
       </section>
 

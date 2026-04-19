@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { Link } from 'react-router-dom'
 import type { MessageParam } from '@anthropic-ai/sdk/resources/messages'
 import ScreenHeader from '../components/layout/ScreenHeader'
 import { useLocale } from '../i18n/LocaleContext'
@@ -10,8 +11,10 @@ import { DEFAULT_OPENAI_MODEL } from './openaiConstants'
 import CvDimensionScores from './CvDimensionScores'
 import CvNextStepsPanel from './CvNextStepsPanel'
 import { parseCvAnalysisResponse } from './cvAnalysisScore'
+import { renderCvPlainTextToDataUrl } from './cvTextPreviewImage'
 import ChatMarkdown from './ChatMarkdown'
 import { formatApiError, streamLlmChat } from './llmStream'
+import { PATH_FOR_PAGE } from '../routes'
 
 const SYSTEM_CV_ANALYSIS = `You are an expert career coach and hiring specialist. The user is preparing for a job search and wants structured feedback on their CV or résumé.
 
@@ -111,7 +114,22 @@ export default function CvAnalysisPage() {
   const [dropActive, setDropActive] = useState(false)
   /** Raster of PDF page 1 after upload; cleared on reset or non-PDF extract. */
   const [cvPdfPreviewDataUrl, setCvPdfPreviewDataUrl] = useState<string | null>(null)
+  /** Object URL for uploaded PNG/JPEG/WebP/GIF; must be revoked. */
+  const cvImageObjectUrlRef = useRef<string | null>(null)
+  const [cvImageObjectUrl, setCvImageObjectUrl] = useState<string | null>(null)
+  /** Canvas PNG for pasted / Word text when there is no PDF or image file preview. */
+  const [cvTextRasterUrl, setCvTextRasterUrl] = useState<string | null>(null)
+  const [docxBusy, setDocxBusy] = useState(false)
+  const [pdfBusy, setPdfBusy] = useState(false)
+  const exportBusy = docxBusy || pdfBusy
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const revokeAndSetImageObjectUrl = useCallback((next: string | null) => {
+    const prev = cvImageObjectUrlRef.current
+    if (prev && prev !== next) URL.revokeObjectURL(prev)
+    cvImageObjectUrlRef.current = next
+    setCvImageObjectUrl(next)
+  }, [])
 
   useEffect(() => {
     function endDrag() {
@@ -121,13 +139,77 @@ export default function CvAnalysisPage() {
     return () => window.removeEventListener('dragend', endDrag)
   }, [])
 
+  useEffect(() => {
+    return () => {
+      const u = cvImageObjectUrlRef.current
+      if (u) URL.revokeObjectURL(u)
+      cvImageObjectUrlRef.current = null
+    }
+  }, [])
+
+  useEffect(() => {
+    if (cvPdfPreviewDataUrl || cvImageObjectUrl) {
+      setCvTextRasterUrl(null)
+      return
+    }
+    const text = cvText.trim()
+    if (!text) {
+      setCvTextRasterUrl(null)
+      return
+    }
+    const id = window.setTimeout(() => {
+      setCvTextRasterUrl(renderCvPlainTextToDataUrl(cvText))
+    }, 160)
+    return () => window.clearTimeout(id)
+  }, [cvText, cvPdfPreviewDataUrl, cvImageObjectUrl])
+
   const jobUrlLooksInvalid = jobUrl.trim().length > 0 && !isValidOptionalJobUrl(jobUrl)
   const canAnalyze =
     apiKey.trim().length > 0 && cvText.trim().length > 0 && !loading && !jobUrlLooksInvalid
 
+  const downloadStyledDocx = useCallback(async () => {
+    if (!cvText.trim()) return
+    setDocxBusy(true)
+    try {
+      const { plainTextToYaronStyleDocx } = await import('./cvYaronStyleDocx')
+      const out = await plainTextToYaronStyleDocx(cvText)
+      if (!out) return
+      const url = URL.createObjectURL(out.blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `${out.baseName}_Resume.docx`
+      a.rel = 'noopener'
+      a.click()
+      URL.revokeObjectURL(url)
+    } finally {
+      setDocxBusy(false)
+    }
+  }, [cvText])
+
+  const downloadStyledPdf = useCallback(async () => {
+    if (!cvText.trim()) return
+    setPdfBusy(true)
+    try {
+      const { plainTextToYaronStylePdf } = await import('./cvYaronStylePdf')
+      const out = await plainTextToYaronStylePdf(cvText)
+      if (!out) return
+      const url = URL.createObjectURL(out.blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `${out.baseName}_Resume.pdf`
+      a.rel = 'noopener'
+      a.click()
+      URL.revokeObjectURL(url)
+    } finally {
+      setPdfBusy(false)
+    }
+  }, [cvText])
+
   const clearAll = useCallback(() => {
     setCvText('')
     setCvPdfPreviewDataUrl(null)
+    revokeAndSetImageObjectUrl(null)
+    setCvTextRasterUrl(null)
     setJobUrl('')
     setJobText('')
     setResult('')
@@ -135,7 +217,7 @@ export default function CvAnalysisPage() {
     setError(null)
     setUploadError(null)
     if (fileInputRef.current) fileInputRef.current.value = ''
-  }, [])
+  }, [revokeAndSetImageObjectUrl])
 
   async function processCvFile(file: File) {
     setUploadError(null)
@@ -146,8 +228,10 @@ export default function CvAnalysisPage() {
       if (out.ok) {
         setCvText(out.text)
         setCvPdfPreviewDataUrl(out.pdfPreviewDataUrl)
+        revokeAndSetImageObjectUrl(out.imageObjectUrl)
       } else {
         setCvPdfPreviewDataUrl(null)
+        revokeAndSetImageObjectUrl(null)
         const msg =
           out.code === 'too_large'
             ? cv.uploadTooLarge
@@ -281,9 +365,22 @@ export default function CvAnalysisPage() {
   const jobUrlTrim = jobUrl.trim()
   const canOpenJobLink = jobUrlTrim.length > 0 && isValidOptionalJobUrl(jobUrl)
 
+  const previewImageSrc = cvPdfPreviewDataUrl ?? cvImageObjectUrl ?? cvTextRasterUrl
+  const previewImageAlt = cvPdfPreviewDataUrl
+    ? cv.cvPreviewImageAlt
+    : cvImageObjectUrl
+      ? cv.cvPreviewUploadImageAlt
+      : cv.cvPreviewTextImageAlt
+
   return (
     <div className="editorial-page editorial-page--cv cv-analysis-page" dir={contentDir}>
       <ScreenHeader title={cv.title} lead={cv.lead} align="start" />
+
+      <p className="cv-analysis-theme-link-wrap">
+        <Link className="cv-analysis-theme-link" to={PATH_FOR_PAGE.cvThemes}>
+          {cv.themeGeneratorLink}
+        </Link>
+      </p>
 
       <section className="editorial-panel cv-analysis-settings" aria-label="AI settings">
         <ApiKeySettings onAiSettingsChange={onAiSettingsChange} />
@@ -304,7 +401,7 @@ export default function CvAnalysisPage() {
                 id="cv-analysis-file"
                 type="file"
                 className="cv-analysis-file-input"
-                accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                accept=".pdf,.docx,.png,.jpg,.jpeg,.webp,.gif,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/png,image/jpeg,image/webp,image/gif"
                 onChange={(e) => void onCvFileChange(e)}
                 disabled={loading || uploadBusy}
                 aria-label={cv.uploadButton}
@@ -343,6 +440,9 @@ export default function CvAnalysisPage() {
               disabled={loading}
               spellCheck
             />
+            {cvImageObjectUrl && cvText.trim().length === 0 ? (
+              <p className="cv-analysis-hint cv-analysis-hint--image-note">{cv.cvImageNeedTextHint}</p>
+            ) : null}
           </div>
           <div className="cv-analysis-cv-preview-col">
             <div id="cv-analysis-preview-heading" className="cv-analysis-label">
@@ -354,27 +454,16 @@ export default function CvAnalysisPage() {
               role="region"
               aria-labelledby="cv-analysis-preview-heading"
             >
-              {cvPdfPreviewDataUrl ? (
+              {previewImageSrc ? (
                 <div className="cv-analysis-preview-image-wrap">
                   <img
-                    src={cvPdfPreviewDataUrl}
-                    alt={cv.cvPreviewImageAlt}
+                    src={previewImageSrc}
+                    alt={previewImageAlt}
                     className="cv-analysis-preview-image"
                     decoding="async"
                   />
                 </div>
-              ) : null}
-              {cvText.trim().length > 0 ? (
-                <div
-                  className={
-                    cvPdfPreviewDataUrl
-                      ? 'cv-analysis-preview-body cv-analysis-preview-body--below-image'
-                      : 'cv-analysis-preview-body'
-                  }
-                >
-                  {cvText}
-                </div>
-              ) : cvPdfPreviewDataUrl ? null : (
+              ) : (
                 <p className="cv-analysis-preview-empty">{cv.cvPreviewPlaceholder}</p>
               )}
             </div>
@@ -428,6 +517,22 @@ export default function CvAnalysisPage() {
         <div className="cv-analysis-actions">
           <button type="button" onClick={() => void analyze()} disabled={!canAnalyze}>
             {loading ? cv.analyzing : cv.analyze}
+          </button>
+          <button
+            type="button"
+            className="secondary"
+            onClick={() => void downloadStyledDocx()}
+            disabled={!cvText.trim() || loading || exportBusy}
+          >
+            {docxBusy ? strings.cvThemePage.docxWorking : cv.downloadStyledDocx}
+          </button>
+          <button
+            type="button"
+            className="secondary"
+            onClick={() => void downloadStyledPdf()}
+            disabled={!cvText.trim() || loading || exportBusy}
+          >
+            {pdfBusy ? strings.cvThemePage.pdfWorking : cv.downloadStyledPdf}
           </button>
           <button
             type="button"

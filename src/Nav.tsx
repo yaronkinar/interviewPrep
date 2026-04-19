@@ -17,7 +17,7 @@ import type { Page } from './page'
 import { PATH_FOR_PAGE } from './routes'
 import { useTheme } from './theme/ThemeContext'
 
-const TAB_IDS: Page[] = ['home', 'js', 'react', 'sandbox', 'mock', 'questions', 'cv']
+const TAB_IDS: Page[] = ['home', 'js', 'react', 'css', 'sandbox', 'mock', 'questions', 'cv', 'cvThemes']
 const LOCALE_LABELS: Record<Locale, string> = {
   en: 'English',
   he: 'עברית',

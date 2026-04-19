@@ -5,20 +5,24 @@ export const PATH_FOR_PAGE: Record<Page, string> = {
   home: '/',
   js: '/js',
   react: '/react',
+  css: '/css',
   sandbox: '/sandbox',
   mock: '/mock',
   questions: '/questions',
   cv: '/cv',
+  cvThemes: '/cv/themes',
 }
 
 const PATH_TO_PAGE: Record<string, Page> = {
   '/': 'home',
   '/js': 'js',
   '/react': 'react',
+  '/css': 'css',
   '/sandbox': 'sandbox',
   '/mock': 'mock',
   '/questions': 'questions',
   '/cv': 'cv',
+  '/cv/themes': 'cvThemes',
 }
 
 /** Map current pathname to a `Page` (trailing slash normalized). Unknown paths → `null`. */

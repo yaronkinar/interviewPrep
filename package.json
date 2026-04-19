@@ -8,7 +8,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "tsc": "tsc --noEmit",
-    "fetch-stitch": "node scripts/fetch-stitch-screens.mjs"
+    "fetch-stitch": "node scripts/fetch-stitch-screens.mjs",
+    "generate-cv-template": "node scripts/generate-cv-template.mjs"
   },
   "devDependencies": {
     "@google/stitch-sdk": "^0.1.0",
@@ -35,6 +36,8 @@
     "@vercel/analytics": "^2.0.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "docx": "^9.6.1",
+    "jspdf": "^4.2.1",
     "lucide-react": "^1.7.0",
     "mammoth": "^1.12.0",
     "monaco-editor": "^0.55.1",

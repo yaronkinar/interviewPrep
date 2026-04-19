@@ -1,1 +1,10 @@
-export type Page = 'home' | 'js' | 'react' | 'sandbox' | 'mock' | 'questions' | 'cv'
+export type Page =
+  | 'home'
+  | 'js'
+  | 'react'
+  | 'css'
+  | 'sandbox'
+  | 'mock'
+  | 'questions'
+  | 'cv'
+  | 'cvThemes'

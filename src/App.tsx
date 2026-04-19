@@ -8,8 +8,10 @@ import Nav from './Nav'
 import { ThemeProvider } from './theme/ThemeContext'
 import JsPage from './js/index'
 import ReactPage from './react/index'
+import CssPage from './css/index'
 import ReactSandboxPage from './ReactSandboxPage'
 import CvAnalysisPage from './questions/CvAnalysisPage'
+import CvThemeGeneratorPage from './questions/CvThemeGeneratorPage'
 import MockInterviewPage from './questions/MockInterviewPage'
 import QuestionsPage from './questions/QuestionsPage'
 import type { Page } from './page'
@@ -55,10 +57,12 @@ function AppShell() {
       document.title = strings.home.metaTitle
     } else if (page === 'cv') {
       document.title = `${strings.cvPage.title} — Interview Prep`
+    } else if (page === 'cvThemes') {
+      document.title = `${strings.cvThemePage.title} — Interview Prep`
     } else if (page) {
       document.title = 'Interview Prep'
     }
-  }, [page, strings.home.metaTitle])
+  }, [page, strings.home.metaTitle, strings.cvPage.title, strings.cvThemePage.title])
 
   useEffect(() => {
     if (!GA_MEASUREMENT_ID || !window.gtag) return
@@ -78,10 +82,12 @@ function AppShell() {
           <Route path="/" element={<HomePage />} />
           <Route path="/js" element={<JsPage />} />
           <Route path="/react" element={<ReactPage />} />
+          <Route path="/css" element={<CssPage />} />
           <Route path="/sandbox" element={<ReactSandboxPage />} />
           <Route path="/mock" element={<MockInterviewPage />} />
           <Route path="/questions" element={<QuestionsPage />} />
           <Route path="/cv" element={<CvAnalysisPage />} />
+          <Route path="/cv/themes" element={<CvThemeGeneratorPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>

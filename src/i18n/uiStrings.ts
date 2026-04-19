@@ -15,6 +15,7 @@ export type UiStrings = {
   pages: {
     jsTitle: string
     reactTitle: string
+    cssTitle: string
     sandboxTitle: string
     questionsTitle: string
     sandboxLead: string
@@ -182,6 +183,7 @@ const en: UiStrings = {
   pages: {
     jsTitle: 'JS Patterns',
     reactTitle: 'React Questions',
+    cssTitle: 'CSS Patterns',
     sandboxTitle: 'React sandbox',
     questionsTitle: 'Company Interview Questions',
     sandboxLead:
@@ -371,6 +373,7 @@ const he: UiStrings = {
   pages: {
     jsTitle: 'דפוסי JS',
     reactTitle: 'שאלות React',
+    cssTitle: 'דפוסי CSS',
     sandboxTitle: 'ארגז חול React',
     questionsTitle: 'שאלות ראיונות חברות',
     sandboxLead:

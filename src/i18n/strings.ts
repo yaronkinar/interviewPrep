@@ -33,6 +33,12 @@ export type CvPageStrings = {
   cvPreviewPlaceholder: string
   /** Alt text for first-page PDF raster preview */
   cvPreviewImageAlt: string
+  /** Alt text for canvas raster of pasted / Word-extracted text */
+  cvPreviewTextImageAlt: string
+  /** Alt text for uploaded PNG/JPEG/WebP/GIF preview */
+  cvPreviewUploadImageAlt: string
+  /** Shown when an image file is loaded but the CV text field is still empty */
+  cvImageNeedTextHint: string
   jobLabel: string
   jobPlaceholder: string
   jobHelp: string
@@ -76,6 +82,39 @@ export type CvPageStrings = {
   promptSectionJobText: string
   promptJobUrlNone: string
   promptNoJobPostingText: string
+  /** Link copy to the CV theme preview tool (shown on the CV analysis page). */
+  themeGeneratorLink: string
+  /** Download résumé as Word (.docx) with the site’s default layout (browser-only). */
+  downloadStyledDocx: string
+  /** Download résumé as PDF with the same parsed layout (browser-only). */
+  downloadStyledPdf: string
+}
+
+export type CvThemePageStrings = {
+  title: string
+  lead: string
+  sectionHeading: string
+  cvLabel: string
+  cvPlaceholder: string
+  docxExportHint: string
+  downloadDocx: string
+  docxWorking: string
+  downloadPdf: string
+  pdfWorking: string
+  /** Link label for the static blank Word template in /public. */
+  downloadBlankTemplate: string
+  themesHeading: string
+  previewHeading: string
+  previewAlt: string
+  previewEmpty: string
+  downloadPng: string
+  backToAnalysis: string
+  presetEditorial: string
+  presetNoir: string
+  presetOcean: string
+  presetParchment: string
+  presetMono: string
+  presetRose: string
 }
 
 /** LLM user-message section labels — one set per UI locale (merged in getStrings). */
@@ -199,6 +238,7 @@ export type AppStrings = {
   nav: Record<Page, string>
   home: HomeStrings
   cvPage: CvPageStrings
+  cvThemePage: CvThemePageStrings
   /** Text before the linked author name in the footer; omit per-locale to fall back to English. */
   siteCreditPrefix?: string
   /** Linked author display name; omit per-locale to fall back to English. */
@@ -215,6 +255,10 @@ const CV_PAGE_EN: CvPageStrings = {
   cvPreviewHeading: 'Preview',
   cvPreviewPlaceholder: 'Text you paste or extract from a file will show here as plain text.',
   cvPreviewImageAlt: 'First page of uploaded PDF (visual preview)',
+  cvPreviewTextImageAlt: 'CV text rendered as a page preview',
+  cvPreviewUploadImageAlt: 'Uploaded CV image preview',
+  cvImageNeedTextHint:
+    'Photos are shown as a preview only. Paste or type the CV text on the left (or upload PDF/Word) so analysis can run — this page does not OCR images automatically.',
   jobLabel: 'Target role or job description (optional)',
   jobPlaceholder: 'e.g. “Senior frontend engineer” or paste a job posting…',
   jobHelp: 'When provided, the analysis emphasizes fit, gaps, and keywords for that role.',
@@ -227,14 +271,16 @@ const CV_PAGE_EN: CvPageStrings = {
   assistantLabel: 'Assistant',
   apiKeyHint: 'Add an API key in the AI settings above to run analysis.',
   uploadLabel: 'Upload PDF or Word',
-  uploadHint: '.pdf or .docx — extracted locally in your browser (the file is not sent to this site until you run analysis).',
+  uploadHint:
+    'PDF, Word .docx, or image (PNG, JPEG, WebP, GIF). Text is extracted locally for PDF/Word; images show a preview only until you paste text. Nothing is sent until you run analysis.',
   uploadButton: 'Choose file',
   uploadParsing: 'Reading file…',
   uploadEmpty: 'No text could be extracted. Try another export or paste the text manually.',
-  uploadUnsupported: 'Use PDF or Word .docx. Older .doc files are not supported in the browser.',
+  uploadUnsupported:
+    'Use PDF, Word .docx, or a raster image (PNG, JPEG, WebP, GIF). Older .doc files are not supported in the browser.',
   uploadTooLarge: 'File is too large (max 12 MB).',
   uploadReadError: 'Could not read this file.',
-  dropZoneHint: 'Drag and drop a PDF or .docx file here',
+  dropZoneHint: 'Drag and drop a PDF, .docx, or image file here',
   dropZoneActive: 'Release to load',
   scoreHeading: 'Overall score',
   scoreOutOf: '/100',
@@ -254,6 +300,9 @@ const CV_PAGE_EN: CvPageStrings = {
   jobUrlInvalid: 'Enter a valid http(s) URL or leave this field empty.',
   jobPasteHint:
     'This app cannot load most job sites in the browser. Open the link in another tab, copy the posting text, and paste it below for a role-specific comparison.',
+  themeGeneratorLink: 'Try CV theme preview — colors & fonts as a shareable image',
+  downloadStyledDocx: 'Download résumé (.docx — styled layout)',
+  downloadStyledPdf: 'Download résumé (.pdf — styled layout)',
   ...CV_PAGE_PROMPT_BY_LOCALE.en,
 }
 
@@ -267,6 +316,10 @@ const CV_PAGE_HE: CvPageStrings = {
   cvPreviewHeading: 'תצוגה מקדימה',
   cvPreviewPlaceholder: 'טקסט שתדביקו או שיימשך מהקובץ יוצג כאן כטקסט פשוט.',
   cvPreviewImageAlt: 'עמוד ראשון של קובץ PDF שהועלה (תצוגה ויזואלית)',
+  cvPreviewTextImageAlt: 'תצוגת עמוד של טקסט קורות החיים',
+  cvPreviewUploadImageAlt: 'תצוגה מקדימה של תמונת קורות חיים שהועלתה',
+  cvImageNeedTextHint:
+    'תמונות מוצגות לתצוגה בלבד. הדביקו או הקלידו את טקסט קורות החיים משמאל (או העלו PDF/Word) כדי להריץ ניתוח — הדף אינו מבצע OCR אוטומטי לתמונות.',
   jobLabel: 'תפקיד יעד או תיאור משרה (אופציונלי)',
   jobPlaceholder: 'למשל "מפתח פרונטנד בכיר" או הדבקת מודעת משרה…',
   jobHelp: 'כשממלאים, הניתוח מתמקד בהתאמה, פערים ומילות מפתח לתפקיד.',
@@ -279,14 +332,16 @@ const CV_PAGE_HE: CvPageStrings = {
   assistantLabel: 'עוזר',
   apiKeyHint: 'הוסיפו מפתח API בהגדרות הבינה המלאכותית למעלה כדי להריץ ניתוח.',
   uploadLabel: 'העלאת PDF או Word',
-  uploadHint: '.pdf או .docx — החילוץ מתבצע מקומית בדפדפן (הקובץ לא נשלח לאתר עד שמריצים ניתוח).',
+  uploadHint:
+    'PDF, Word ‎.docx או תמונה (PNG, JPEG, WebP, GIF). טקסט נחלץ מקומית מ-PDF/Word; תמונות מוצגות בתצוגה בלבד עד שמדביקים טקסט. שום דבר לא נשלח עד שמריצים ניתוח.',
   uploadButton: 'בחירת קובץ',
   uploadParsing: 'קורא קובץ…',
   uploadEmpty: 'לא ניתן היה לחלץ טקסט. נסו ייצוא אחר או הדביקו את הטקסט ידנית.',
-  uploadUnsupported: 'השתמשו ב-PDF או Word ‎.docx. קבצי ‎.doc ישנים אינם נתמכים בדפדפן.',
+  uploadUnsupported:
+    'השתמשו ב-PDF, Word ‎.docx או תמונת רסטר (PNG, JPEG, WebP, GIF). קבצי ‎.doc ישנים אינם נתמכים בדפדפן.',
   uploadTooLarge: 'הקובץ גדול מדי (מקסימום 12 מ״ב).',
   uploadReadError: 'לא ניתן לקרוא את הקובץ.',
-  dropZoneHint: 'גררו לכאן קובץ PDF או ‎.docx',
+  dropZoneHint: 'גררו לכאן קובץ PDF, ‎.docx או תמונה',
   dropZoneActive: 'שחררו לטעינה',
   scoreHeading: 'ציון כולל',
   scoreOutOf: '/100',
@@ -306,7 +361,67 @@ const CV_PAGE_HE: CvPageStrings = {
   jobUrlInvalid: 'הזינו כתובת http(s) תקינה או השאירו ריק.',
   jobPasteHint:
     'האפליקציה אינה יכולה לטעון את רוב אתרי הגיוס בדפדפן. פתחו את הקישור בלשונית אחרת, העתיקו את טקסט המשרה והדביקו למטה להשוואה ממוקדת.',
+  themeGeneratorLink: 'תצוגת ערכות צבע וגופנים לקורות חיים (תמונה)',
+  downloadStyledDocx: 'הורדת קו״ח (.docx — פריסה מעוצבת)',
+  downloadStyledPdf: 'הורדת קו״ח ‎(.pdf — פריסה מעוצבת)',
   ...CV_PAGE_PROMPT_BY_LOCALE.he,
+}
+
+const CV_THEME_PAGE_EN: CvThemePageStrings = {
+  title: 'CV theme preview',
+  lead:
+    'Pick a visual preset and paste résumé text. A PNG preview is generated entirely in your browser — no API calls. Use it to compare palettes and type moods before you commit in Word, Figma, or LaTeX.',
+  sectionHeading: 'Text and theme',
+  cvLabel: 'Plain-text CV',
+  cvPlaceholder: 'Paste your CV as plain text…',
+  docxExportHint:
+    'You can also download a Word (.docx) or PDF that uses the same typography and colors as the reference résumé layout (Arial + Courier, blue section rules, right-aligned dates). Parsing is best-effort from plain text — use clear section headings such as SKILLS, WORK HISTORY, and EDUCATION.',
+  downloadDocx: 'Download Word (.docx)',
+  docxWorking: 'Preparing…',
+  downloadPdf: 'Download PDF',
+  pdfWorking: 'Preparing…',
+  downloadBlankTemplate: 'Download blank Word template (.docx)',
+  themesHeading: 'Theme presets',
+  previewHeading: 'Preview',
+  previewAlt: 'CV plain text rendered with the selected theme',
+  previewEmpty: 'Add some text to see a preview.',
+  downloadPng: 'Download PNG',
+  backToAnalysis: '← CV analysis (feedback with AI)',
+  presetEditorial: 'Editorial',
+  presetNoir: 'Noir',
+  presetOcean: 'Ocean serif',
+  presetParchment: 'Parchment',
+  presetMono: 'Mono',
+  presetRose: 'Rose',
+}
+
+const CV_THEME_PAGE_HE: CvThemePageStrings = {
+  ...CV_THEME_PAGE_EN,
+  title: 'תצוגת ערכת עיצוב לקורות חיים',
+  lead:
+    'בחרו ערכת צבעים והדביקו טקסט קורות חיים. תמונת PNG נוצרת בדפדפן בלבד — בלי קריאות ל-API. מתאים להשוואת מצב רוח טיפוגרפי לפני עיצוב ב-Word, Figma או LaTeX.',
+  sectionHeading: 'טקסט וערכת נושא',
+  cvLabel: 'קורות חיים כטקסט פשוט',
+  cvPlaceholder: 'הדביקו כאן את קורות החיים כטקסט פשוט…',
+  docxExportHint:
+    'אפשר גם להוריד קובץ Word ‎(.docx) או PDF עם אותה שפת עיצוב כמו בפריסת הייחוס (Arial + Courier, קווים כחולים, תאריכים מיושרים לימין). הניתוח הוא הטבה מטקסט פשוט — עדיף כותרות מקטעים ברורות כמו SKILLS, WORK HISTORY, EDUCATION.',
+  downloadDocx: 'הורדת Word ‎(.docx)',
+  docxWorking: 'מכין…',
+  downloadPdf: 'הורדת PDF',
+  pdfWorking: 'מכין…',
+  downloadBlankTemplate: 'הורדת תבנית Word ריקה ‎(.docx)',
+  themesHeading: 'ערכות מוכנות',
+  previewHeading: 'תצוגה מקדימה',
+  previewAlt: 'טקסט קורות חיים מוצג עם הערכה שנבחרה',
+  previewEmpty: 'הוסיפו טקסט כדי לראות תצוגה מקדימה.',
+  downloadPng: 'הורדת PNG',
+  backToAnalysis: '← ניתוח קורות חיים (משוב עם בינה מלאכותית)',
+  presetEditorial: 'עריכתי',
+  presetNoir: 'נואר',
+  presetOcean: 'מפרץ (סריף)',
+  presetParchment: 'קלף',
+  presetMono: 'מונו',
+  presetRose: 'ורוד',
 }
 
 const en: AppStrings = {
@@ -316,10 +431,12 @@ const en: AppStrings = {
     home: 'Home',
     js: 'JS Patterns',
     react: 'React Questions',
+    css: 'CSS',
     sandbox: 'React sandbox',
     mock: 'Mock interview',
     questions: 'Company Q&A',
     cv: 'CV analysis',
+    cvThemes: 'CV themes',
   },
   home: {
     metaTitle: 'Interview Prep — practice in the browser',
@@ -361,6 +478,7 @@ const en: AppStrings = {
     cta: 'Choose a section from the navigation above to get started.',
   },
   cvPage: CV_PAGE_EN,
+  cvThemePage: CV_THEME_PAGE_EN,
 }
 
 const he: AppStrings = {
@@ -370,10 +488,12 @@ const he: AppStrings = {
     home: 'בית',
     js: 'דפוסי JS',
     react: 'שאלות React',
+    css: 'CSS',
     sandbox: 'ארגז חול React',
     mock: 'ראיון דמה',
     questions: 'שאלות ותשובות',
     cv: 'ניתוח קורות חיים',
+    cvThemes: 'ערכות קו״ח',
   },
   home: {
     metaTitle: 'הכנה לראיונות — תרגול בדפדפן',
@@ -414,6 +534,7 @@ const he: AppStrings = {
     cta: 'בחרו אזור מהתפריט למעלה כדי להתחיל.',
   },
   cvPage: CV_PAGE_HE,
+  cvThemePage: CV_THEME_PAGE_HE,
 }
 
 const es: AppStrings = {
@@ -421,10 +542,12 @@ const es: AppStrings = {
     home: 'Inicio',
     js: 'Patrones JS',
     react: 'Preguntas React',
+    css: 'CSS',
     sandbox: 'Sandbox React',
     mock: 'Simulacro',
     questions: 'P&R empresas',
     cv: 'Análisis de CV',
+    cvThemes: 'Temas CV',
   },
   home: {
     metaTitle: 'Preparación para entrevistas — práctica en el navegador',
@@ -465,6 +588,7 @@ const es: AppStrings = {
     cta: 'Elige una sección en la barra superior para empezar.',
   },
   cvPage: CV_PAGE_EN,
+  cvThemePage: CV_THEME_PAGE_EN,
 }
 
 const fr: AppStrings = {
@@ -472,10 +596,12 @@ const fr: AppStrings = {
     home: 'Accueil',
     js: 'Patterns JS',
     react: 'Questions React',
+    css: 'CSS',
     sandbox: 'Bac à sable React',
     mock: 'Entretien blanc',
     questions: 'Q&R entreprises',
     cv: 'Analyse CV',
+    cvThemes: 'Thèmes CV',
   },
   home: {
     metaTitle: 'Préparation entretiens — pratique dans le navigateur',
@@ -516,6 +642,7 @@ const fr: AppStrings = {
     cta: 'Choisissez une section dans la barre du haut pour commencer.',
   },
   cvPage: CV_PAGE_EN,
+  cvThemePage: CV_THEME_PAGE_EN,
 }
 
 const de: AppStrings = {
@@ -523,10 +650,12 @@ const de: AppStrings = {
     home: 'Start',
     js: 'JS-Muster',
     react: 'React-Fragen',
+    css: 'CSS',
     sandbox: 'React-Sandbox',
     mock: 'Probegespräch',
     questions: 'Firmen-F&A',
     cv: 'Lebenslauf-Analyse',
+    cvThemes: 'CV-Themes',
   },
   home: {
     metaTitle: 'Interview Prep — Übung im Browser',
@@ -567,6 +696,7 @@ const de: AppStrings = {
     cta: 'Wähle oben in der Navigation einen Bereich, um zu starten.',
   },
   cvPage: CV_PAGE_EN,
+  cvThemePage: CV_THEME_PAGE_EN,
 }
 
 const pt: AppStrings = {
@@ -574,10 +704,12 @@ const pt: AppStrings = {
     home: 'Início',
     js: 'Padrões JS',
     react: 'Perguntas React',
+    css: 'CSS',
     sandbox: 'Sandbox React',
     mock: 'Simulado',
     questions: 'P&R empresas',
     cv: 'Análise de CV',
+    cvThemes: 'Temas CV',
   },
   home: {
     metaTitle: 'Preparação para entrevistas — prática no navegador',
@@ -618,6 +750,7 @@ const pt: AppStrings = {
     cta: 'Escolha uma seção na barra acima para começar.',
   },
   cvPage: CV_PAGE_EN,
+  cvThemePage: CV_THEME_PAGE_EN,
 }
 
 const ja: AppStrings = {
@@ -625,10 +758,12 @@ const ja: AppStrings = {
     home: 'ホーム',
     js: 'JS パターン',
     react: 'React 質問',
+    css: 'CSS',
     sandbox: 'React サンドボックス',
     mock: '模擬面接',
     questions: '企業 Q&A',
     cv: '履歴書の分析',
+    cvThemes: '履歴書のテーマ',
   },
   home: {
     metaTitle: '面接対策 — ブラウザで練習',
@@ -669,6 +804,7 @@ const ja: AppStrings = {
     cta: '上のナビからセクションを選んで始めてください。',
   },
   cvPage: CV_PAGE_EN,
+  cvThemePage: CV_THEME_PAGE_EN,
 }
 
 const zh: AppStrings = {
@@ -676,10 +812,12 @@ const zh: AppStrings = {
     home: '首页',
     js: 'JS 模式',
     react: 'React 题库',
+    css: 'CSS',
     sandbox: 'React 沙箱',
     mock: '模拟面试',
     questions: '公司问答',
     cv: '简历分析',
+    cvThemes: '简历主题',
   },
   home: {
     metaTitle: '面试准备 — 在浏览器中练习',
@@ -720,6 +858,7 @@ const zh: AppStrings = {
     cta: '请从上方导航选择要开始的区域。',
   },
   cvPage: CV_PAGE_EN,
+  cvThemePage: CV_THEME_PAGE_EN,
 }
 
 const ar: AppStrings = {
@@ -727,10 +866,12 @@ const ar: AppStrings = {
     home: 'الرئيسية',
     js: 'أنماط JS',
     react: 'أسئلة React',
+    css: 'CSS',
     sandbox: 'بيئة React',
     mock: 'مقابلة تجريبية',
     questions: 'أسئلة الشركات',
     cv: 'تحليل السيرة الذاتية',
+    cvThemes: 'سمات السيرة',
   },
   home: {
     metaTitle: 'التحضير للمقابلات — تمرّن في المتصفح',
@@ -771,6 +912,7 @@ const ar: AppStrings = {
     cta: 'اختر قسماً من شريط التنقل أعلاه للبدء.',
   },
   cvPage: CV_PAGE_EN,
+  cvThemePage: CV_THEME_PAGE_EN,
 }
 
 const ru: AppStrings = {
@@ -778,10 +920,12 @@ const ru: AppStrings = {
     home: 'Главная',
     js: 'Паттерны JS',
     react: 'Вопросы React',
+    css: 'CSS',
     sandbox: 'Песочница React',
     mock: 'Пробное интервью',
     questions: 'Вопросы компаний',
     cv: 'Анализ резюме',
+    cvThemes: 'Темы резюме',
   },
   home: {
     metaTitle: 'Подготовка к собеседованиям — в браузере',
@@ -822,6 +966,7 @@ const ru: AppStrings = {
     cta: 'Выберите раздел в верхней навигации, чтобы начать.',
   },
   cvPage: CV_PAGE_EN,
+  cvThemePage: CV_THEME_PAGE_EN,
 }
 
 const hi: AppStrings = {
@@ -829,10 +974,12 @@ const hi: AppStrings = {
     home: 'होम',
     js: 'JS पैटर्न',
     react: 'React प्रश्न',
+    css: 'CSS',
     sandbox: 'React सैंडबॉक्स',
     mock: 'मॉक इंटरव्यू',
     questions: 'कंपनी Q&A',
     cv: 'CV विश्लेषण',
+    cvThemes: 'CV थीम',
   },
   home: {
     metaTitle: 'इंटरव्यू तैयारी — ब्राउज़र में अभ्यास',
@@ -873,6 +1020,7 @@ const hi: AppStrings = {
     cta: 'शुरू करने के लिए ऊपर नेविगेशन से एक खंड चुनें।',
   },
   cvPage: CV_PAGE_EN,
+  cvThemePage: CV_THEME_PAGE_EN,
 }
 
 const pl: AppStrings = {
@@ -880,10 +1028,12 @@ const pl: AppStrings = {
     home: 'Start',
     js: 'Wzorce JS',
     react: 'Pytania React',
+    css: 'CSS',
     sandbox: 'Piaskownica React',
     mock: 'Mock interview',
     questions: 'Pytania firm',
     cv: 'Analiza CV',
+    cvThemes: 'Motywy CV',
   },
   home: {
     metaTitle: 'Przygotowanie do rozmów — w przeglądarce',
@@ -924,6 +1074,7 @@ const pl: AppStrings = {
     cta: 'Wybierz sekcję w górnym menu, aby zacząć.',
   },
   cvPage: CV_PAGE_EN,
+  cvThemePage: CV_THEME_PAGE_EN,
 }
 
 const ko: AppStrings = {
@@ -931,10 +1082,12 @@ const ko: AppStrings = {
     home: '홈',
     js: 'JS 패턴',
     react: 'React 질문',
+    css: 'CSS',
     sandbox: 'React 샌드박스',
     mock: '모의 면접',
     questions: '기업 Q&A',
     cv: '이력서 분석',
+    cvThemes: '이력서 테마',
   },
   home: {
     metaTitle: '면접 준비 — 브라우저에서 연습',
@@ -975,6 +1128,7 @@ const ko: AppStrings = {
     cta: '위에서 시작할 섹션을 선택하세요.',
   },
   cvPage: CV_PAGE_EN,
+  cvThemePage: CV_THEME_PAGE_EN,
 }
 
 export const STRINGS_BY_LOCALE: Record<Locale, AppStrings> = {
