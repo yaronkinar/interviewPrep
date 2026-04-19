@@ -7226,3 +7226,130 @@ html[data-theme='light'] body {
   color: var(--text-muted);
   margin-bottom: 8px;
 }
+
+/* ---------------------------------------------------------------------------
+ * Mobile tweaks for this session's additions: /css demo cards + /cv/themes.
+ * Additive only — desktop rules above are untouched. Uses the project's
+ * existing 720px breakpoint.
+ * ------------------------------------------------------------------------- */
+@media (max-width: 720px) {
+  /* CenterDivCard — shorter stage so the whole card fits without scrolling */
+  .css-center-stage {
+    height: 140px;
+  }
+
+  /* PositionCard */
+  .css-pos-stage {
+    padding: 12px;
+    min-height: 200px;
+  }
+  .css-pos-target--absolute {
+    right: 8px;
+    top: 8px;
+  }
+  .css-pos-scroll {
+    height: 180px;
+  }
+
+  /* BoxModelCard — 200px target + thick border can clip at 360px viewport */
+  .css-box-target {
+    width: min(100%, 200px);
+  }
+
+  /* SpecificityCard — long literal in .css-spec-target overflows; the table
+   * has 4 columns that don't fit; let it scroll horizontally instead. */
+  .css-spec-target {
+    font-size: 0.78rem;
+    word-break: break-word;
+  }
+  .css-spec-table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    white-space: nowrap;
+    font-size: 0.78rem;
+  }
+  .css-spec-table th,
+  .css-spec-table td {
+    padding: 6px;
+  }
+
+  /* TruncateTextCard — drop the 320px lid so the box uses card width */
+  .css-truncate-target {
+    max-width: 100%;
+  }
+
+  /* StackingContextCard — child & sibling were sized for desktop card width */
+  .css-stack-stage {
+    height: 240px;
+  }
+  .css-stack-sibling,
+  .css-stack-child {
+    font-size: 0.78rem;
+    padding: 8px 12px;
+  }
+  .css-stack-parent {
+    width: 80%;
+    height: 150px;
+  }
+  .css-stack-child {
+    white-space: normal;
+    text-align: center;
+    max-width: 80%;
+  }
+  .css-stack-readout {
+    font-size: 0.75rem;
+  }
+
+  /* DisplayCard — comparison table is the worst offender on phones */
+  .css-hide-table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    white-space: nowrap;
+    font-size: 0.78rem;
+  }
+  .css-hide-table th,
+  .css-hide-table td {
+    padding: 6px;
+  }
+
+  /* PseudoCard — float-left + float-right collide on narrow widths */
+  .css-pseudo-floated,
+  .css-pseudo-floated--right {
+    float: none;
+    display: block;
+    margin: 0 0 6px;
+  }
+  .css-pseudo-badges {
+    line-height: 1.9;
+  }
+  .css-pseudo-list {
+    padding-left: 20px;
+    font-size: 0.8rem;
+  }
+
+  /* MarginCollapseCard — keep child labels readable */
+  .css-mc-child {
+    padding: 8px 10px;
+    font-size: 0.78rem;
+  }
+
+  /* CssVarsCard — sliders fill width (already do via input width: 100%); just
+   * tighten the stage padding so chips don't push the card wider. */
+  .css-vars-stage {
+    padding: 12px;
+  }
+  .css-vars-stage > * {
+    margin: 0 6px 8px 0;
+  }
+
+  /* CvThemeGeneratorPage — keep preview pane from dominating the viewport
+   * and tighten the off-page crossnav padding to match other panels. */
+  .editorial-page--cv.cv-theme-page .cv-theme-crossnav {
+    padding-inline: 1rem;
+  }
+  .editorial-page--cv.cv-theme-page .cv-theme-preview-pane {
+    max-height: 60vh;
+  }
+}
