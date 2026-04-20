@@ -437,6 +437,7 @@ const en: AppStrings = {
     questions: 'Company Q&A',
     cv: 'CV analysis',
     cvThemes: 'CV themes',
+    quest: 'JS Quest',
   },
   home: {
     metaTitle: 'Interview Prep — practice in the browser',
@@ -494,6 +495,7 @@ const he: AppStrings = {
     questions: 'שאלות ותשובות',
     cv: 'ניתוח קורות חיים',
     cvThemes: 'ערכות קו״ח',
+    quest: 'משחק JS',
   },
   home: {
     metaTitle: 'הכנה לראיונות — תרגול בדפדפן',
@@ -548,6 +550,7 @@ const es: AppStrings = {
     questions: 'P&R empresas',
     cv: 'Análisis de CV',
     cvThemes: 'Temas CV',
+    quest: 'Aventura JS',
   },
   home: {
     metaTitle: 'Preparación para entrevistas — práctica en el navegador',
@@ -602,6 +605,7 @@ const fr: AppStrings = {
     questions: 'Q&R entreprises',
     cv: 'Analyse CV',
     cvThemes: 'Thèmes CV',
+    quest: 'Aventure JS',
   },
   home: {
     metaTitle: 'Préparation entretiens — pratique dans le navigateur',
@@ -656,6 +660,7 @@ const de: AppStrings = {
     questions: 'Firmen-F&A',
     cv: 'Lebenslauf-Analyse',
     cvThemes: 'CV-Themes',
+    quest: 'JS-Abenteuer',
   },
   home: {
     metaTitle: 'Interview Prep — Übung im Browser',
@@ -710,6 +715,7 @@ const pt: AppStrings = {
     questions: 'P&R empresas',
     cv: 'Análise de CV',
     cvThemes: 'Temas CV',
+    quest: 'Aventura JS',
   },
   home: {
     metaTitle: 'Preparação para entrevistas — prática no navegador',
@@ -764,6 +770,7 @@ const ja: AppStrings = {
     questions: '企業 Q&A',
     cv: '履歴書の分析',
     cvThemes: '履歴書のテーマ',
+    quest: 'JS クエスト',
   },
   home: {
     metaTitle: '面接対策 — ブラウザで練習',
@@ -818,6 +825,7 @@ const zh: AppStrings = {
     questions: '公司问答',
     cv: '简历分析',
     cvThemes: '简历主题',
+    quest: 'JS 闯关',
   },
   home: {
     metaTitle: '面试准备 — 在浏览器中练习',
@@ -872,6 +880,7 @@ const ar: AppStrings = {
     questions: 'أسئلة الشركات',
     cv: 'تحليل السيرة الذاتية',
     cvThemes: 'سمات السيرة',
+    quest: 'مغامرة JS',
   },
   home: {
     metaTitle: 'التحضير للمقابلات — تمرّن في المتصفح',
@@ -926,6 +935,7 @@ const ru: AppStrings = {
     questions: 'Вопросы компаний',
     cv: 'Анализ резюме',
     cvThemes: 'Темы резюме',
+    quest: 'Квест JS',
   },
   home: {
     metaTitle: 'Подготовка к собеседованиям — в браузере',
@@ -980,6 +990,7 @@ const hi: AppStrings = {
     questions: 'कंपनी Q&A',
     cv: 'CV विश्लेषण',
     cvThemes: 'CV थीम',
+    quest: 'JS क्वेस्ट',
   },
   home: {
     metaTitle: 'इंटरव्यू तैयारी — ब्राउज़र में अभ्यास',
@@ -1034,6 +1045,7 @@ const pl: AppStrings = {
     questions: 'Pytania firm',
     cv: 'Analiza CV',
     cvThemes: 'Motywy CV',
+    quest: 'Misja JS',
   },
   home: {
     metaTitle: 'Przygotowanie do rozmów — w przeglądarce',
@@ -1088,6 +1100,7 @@ const ko: AppStrings = {
     questions: '기업 Q&A',
     cv: '이력서 분석',
     cvThemes: '이력서 테마',
+    quest: 'JS 퀘스트',
   },
   home: {
     metaTitle: '면접 준비 — 브라우저에서 연습',

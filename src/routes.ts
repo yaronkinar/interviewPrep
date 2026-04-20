@@ -11,6 +11,7 @@ export const PATH_FOR_PAGE: Record<Page, string> = {
   questions: '/questions',
   cv: '/cv',
   cvThemes: '/cv/themes',
+  quest: '/quest',
 }
 
 const PATH_TO_PAGE: Record<string, Page> = {
@@ -23,6 +24,7 @@ const PATH_TO_PAGE: Record<string, Page> = {
   '/questions': 'questions',
   '/cv': 'cv',
   '/cv/themes': 'cvThemes',
+  '/quest': 'quest',
 }
 
 /** Map current pathname to a `Page` (trailing slash normalized). Unknown paths → `null`. */

@@ -14,6 +14,7 @@ import CvAnalysisPage from './questions/CvAnalysisPage'
 import CvThemeGeneratorPage from './questions/CvThemeGeneratorPage'
 import MockInterviewPage from './questions/MockInterviewPage'
 import QuestionsPage from './questions/QuestionsPage'
+import QuestPage from './quest'
 import type { Page } from './page'
 import { pageFromPathname } from './routes'
 import { AUTHOR_LINKEDIN_URL } from './site'
@@ -88,6 +89,7 @@ function AppShell() {
           <Route path="/questions" element={<QuestionsPage />} />
           <Route path="/cv" element={<CvAnalysisPage />} />
           <Route path="/cv/themes" element={<CvThemeGeneratorPage />} />
+          <Route path="/quest" element={<QuestPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>

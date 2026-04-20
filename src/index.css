@@ -1514,7 +1514,7 @@ button.nav-mobile-drawer-close:hover {
     padding: 0.72rem;
   }
   .js-editorial--stitch .js-editorial-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
   .js-editorial--stitch .sandbox-body {
     grid-template-columns: 1fr;
@@ -3553,6 +3553,11 @@ input:focus { border-color: var(--accent); }
 /* Generic expandable card wrapper (JS / React demo cards) */
 .expandable-card-wrap {
   position: relative;
+  /* Grid items default to min-width: auto, which expands to the intrinsic
+   * min-content size of the card. A non-wrapping <pre> code block can blow
+   * the column up to thousands of pixels and break mobile layout. Letting
+   * the wrapper shrink keeps the card inside its grid track. */
+  min-width: 0;
 }
 .expandable-card-modal {
   max-width: 900px;
@@ -7353,3 +7358,381 @@ html[data-theme='light'] body {
     max-height: 60vh;
   }
 }
+
+/* ===========================================================================
+ * JS Quest — adventure game for teaching intermediate JavaScript.
+ * Layout: 3-column (picker | stage | objective) collapsing to stacked on small
+ * viewports. Board uses absolute positioning so sprites animate via CSS
+ * transitions rather than re-laying out.
+ * ====================================================================== */
+
+.quest-page {
+  padding: 24px clamp(16px, 4vw, 48px) 64px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  color: var(--text);
+}
+.quest-page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 24px;
+}
+.quest-page-title {
+  margin: 0;
+  font-size: clamp(1.5rem, 2.4vw, 2rem);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.quest-page-lead {
+  margin: 6px 0 0;
+  max-width: 70ch;
+  color: var(--muted, #94a3b8);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.quest-layout {
+  display: grid;
+  grid-template-columns: 220px 1fr 320px;
+  gap: 20px;
+  align-items: start;
+}
+@media (max-width: 1100px) {
+  .quest-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---------- Level picker (left rail) ---------- */
+.quest-picker {
+  background: rgba(15, 18, 28, 0.65);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 12px;
+  padding: 14px 12px;
+  position: sticky;
+  top: 16px;
+}
+.quest-picker-title {
+  margin: 0 0 10px;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--muted, #94a3b8);
+}
+.quest-picker-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.quest-picker-item {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 28px 1fr 18px;
+  gap: 10px;
+  align-items: center;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease;
+}
+.quest-picker-item:hover {
+  background: rgba(129, 140, 248, 0.08);
+}
+.quest-picker-item.active {
+  background: rgba(129, 140, 248, 0.18);
+  border-color: rgba(129, 140, 248, 0.35);
+}
+.quest-picker-item.done .quest-picker-num {
+  background: rgba(74, 222, 128, 0.18);
+  color: #4ade80;
+  border-color: rgba(74, 222, 128, 0.4);
+}
+.quest-picker-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: rgba(129, 140, 248, 0.12);
+  border: 1px solid rgba(129, 140, 248, 0.3);
+  color: #a5b4fc;
+  font-weight: 700;
+  font-size: 0.78rem;
+}
+.quest-picker-meta {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.quest-picker-name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.quest-picker-concept {
+  font-size: 0.72rem;
+  color: var(--muted, #94a3b8);
+  margin-top: 1px;
+}
+.quest-picker-status {
+  color: #4ade80;
+  font-weight: 700;
+  text-align: right;
+}
+
+/* ---------- Stage (editor + board) ---------- */
+.quest-stage {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.quest-editor-wrap {
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  overflow: hidden;
+  background: #0a0c12;
+}
+.quest-editor-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  background: rgba(30, 33, 48, 0.7);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+}
+.quest-editor-title {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+.quest-editor-actions {
+  display: flex;
+  gap: 8px;
+}
+.quest-editor-actions button {
+  padding: 6px 14px;
+  font-size: 0.85rem;
+}
+.quest-editor {
+  height: 320px;
+}
+
+.quest-board-wrap {
+  display: flex;
+  justify-content: center;
+  padding: 18px;
+  background: rgba(15, 18, 28, 0.65);
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  overflow: auto;
+}
+
+/* ---------- Board grid + sprites ---------- */
+.quest-board {
+  position: relative;
+  margin: 0 auto;
+}
+.quest-board-grid {
+  position: relative;
+}
+.quest-cell {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+.quest-cell.floor {
+  background: #1e2130;
+  border: 1px solid rgba(148, 163, 184, 0.05);
+}
+.quest-cell.wall {
+  background: #11131c;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  background-image: linear-gradient(135deg, #161927 25%, transparent 25%, transparent 50%, #161927 50%, #161927 75%, transparent 75%);
+  background-size: 8px 8px;
+}
+.quest-cell.goal {
+  background: rgba(250, 204, 21, 0.16);
+  border: 1px solid rgba(250, 204, 21, 0.45);
+  color: #facc15;
+  font-weight: 700;
+}
+.quest-cell.door {
+  background: rgba(248, 113, 113, 0.12);
+  border: 1px solid rgba(248, 113, 113, 0.45);
+  color: #f87171;
+}
+.quest-cell.door.open {
+  background: rgba(74, 222, 128, 0.12);
+  border-color: rgba(74, 222, 128, 0.4);
+  color: transparent;
+}
+.quest-cell.lock {
+  background: #1e2130;
+  border: 1px dashed rgba(248, 113, 113, 0.45);
+  color: #f87171;
+}
+
+.quest-sprite {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  pointer-events: none;
+  user-select: none;
+}
+.quest-hero {
+  z-index: 3;
+  color: #818cf8;
+  font-size: 1.5rem;
+  filter: drop-shadow(0 0 6px rgba(129, 140, 248, 0.5));
+}
+.quest-hero.face-east {
+  transform: scaleX(1);
+}
+.quest-hero.face-west {
+  transform: scaleX(-1);
+}
+.quest-enemy {
+  z-index: 2;
+  color: #f87171;
+}
+.quest-enemy.goblin {
+  color: #4ade80;
+}
+.quest-enemy.troll {
+  color: #facc15;
+}
+.quest-item {
+  z-index: 2;
+  color: #38bdf8;
+  font-size: 1.1rem;
+}
+.quest-item.gem {
+  color: #38bdf8;
+}
+.quest-item.key {
+  color: #facc15;
+}
+.quest-item.scroll {
+  color: #f0abfc;
+}
+
+.quest-bubble {
+  position: absolute;
+  z-index: 4;
+  background: rgba(15, 18, 28, 0.96);
+  border: 1px solid rgba(129, 140, 248, 0.35);
+  color: #e2e8f0;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/* ---------- Objective panel (right rail) ---------- */
+.quest-objective {
+  position: sticky;
+  top: 16px;
+  background: rgba(15, 18, 28, 0.65);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.quest-objective-header {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.quest-objective-num {
+  display: inline-block;
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #a5b4fc;
+  margin-right: 8px;
+}
+.quest-objective-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+.quest-objective-goal {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--muted, #94a3b8);
+  line-height: 1.5;
+}
+.quest-objective-brief p {
+  margin: 0;
+  font-size: 0.86rem;
+  line-height: 1.55;
+}
+.quest-objective-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.quest-objective-controls button {
+  align-self: flex-start;
+  padding: 4px 10px;
+  font-size: 0.8rem;
+}
+.quest-objective-hint {
+  margin: 0;
+  padding: 10px 12px;
+  background: rgba(15, 18, 28, 0.85);
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  border-radius: 8px;
+  font-size: 0.78rem;
+  font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+  color: #c3e88d;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.quest-objective-status {
+  margin-top: 4px;
+  font-size: 0.86rem;
+}
+.quest-objective-status p {
+  margin: 0;
+}
+.quest-status-idle {
+  color: var(--muted, #94a3b8);
+}
+.quest-status-error {
+  color: #f87171;
+}
+.quest-status-warn {
+  color: #facc15;
+}
+.quest-status-fail {
+  color: #f87171;
+}
+.quest-status-win {
+  color: #4ade80;
+  font-weight: 600;
+}
+
