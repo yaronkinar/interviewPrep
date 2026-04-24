@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useRef, useState, type CSSProperties } from 'react'
-import { Link } from 'react-router-dom'
+import Link from 'next/link'
 import ScreenHeader from '../components/layout/ScreenHeader'
 import { useLocale } from '../i18n/LocaleContext'
 import type { CvThemePageStrings } from '../i18n/strings'
@@ -163,7 +163,7 @@ export default function CvThemeGeneratorPage() {
       <ScreenHeader title={t.title} lead={t.lead} align="start" />
 
       <p className="cv-theme-crossnav">
-        <Link className="cv-theme-crossnav-link" to={PATH_FOR_PAGE.cv}>
+        <Link className="cv-theme-crossnav-link" href={PATH_FOR_PAGE.cv}>
           {t.backToAnalysis}
         </Link>
       </p>

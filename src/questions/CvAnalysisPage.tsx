@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { Link } from 'react-router-dom'
+import Link from 'next/link'
 import type { MessageParam } from '@anthropic-ai/sdk/resources/messages'
 import ScreenHeader from '../components/layout/ScreenHeader'
 import { useLocale } from '../i18n/LocaleContext'
@@ -377,7 +377,7 @@ export default function CvAnalysisPage() {
       <ScreenHeader title={cv.title} lead={cv.lead} align="start" />
 
       <p className="cv-analysis-theme-link-wrap">
-        <Link className="cv-analysis-theme-link" to={PATH_FOR_PAGE.cvThemes}>
+        <Link className="cv-analysis-theme-link" href={PATH_FOR_PAGE.cvThemes}>
           {cv.themeGeneratorLink}
         </Link>
       </p>

@@ -12,7 +12,7 @@ export function normalizeOpenaiModel(stored: string | null | undefined): string 
 
 export function readDefaultOpenaiKeyFromEnv(): string {
   try {
-    const v = import.meta.env.VITE_OPENAI_API_KEY
+    const v = process.env.NEXT_PUBLIC_OPENAI_API_KEY
     return typeof v === 'string' && v.trim() ? v.trim() : ''
   } catch {
     return ''

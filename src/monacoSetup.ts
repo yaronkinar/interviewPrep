@@ -1,25 +1,14 @@
 /**
- * Monaco’s TypeScript worker must load from the same bundle as the editor (Vite).
- * Without this, CDN workers often break and IntelliSense shows an empty suggest box.
+ * Monaco Editor environment setup for Next.js.
+ * Using @monaco-editor/react default CDN loader (no Vite ?worker syntax needed).
+ * Call initMonaco() once before rendering any Monaco editor.
  */
-import { loader } from '@monaco-editor/react'
-import * as monaco from 'monaco-editor'
 
-import EditorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker'
-import TsWorker from 'monaco-editor/esm/vs/language/typescript/ts.worker?worker'
+let initialized = false
 
-globalThis.MonacoEnvironment = {
-  getWorker(_moduleId: string, label: string) {
-    switch (label) {
-      case 'typescript':
-      case 'javascript':
-        return new TsWorker()
-      case 'editorWorkerService':
-        return new EditorWorker()
-      default:
-        return new EditorWorker()
-    }
-  },
+export function initMonaco(): void {
+  if (initialized || typeof window === 'undefined') return
+  initialized = true
+  // @monaco-editor/react handles worker loading automatically via CDN
+  // No custom worker configuration needed in Next.js
 }
-
-loader.config({ monaco })

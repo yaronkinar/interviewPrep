@@ -7736,3 +7736,46 @@ html[data-theme='light'] body {
   font-weight: 600;
 }
 
+/* ─── Auth ──────────────────────────────────────────────────────────────── */
+.nav-auth {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-inline-start: 4px;
+}
+.nav-auth--drawer {
+  padding: 16px;
+  border-top: 1px solid var(--border);
+  margin-top: auto;
+}
+.nav-signin-btn {
+  padding: 6px 14px;
+  border-radius: 6px;
+  background: var(--btn);
+  color: var(--btn-fg);
+  font-size: 0.82rem;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+.nav-signin-btn:hover {
+  background: var(--btn-hover);
+}
+.auth-page {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 60vh;
+  padding: 2rem;
+}
+.mis-save-status {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  opacity: 0.8;
+  margin-inline-end: auto;
+}
+.mis-save-status--ok {
+  color: var(--hit);
+}

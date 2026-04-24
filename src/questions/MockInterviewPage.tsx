@@ -25,6 +25,7 @@ import ChatMarkdown from './ChatMarkdown'
 import { DEFAULT_ANTHROPIC_MODEL } from './anthropicConstants'
 import { DEFAULT_GEMINI_MODEL, readDefaultGeminiKeyFromEnv } from './geminiConstants'
 import { DEFAULT_OPENAI_MODEL } from './openaiConstants'
+import { useCodingAnswer } from '../hooks/useCodingAnswer'
 import type { LlmProvider } from './llmConstants'
 import { formatApiError, streamLlmChat } from './llmStream'
 import {
@@ -254,9 +255,19 @@ function MockInterviewSession({
   const mock = ui.mockInterview
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [input, setInput] = useState('')
+  const { initialCode, saveStatus, onCodeChange: onCodingAnswerChange } = useCodingAnswer(
+    question.id,
+    question.category,
+  )
   const [codeDraft, setCodeDraft] = useState(() =>
     mockStyleUsesCodeEditor(style) ? buildMockCodeReviewStarter(question) : '',
   )
+
+  useEffect(() => {
+    if (initialCode !== null && mockStyleUsesCodeEditor(style)) {
+      setCodeDraft(initialCode)
+    }
+  }, [initialCode, style])
   const [streaming, setStreaming] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -1132,7 +1143,7 @@ function MockInterviewSession({
                   <VsCodeStyleEditor
                     question={question}
                     value={codeDraft}
-                    onChange={setCodeDraft}
+                    onChange={(v) => { setCodeDraft(v); onCodingAnswerChange(v) }}
                     height="min(42vh, 360px)"
                     windowTitle={
                       style === 'code_review'
@@ -1142,6 +1153,8 @@ function MockInterviewSession({
                   />
                 </Suspense>
                 <div className="mis-editor-actions">
+                  {saveStatus === 'saving' && <span className="mis-save-status">Saving…</span>}
+                  {saveStatus === 'saved' && <span className="mis-save-status mis-save-status--ok">Saved ✓</span>}
                   <button
                     type="button"
                     className="mis-editor-fab"

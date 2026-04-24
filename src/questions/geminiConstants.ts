@@ -21,10 +21,10 @@ export function normalizeGeminiModel(stored: string | null | undefined): string 
   return t
 }
 
-/** Optional default from Vite env when the user has not saved a key in the browser. */
+/** Optional default from env when the user has not saved a key in the browser. */
 export function readDefaultGeminiKeyFromEnv(): string {
   try {
-    const g = import.meta.env.VITE_GEMINI_API_KEY
+    const g = process.env.NEXT_PUBLIC_GEMINI_API_KEY
     if (typeof g === 'string' && g.trim()) return g.trim()
     return readViteGoogleDevApiKeyFromEnv()
   } catch {

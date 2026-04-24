@@ -1,13 +1,4 @@
 import * as Babel from '@babel/standalone'
-import transformTypeScript from '@babel/plugin-transform-typescript'
-
-let typescriptPluginRegistered = false
-
-function ensureTypescriptPlugin(): void {
-  if (typescriptPluginRegistered) return
-  Babel.registerPlugin('transform-typescript', transformTypeScript as Parameters<typeof Babel.registerPlugin>[1])
-  typescriptPluginRegistered = true
-}
 
 function stripModuleSyntax(code: string): string {
   const lines = code.split('\n').filter((line) => !/^\s*import\s+/.test(line))
@@ -66,7 +57,6 @@ window.onerror=function(msg,src,line,col,err){
 }
 
 export async function compileAndBuildPreviewHtml(userCode: string): Promise<{ html: string } | { error: string }> {
-  ensureTypescriptPlugin()
   const wrapped = wrapForPreview(userCode)
   try {
     const result = Babel.transform(wrapped, {

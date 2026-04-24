@@ -1,6 +1,10 @@
+'use client'
+
 import { useEffect, useState } from 'react'
 import { Moon, Sun } from 'lucide-react'
-import { Link, NavLink } from 'react-router-dom'
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+import { SignInButton, UserButton, useUser } from '@clerk/nextjs'
 import {
   Sheet,
   SheetClose,
@@ -17,7 +21,7 @@ import type { Page } from './page'
 import { PATH_FOR_PAGE } from './routes'
 import { useTheme } from './theme/ThemeContext'
 
-const TAB_IDS: Page[] = ['home', 'js', 'react', 'css', 'quest', 'sandbox', 'mock', 'questions', 'cv', 'cvThemes']
+const PUBLIC_TAB_IDS: Page[] = ['home', 'js', 'react', 'css', 'quest', 'sandbox', 'mock', 'questions', 'cv', 'cvThemes']
 const LOCALE_LABELS: Record<Locale, string> = {
   en: 'English',
   he: 'עברית',
@@ -36,25 +40,39 @@ const LOCALE_LABELS: Record<Locale, string> = {
 
 type NavLinksProps = {
   className?: string
-  linkClassName: string | ((args: { isActive: boolean }) => string)
+  linkClassName: (args: { isActive: boolean }) => string
   onNavigate?: () => void
 }
 
 function NavLinks({ className, linkClassName, onNavigate }: NavLinksProps) {
   const { strings } = useLocale()
+  const pathname = usePathname()
+  const { isSignedIn } = useUser()
   return (
     <div className={className}>
-      {TAB_IDS.map(id => (
-        <NavLink
-          key={id}
-          to={PATH_FOR_PAGE[id]}
-          end={id === 'home'}
-          className={linkClassName}
+      {PUBLIC_TAB_IDS.map(id => {
+        const to = PATH_FOR_PAGE[id]
+        const isActive = pathname === to || (to !== '/' && pathname.startsWith(to))
+        return (
+          <Link
+            key={id}
+            href={to}
+            className={linkClassName({ isActive })}
+            onClick={onNavigate}
+          >
+            {strings.nav[id]}
+          </Link>
+        )
+      })}
+      {isSignedIn && (
+        <Link
+          href="/saved"
+          className={linkClassName({ isActive: pathname === '/saved' })}
           onClick={onNavigate}
         >
-          {strings.nav[id]}
-        </NavLink>
-      ))}
+          Saved
+        </Link>
+      )}
     </div>
   )
 }
@@ -63,6 +81,7 @@ export default function Nav() {
   const { locale, setLocale, strings } = useLocale()
   const ui = getUiStrings(locale)
   const { theme, setTheme } = useTheme()
+  const { isSignedIn } = useUser()
   const rtl = isRtlLocale(locale)
   const [menuOpen, setMenuOpen] = useState(false)
 
@@ -97,7 +116,7 @@ export default function Nav() {
               </span>
             </button>
           </SheetTrigger>
-          <Link to="/" className="nav-logo nav-logo-btn" dir="ltr" translate="no">
+          <Link href="/" className="nav-logo nav-logo-btn" dir="ltr" translate="no">
             Interview Prep
           </Link>
           <div className="nav-toolbar">
@@ -109,6 +128,7 @@ export default function Nav() {
                 aria-label={ui.theme.useLight}
                 title={ui.theme.useLight}
                 onClick={() => setTheme('light')}
+                suppressHydrationWarning
               >
                 <Sun size={18} strokeWidth={2} aria-hidden />
               </button>
@@ -119,6 +139,7 @@ export default function Nav() {
                 aria-label={ui.theme.useDark}
                 title={ui.theme.useDark}
                 onClick={() => setTheme('dark')}
+                suppressHydrationWarning
               >
                 <Moon size={18} strokeWidth={2} aria-hidden />
               </button>
@@ -144,6 +165,16 @@ export default function Nav() {
               className="nav-tabs nav-tabs--inline"
               linkClassName={({ isActive }) => `nav-tab${isActive ? ' active' : ''}`}
             />
+            <div className="nav-auth">
+              {!isSignedIn && (
+                <SignInButton mode="modal">
+                  <button type="button" className="nav-signin-btn">
+                    Sign in
+                  </button>
+                </SignInButton>
+              )}
+              {isSignedIn && <UserButton />}
+            </div>
           </div>
         </div>
       </nav>
@@ -167,6 +198,16 @@ export default function Nav() {
           linkClassName={({ isActive }) => `nav-tab nav-tab--drawer${isActive ? ' active' : ''}`}
           onNavigate={closeMenu}
         />
+        <div className="nav-auth nav-auth--drawer">
+          {!isSignedIn && (
+            <SignInButton mode="modal">
+              <button type="button" className="nav-signin-btn">
+                Sign in
+              </button>
+            </SignInButton>
+          )}
+          {isSignedIn && <UserButton />}
+        </div>
       </SheetContent>
     </Sheet>
   )

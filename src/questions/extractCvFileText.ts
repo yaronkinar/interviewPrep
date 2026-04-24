@@ -1,7 +1,6 @@
 import mammoth from 'mammoth'
 import type { PDFPageProxy } from 'pdfjs-dist'
-import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist'
-import pdfWorkerSrc from 'pdfjs-dist/build/pdf.worker.min.mjs?url'
+import { getDocument, GlobalWorkerOptions, version as pdfjsVersion } from 'pdfjs-dist'
 
 const MAX_CV_FILE_BYTES = 12 * 1024 * 1024
 
@@ -9,7 +8,7 @@ let pdfWorkerReady = false
 
 function ensurePdfWorker(): void {
   if (pdfWorkerReady) return
-  GlobalWorkerOptions.workerSrc = pdfWorkerSrc
+  GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsVersion}/pdf.worker.min.mjs`
   pdfWorkerReady = true
 }
 

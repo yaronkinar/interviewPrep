@@ -1,6 +1,7 @@
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
-import { Link, useSearchParams } from 'react-router-dom'
+import Link from 'next/link'
+import { useSearchParams, useRouter } from 'next/navigation'
 import {
   ArrowRight,
   Bookmark,
@@ -36,6 +37,7 @@ import {
 import { DEFAULT_ANTHROPIC_MODEL } from './anthropicConstants'
 import { DEFAULT_GEMINI_MODEL, readDefaultGeminiKeyFromEnv } from './geminiConstants'
 import { DEFAULT_OPENAI_MODEL } from './openaiConstants'
+import { useSavedQuestions } from '../hooks/useSavedQuestions'
 import FilterSearchBar from '../components/filters/FilterSearchBar'
 import { PATH_FOR_PAGE } from '../routes'
 
@@ -177,6 +179,9 @@ interface QuestionCardProps {
   isCustom: boolean
   ui: ReturnType<typeof getUiStrings>
   onDeleteCustom?: () => void
+  /** When provided, overrides local-storage bookmark with server-backed state */
+  serverBookmarked?: boolean
+  onServerToggleBookmark?: () => void
 }
 
 interface QuestionCardBodyProps {
@@ -465,29 +470,40 @@ function QuestionCardBody({
 interface QuestionCardWithEditorialProps extends QuestionCardProps {
   editorial?: boolean
   searchQuery?: string
+  section?: string
 }
 
 function QuestionCard({
   q, apiKey, model, llmProvider, isCustom, ui, onDeleteCustom, editorial = false, searchQuery,
+  serverBookmarked, onServerToggleBookmark,
 }: QuestionCardWithEditorialProps) {
   const [open, setOpen] = useState(false)
   const [showThinking, setShowThinking] = useState(false)
   const [showExample, setShowExample] = useState(false)
   const [expanded, setExpanded] = useState(false)
-  const [bookmarked, setBookmarked] = useState(false)
+  const [localBookmarked, setLocalBookmarked] = useState(false)
   const closeRef = useRef<HTMLButtonElement>(null)
 
+  const hasServerBookmark = serverBookmarked !== undefined && onServerToggleBookmark !== undefined
+  const bookmarked = hasServerBookmark ? serverBookmarked : localBookmarked
+
   useEffect(() => {
-    setBookmarked(readBookmarkIds().includes(q.id))
-  }, [q.id])
+    if (!hasServerBookmark) {
+      setLocalBookmarked(readBookmarkIds().includes(q.id))
+    }
+  }, [q.id, hasServerBookmark])
 
   const toggleBookmark = useCallback(() => {
+    if (hasServerBookmark && onServerToggleBookmark) {
+      onServerToggleBookmark()
+      return
+    }
     const next = readBookmarkIds()
     const has = next.includes(q.id)
     const merged = has ? next.filter((id) => id !== q.id) : [...next, q.id]
     writeBookmarkIds(merged)
-    setBookmarked(!has)
-  }, [q.id])
+    setLocalBookmarked(!has)
+  }, [q.id, hasServerBookmark, onServerToggleBookmark])
 
   const shareQuestion = useCallback(async () => {
     const url = typeof window !== 'undefined' ? window.location.href : ''
@@ -573,23 +589,21 @@ function QuestionCard({
 export default function QuestionsPage() {
   const { locale } = useLocale()
   const ui = getUiStrings(locale)
-  const [searchParams, setSearchParams] = useSearchParams()
+  const searchParams = useSearchParams()
+  const router = useRouter()
   const search = searchParams.get('q') ?? ''
+  const { isSaved, toggleSaved } = useSavedQuestions()
 
   const updateSearchQuery = useCallback(
     (value: string) => {
-      setSearchParams(
-        (prev) => {
-          const next = new URLSearchParams(prev)
-          const t = value.trim()
-          if (t) next.set('q', t)
-          else next.delete('q')
-          return next
-        },
-        { replace: true },
-      )
+      const next = new URLSearchParams(searchParams.toString())
+      const t = value.trim()
+      if (t) next.set('q', t)
+      else next.delete('q')
+      const qs = next.toString()
+      router.replace(qs ? `?${qs}` : '?', { scroll: false })
     },
-    [setSearchParams],
+    [searchParams, router],
   )
 
   const [company, setCompany] = useState<string | null>(null)
@@ -644,18 +658,11 @@ export default function QuestionsPage() {
   }, [search, company, difficulty, category, allQuestions])
 
   const clearFilters = useCallback(() => {
-    setSearchParams(
-      (prev) => {
-        const next = new URLSearchParams(prev)
-        next.delete('q')
-        return next
-      },
-      { replace: true },
-    )
+    router.replace('?', { scroll: false })
     setCompany(null)
     setDifficulty(null)
     setCategory(null)
-  }, [setSearchParams])
+  }, [router])
 
   function mergeUploaded(questions: Question[]) {
     setCustomQuestions((prev) => {
@@ -847,6 +854,8 @@ export default function QuestionsPage() {
                     onDeleteCustom={
                       customIds.has(q.id) ? () => removeCustomQuestion(q.id) : undefined
                     }
+                    serverBookmarked={isSaved(q.id)}
+                    onServerToggleBookmark={() => toggleSaved(q.id, q.category)}
                   />
                 ))}
               </div>
@@ -875,7 +884,7 @@ export default function QuestionsPage() {
             <div className="questions-stitch-rail-promo">
               <p className="questions-stitch-rail-promo-kicker">{ui.questions.learningProKicker}</p>
               <p className="questions-stitch-rail-promo-title">{ui.questions.learningProTitle}</p>
-              <Link className="questions-stitch-rail-promo-btn" to={PATH_FOR_PAGE.sandbox}>
+              <Link className="questions-stitch-rail-promo-btn" href={PATH_FOR_PAGE.sandbox}>
                 {ui.questions.learningLaunchEditor}
               </Link>
             </div>
