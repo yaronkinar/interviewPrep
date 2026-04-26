@@ -42,9 +42,10 @@ type NavLinksProps = {
   className?: string
   linkClassName: (args: { isActive: boolean }) => string
   onNavigate?: () => void
+  isAdmin: boolean
 }
 
-function NavLinks({ className, linkClassName, onNavigate }: NavLinksProps) {
+function NavLinks({ className, linkClassName, onNavigate, isAdmin }: NavLinksProps) {
   const { strings } = useLocale()
   const pathname = usePathname()
   const { isSignedIn } = useUser()
@@ -73,6 +74,24 @@ function NavLinks({ className, linkClassName, onNavigate }: NavLinksProps) {
           Saved
         </Link>
       )}
+      {isAdmin && (
+        <>
+          <Link
+            href="/admin/questions"
+            className={linkClassName({ isActive: pathname === '/admin/questions' })}
+            onClick={onNavigate}
+          >
+            Admin Questions
+          </Link>
+          <Link
+            href="/admin/users"
+            className={linkClassName({ isActive: pathname === '/admin/users' })}
+            onClick={onNavigate}
+          >
+            Admin Users
+          </Link>
+        </>
+      )}
     </div>
   )
 }
@@ -82,6 +101,7 @@ export default function Nav() {
   const ui = getUiStrings(locale)
   const { theme, setTheme } = useTheme()
   const { isSignedIn } = useUser()
+  const [isAdmin, setIsAdmin] = useState(false)
   const rtl = isRtlLocale(locale)
   const [menuOpen, setMenuOpen] = useState(false)
 
@@ -95,6 +115,34 @@ export default function Nav() {
     mq.addEventListener('change', onChange)
     return () => mq.removeEventListener('change', onChange)
   }, [])
+
+  useEffect(() => {
+    if (!isSignedIn) {
+      setIsAdmin(false)
+      return
+    }
+
+    let canceled = false
+
+    async function loadAdminStatus() {
+      try {
+        const response = await fetch('/api/admin/me')
+        if (!response.ok) {
+          if (!canceled) setIsAdmin(false)
+          return
+        }
+        const data = (await response.json()) as { isAdmin?: boolean }
+        if (!canceled) setIsAdmin(Boolean(data.isAdmin))
+      } catch {
+        if (!canceled) setIsAdmin(false)
+      }
+    }
+
+    loadAdminStatus()
+    return () => {
+      canceled = true
+    }
+  }, [isSignedIn])
 
   return (
     <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
@@ -164,6 +212,7 @@ export default function Nav() {
             <NavLinks
               className="nav-tabs nav-tabs--inline"
               linkClassName={({ isActive }) => `nav-tab${isActive ? ' active' : ''}`}
+              isAdmin={isAdmin}
             />
             <div className="nav-auth">
               {!isSignedIn && (
@@ -197,6 +246,7 @@ export default function Nav() {
           className="nav-tabs nav-tabs--drawer"
           linkClassName={({ isActive }) => `nav-tab nav-tab--drawer${isActive ? ' active' : ''}`}
           onNavigate={closeMenu}
+          isAdmin={isAdmin}
         />
         <div className="nav-auth nav-auth--drawer">
           {!isSignedIn && (

@@ -1,5 +1,5 @@
 import type { Category, Difficulty, Question } from './data'
-import { CATEGORIES, QUESTIONS } from './data'
+import { CATEGORIES } from './data'
 
 export const CUSTOM_QUESTIONS_STORAGE_KEY = 'interviews:customQuestions'
 
@@ -69,7 +69,10 @@ export function validateCustomQuestion(raw: unknown, reservedIds: Set<string>): 
   }
 }
 
-export function parseQuestionsJson(text: string): { ok: true; questions: Question[] } | { ok: false; error: string } {
+export function parseQuestionsJson(
+  text: string,
+  reservedIds: Set<string> = new Set(),
+): { ok: true; questions: Question[] } | { ok: false; error: string } {
   let parsed: unknown
   try {
     parsed = JSON.parse(text) as unknown
@@ -82,8 +85,7 @@ export function parseQuestionsJson(text: string): { ok: true; questions: Questio
     return { ok: false, error: 'JSON must be one object or an array of objects.' }
   }
 
-  const builtinIds = new Set(QUESTIONS.map((q) => q.id))
-  const reserved = new Set(builtinIds)
+  const reserved = new Set(reservedIds)
   const out: Question[] = []
 
   for (const item of items) {

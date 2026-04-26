@@ -10,13 +10,13 @@ import {
 } from 'react'
 import type { MessageParam } from '@anthropic-ai/sdk/resources/messages'
 import {
-  QUESTIONS,
   COMPANIES,
   CATEGORIES,
   type Question,
   type Difficulty,
   type Category,
 } from './data'
+import { useQuestionCatalog } from './useQuestionCatalog'
 import { useLocale } from '../i18n/LocaleContext'
 import { getUiStrings, type UiStrings } from '../i18n/uiStrings'
 import type { MockInterviewStrings } from '../i18n/mockInterviewStrings'
@@ -1199,10 +1199,11 @@ export default function MockInterviewPage() {
   const [company, setCompany] = useState<string | null>(null)
   const [difficulty, setDifficulty] = useState<Difficulty | null>(null)
   const [category, setCategory] = useState<Category | null>(null)
+  const { questions: catalogQuestions, loading: catalogLoading, error: catalogError, reload: reloadCatalog } = useQuestionCatalog()
 
   const [customQuestions] = useState<Question[]>(() => loadCustomQuestionsFromStorage())
 
-  const [selectedId, setSelectedId] = useState<string>(() => QUESTIONS[0]?.id ?? '')
+  const [selectedId, setSelectedId] = useState<string>('')
   const [style, setStyle] = useState<MockTrainingStyle>('understand')
   const [includeRefAnswer, setIncludeRefAnswer] = useState(false)
 
@@ -1235,7 +1236,7 @@ export default function MockInterviewPage() {
         ? aiSettings.openaiModel
         : aiSettings.anthropicModel
 
-  const allQuestions = useMemo(() => [...QUESTIONS, ...customQuestions], [customQuestions])
+  const allQuestions = useMemo(() => [...catalogQuestions, ...customQuestions], [catalogQuestions, customQuestions])
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim()
@@ -1413,7 +1414,16 @@ export default function MockInterviewPage() {
               ))}
             </FilterRow>
 
-            {filtered.length === 0 ? (
+            {catalogLoading ? (
+              <p className="q-empty">Loading questions...</p>
+            ) : catalogError ? (
+              <div className="q-empty">
+                <p>{catalogError}</p>
+                <button type="button" className="home-card-link" onClick={reloadCatalog}>
+                  Try again
+                </button>
+              </div>
+            ) : filtered.length === 0 ? (
               <p className="q-empty">{mi.emptyQuestions}</p>
             ) : (
               <label className="mock-interview-select-label">

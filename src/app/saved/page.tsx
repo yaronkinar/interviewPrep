@@ -1,22 +1,18 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useMemo } from 'react'
 import { useAuth } from '@clerk/nextjs'
 import { Bookmark } from 'lucide-react'
 import Link from 'next/link'
 import { useSavedQuestions } from '@/hooks/useSavedQuestions'
-import { QUESTIONS, type Question } from '@/questions/data'
+import { useQuestionCatalog } from '@/questions/useQuestionCatalog'
 import { PATH_FOR_PAGE } from '@/routes'
 
 export default function SavedPage() {
   const { isSignedIn, isLoaded } = useAuth()
   const { saved, loading } = useSavedQuestions()
-  const [savedQuestions, setSavedQuestions] = useState<Question[]>([])
-
-  useEffect(() => {
-    const ids = new Set(saved.map(s => s.questionId))
-    setSavedQuestions(QUESTIONS.filter(q => ids.has(q.id)))
-  }, [saved])
+  const savedIds = useMemo(() => saved.map(s => s.questionId), [saved])
+  const { questions: savedQuestions, loading: questionsLoading, error: questionsError } = useQuestionCatalog(savedIds)
 
   if (!isLoaded) return null
 
@@ -47,8 +43,10 @@ export default function SavedPage() {
           {savedQuestions.length} bookmarked question{savedQuestions.length !== 1 ? 's' : ''}
         </p>
 
-        {loading ? (
+        {loading || questionsLoading ? (
           <p style={{ color: 'var(--text-muted)' }}>Loading…</p>
+        ) : questionsError ? (
+          <p style={{ color: '#ef4444' }}>{questionsError}</p>
         ) : savedQuestions.length === 0 ? (
           <div style={{ textAlign: 'center', paddingBlock: '3rem' }}>
             <Bookmark size={36} style={{ margin: '0 auto 1rem', opacity: 0.3 }} />

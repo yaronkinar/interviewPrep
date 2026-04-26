@@ -15,13 +15,13 @@ import {
   Terminal,
 } from 'lucide-react'
 import {
-  QUESTIONS,
   COMPANIES,
   CATEGORIES,
   type Question,
   type Difficulty,
   type Category,
 } from './data'
+import { useQuestionCatalog } from './useQuestionCatalog'
 import { CodeBlock } from '../components/CodeBlock'
 import { QuestionExample, hasQuestionExample } from './QuestionExample'
 import ApiKeySettings, { type AiSettingsSnapshot } from './ApiKeySettings'
@@ -593,6 +593,12 @@ export default function QuestionsPage() {
   const router = useRouter()
   const search = searchParams.get('q') ?? ''
   const { isSaved, toggleSaved } = useSavedQuestions()
+  const {
+    questions: catalogQuestions,
+    loading: catalogLoading,
+    error: catalogError,
+    reload: reloadCatalog,
+  } = useQuestionCatalog()
 
   const updateSearchQuery = useCallback(
     (value: string) => {
@@ -645,7 +651,12 @@ export default function QuestionsPage() {
 
   const customIds = useMemo(() => new Set(customQuestions.map((q) => q.id)), [customQuestions])
 
-  const allQuestions = useMemo(() => [...QUESTIONS, ...customQuestions], [customQuestions])
+  const reservedCatalogIds = useMemo(
+    () => new Set(catalogQuestions.map((q) => q.id)),
+    [catalogQuestions],
+  )
+
+  const allQuestions = useMemo(() => [...catalogQuestions, ...customQuestions], [catalogQuestions, customQuestions])
 
   const filtered = useMemo(() => {
     return allQuestions.filter((question) => {
@@ -678,7 +689,7 @@ export default function QuestionsPage() {
     const reader = new FileReader()
     reader.onload = () => {
       const text = String(reader.result ?? '')
-      const result = parseQuestionsJson(text)
+      const result = parseQuestionsJson(text, reservedCatalogIds)
       if (!result.ok) {
         setUploadError(result.error)
         return
@@ -691,7 +702,7 @@ export default function QuestionsPage() {
   }
 
   function handlePasteUpload() {
-    const result = parseQuestionsJson(uploadPaste.trim())
+    const result = parseQuestionsJson(uploadPaste.trim(), reservedCatalogIds)
     if (!result.ok) {
       setUploadError(result.error)
       return
@@ -835,7 +846,16 @@ export default function QuestionsPage() {
             </div>
           )}
 
-          {filtered.length === 0 ? (
+          {catalogLoading ? (
+            <div className="q-empty">Loading questions...</div>
+          ) : catalogError ? (
+            <div className="q-empty">
+              <p>{catalogError}</p>
+              <button type="button" className="home-card-link" onClick={reloadCatalog}>
+                Try again
+              </button>
+            </div>
+          ) : filtered.length === 0 ? (
             <div className="q-empty">{ui.questions.emptyState}</div>
           ) : (
             <>

