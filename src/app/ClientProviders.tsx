@@ -8,6 +8,7 @@ import Nav from '@/Nav'
 import { LocaleProvider, useLocale } from '@/i18n/LocaleContext'
 import { ThemeProvider } from '@/theme/ThemeContext'
 import { AUTHOR_LINKEDIN_URL } from '@/site'
+import { preloadQuestionCatalog } from '@/questions/useQuestionCatalog'
 import type { ReactNode } from 'react'
 
 declare global {
@@ -52,6 +53,26 @@ function GaTracker() {
   return null
 }
 
+function QuestionCatalogPreloader() {
+  useEffect(() => {
+    const preload = () => {
+      preloadQuestionCatalog().catch(() => {
+        // Page-level loaders surface errors if the catalog is actually needed.
+      })
+    }
+
+    if ('requestIdleCallback' in window) {
+      const id = window.requestIdleCallback(preload, { timeout: 2000 })
+      return () => window.cancelIdleCallback(id)
+    }
+
+    const id = globalThis.setTimeout(preload, 0)
+    return () => globalThis.clearTimeout(id)
+  }, [])
+
+  return null
+}
+
 function AppShellInner({ children }: { children: ReactNode }) {
   const { strings } = useLocale()
   return (
@@ -74,6 +95,7 @@ function AppShellInner({ children }: { children: ReactNode }) {
       <Analytics />
       <AppBrowserConsole />
       <GaTracker />
+      <QuestionCatalogPreloader />
     </div>
   )
 }
