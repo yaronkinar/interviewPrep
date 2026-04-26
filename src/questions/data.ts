@@ -357,7 +357,7 @@ runSequential(tasks).then(console.log) // [1, 2, 3]`,
   },
   {
     id: 'event-loop',
-    companies: ['Amazon', 'Uber', 'Google'],
+    companies: ['Amazon', 'Uber', 'Google', 'Tenable'],
     title: 'Explain the Event Loop — what is the output order?',
     difficulty: 'medium',
     category: 'Async & Promises',
@@ -839,7 +839,7 @@ function delegate(parent, selector, event, handler) {
   },
   {
     id: 'xss-csrf',
-    companies: ['Google', 'CrowdStrike'],
+    companies: ['Google', 'CrowdStrike', 'Tenable'],
     title: 'XSS vs CSRF — how do you prevent them?',
     difficulty: 'medium',
     category: 'DOM & Browser',
@@ -1187,7 +1187,7 @@ store.addData('count', 3)   // (no event — unsubscribed)`,
   // ── SYSTEM DESIGN ────────────────────────────────────────────
   {
     id: 'autocomplete',
-    companies: ['Airbnb', 'Amazon', 'Google'],
+    companies: ['Airbnb', 'Amazon', 'Google', 'Tenable'],
     title: 'Design an autocomplete / type-ahead component',
     difficulty: 'hard',
     category: 'System Design',
@@ -1695,7 +1695,7 @@ flattenObject({
   },
   {
     id: 'react-key-reconciliation',
-    companies: ['Meta', 'Airbnb', 'TikTok'],
+    companies: ['Meta', 'Airbnb', 'TikTok', 'Tenable'],
     title: 'Why React list keys matter (and bad key bugs)',
     difficulty: 'easy',
     category: 'Performance',
@@ -2346,7 +2346,7 @@ p.then(console.log) // first`,
   // ── CROWDSTRIKE ──────────────────────────────────────────────
   {
     id: 'csp-strict-design',
-    companies: ['CrowdStrike', 'Google'],
+    companies: ['CrowdStrike', 'Google', 'Tenable'],
     title: 'Design a strict Content Security Policy (CSP) for a SPA',
     difficulty: 'hard',
     category: 'DOM & Browser',
@@ -2721,7 +2721,7 @@ function DangerButton() {
   },
   {
     id: 'safe-html-rendering',
-    companies: ['CrowdStrike', 'Google', 'Meta'],
+    companies: ['CrowdStrike', 'Google', 'Meta', 'Tenable'],
     title: 'Safely render user-supplied HTML (sanitization)',
     difficulty: 'medium',
     category: 'DOM & Browser',
@@ -2956,5 +2956,490 @@ Common follow-ups:
 - A: defer preserves script order and runs after parsing; async runs whenever downloaded and can execute out of order.
 - Q: Where do service workers fit?
 - A: After navigation starts, a matching service worker can intercept the request and respond from cache, network, or generated content.`,
+  },
+  {
+    id: 'tenable-javascript-fundamentals',
+    companies: ['Tenable'],
+    title: 'JavaScript fundamentals checklist for frontend interviews',
+    difficulty: 'medium',
+    category: 'ES6+',
+    description:
+      'Walk through the JavaScript fundamentals a frontend engineer should know: scope, closures, hoisting, equality, `this`, prototypes, async behavior, modules, and common runtime pitfalls.',
+    answerType: 'text',
+    tags: ['JavaScript', 'fundamentals', 'closures', 'this', 'async'],
+    source: 'Tenable frontend prep',
+    answer: `Interview framing:
+This is usually a breadth question. Give a structured checklist and show that you can connect language rules to real bugs.
+
+Core topics:
+1) Scope and closures:
+- let/const are block-scoped; var is function-scoped.
+- A closure lets a function remember variables from its outer scope.
+- Common use cases: event handlers, memoization, debounce, private state.
+
+2) Hoisting and TDZ:
+- Function declarations are callable before their declaration.
+- var is hoisted and initialized to undefined.
+- let/const are hoisted but unavailable until initialized (temporal dead zone).
+
+3) Equality and coercion:
+- Prefer === because it avoids implicit coercion.
+- Know common surprises: [] == false, '0' == 0, null == undefined.
+
+4) this binding:
+- Determined by call site: default, implicit, explicit call/apply/bind, or new.
+- Arrow functions do not have their own this; they capture lexical this.
+
+5) Prototypes and classes:
+- Classes are syntax over prototype-based inheritance.
+- Property lookup walks the prototype chain.
+
+6) Async model:
+- Synchronous code runs first.
+- Promise callbacks run as microtasks.
+- Timers, events, and network callbacks are macrotasks.
+
+7) Common frontend pitfalls:
+- Mutating shared objects accidentally.
+- Missing return in promise chains.
+- Forgetting cleanup for timers/listeners.
+- Relying on stale closure values in callbacks.
+
+Strong closing sentence:
+"I try to explain JS fundamentals by tying them to production bugs: stale state, wrong this, race conditions, memory leaks, and unexpected async ordering."`,
+  },
+  {
+    id: 'tenable-typescript-frontend',
+    companies: ['Tenable'],
+    title: 'TypeScript patterns for scalable frontend code',
+    difficulty: 'medium',
+    category: 'ES6+',
+    description:
+      'Explain how TypeScript improves frontend correctness and maintainability. Cover interfaces vs types, unions, generics, strict null checks, API typing, and component props.',
+    answerType: 'text',
+    tags: ['TypeScript', 'types', 'generics', 'frontend architecture'],
+    source: 'Tenable frontend job description',
+    answer: `Interview framing:
+TypeScript is valuable when it models contracts between components, API responses, and business logic. The goal is not "more types"; it is fewer invalid states.
+
+Key points:
+1) type vs interface:
+- Use interface for object shapes that may be extended.
+- Use type for unions, intersections, primitives, tuples, and mapped types.
+
+2) Union types:
+- Model finite states explicitly:
+  loading | success | error is better than many optional booleans.
+
+3) Generics:
+- Useful for reusable helpers/components where input and output types are related.
+- Example: ApiResponse<T>, SelectOption<T>, Repository<T>.
+
+4) Strict null checks:
+- Force you to handle missing data from APIs and async flows.
+- Prefer narrowing over non-null assertions.
+
+5) API boundaries:
+- TypeScript checks compile-time assumptions, but API data is runtime input.
+- Use schema validation (zod/io-ts/custom validators) for untrusted responses.
+
+6) Component props:
+- Keep prop types expressive but small.
+- Avoid passing huge objects when a component only needs a few fields.
+
+Pitfalls:
+- any disables the value of TypeScript.
+- Overly clever types can make code hard to maintain.
+- Types should encode domain invariants, not fight the implementation.`,
+  },
+  {
+    id: 'tenable-angular-rxjs-change-detection',
+    companies: ['Tenable'],
+    title: 'Angular, RxJS, and change detection fundamentals',
+    difficulty: 'medium',
+    category: 'System Design',
+    description:
+      'Explain Angular frontend fundamentals: components, services, dependency injection, observables, RxJS operators, change detection, and common performance practices.',
+    answerType: 'text',
+    tags: ['Angular', 'RxJS', 'change detection', 'frontend architecture'],
+    source: 'Tenable frontend job description',
+    answer: `Interview framing:
+Tenable roles mention Angular heavily, so show that you understand Angular as an architecture: components for UI, services for shared logic/data, and RxJS for async streams.
+
+Core concepts:
+1) Components:
+- Own template, styles, inputs/outputs, and local UI behavior.
+- Prefer presentational components for reusable UI and container components for data orchestration.
+
+2) Services and DI:
+- Services hold shared data access, business logic, and integrations.
+- Dependency injection makes services testable and replaceable.
+
+3) Observables:
+- HTTP, route params, forms, and UI events can be modeled as streams.
+- Use async pipe where possible so Angular handles subscription cleanup.
+
+4) RxJS operators:
+- map transforms values.
+- switchMap cancels stale async work, great for search inputs.
+- mergeMap runs concurrent work.
+- concatMap preserves order.
+- catchError handles stream errors.
+
+5) Change detection:
+- Angular checks bindings when async events happen.
+- OnPush improves performance by checking components mainly when inputs change, events fire, or observables emit.
+
+6) Performance:
+- Use trackBy in ngFor.
+- Avoid expensive template functions.
+- Split large components.
+- Lazy-load feature modules/routes.
+
+Common follow-up:
+Q: How do you prevent memory leaks?
+A: Prefer async pipe; otherwise unsubscribe with takeUntilDestroyed, takeUntil, or framework lifecycle helpers.`,
+  },
+  {
+    id: 'tenable-debug-web-app-devtools',
+    companies: ['Tenable'],
+    title: 'Debug a broken web app with Chrome DevTools',
+    difficulty: 'medium',
+    category: 'DOM & Browser',
+    description:
+      'Describe a systematic debugging workflow for frontend issues using Chrome DevTools: Console, Network, Sources, Elements, Performance, Application, and React/Angular tooling.',
+    answerType: 'text',
+    tags: ['debugging', 'Chrome DevTools', 'browser', 'performance'],
+    source: 'Tenable UI job description',
+    answer: `Interview framing:
+Good debugging is systematic. Start by reproducing the issue, then narrow it with browser evidence.
+
+Workflow:
+1) Reproduce and scope:
+- What exact user action breaks?
+- Is it browser-specific, user-specific, data-specific, or environment-specific?
+
+2) Console:
+- Look for runtime errors, failed assertions, warnings, and stack traces.
+- Preserve logs across navigation if the issue happens during page load.
+
+3) Network:
+- Check failed requests, status codes, payloads, response bodies, CORS errors, caching, and timing.
+- Confirm whether the bug is frontend rendering or backend/API data.
+
+4) Elements:
+- Inspect DOM structure, computed CSS, layout, z-index, overflow, and event listeners.
+- Use forced states like :hover/:focus for UI bugs.
+
+5) Sources:
+- Add breakpoints, conditional breakpoints, and inspect call stacks.
+- Use source maps to debug TypeScript/React/Angular source.
+
+6) Performance:
+- Record slow interactions.
+- Look for long tasks, layout thrashing, expensive scripting, and repeated renders.
+
+7) Application:
+- Inspect cookies, localStorage, sessionStorage, IndexedDB, service workers, and cache.
+
+Strong closing:
+"I try to prove where the bug lives: browser state, network/API, rendering/CSS, framework state, or business logic. Then the fix is usually much smaller."`,
+  },
+  {
+    id: 'tenable-frontend-testing-strategy',
+    companies: ['Tenable'],
+    title: 'Frontend unit and end-to-end testing strategy',
+    difficulty: 'medium',
+    category: 'System Design',
+    description:
+      'Design a practical testing strategy for a production frontend app. Cover unit tests, component tests, integration tests, E2E tests, mocks, accessibility checks, and CI trade-offs.',
+    answerType: 'text',
+    tags: ['testing', 'unit tests', 'E2E', 'CI', 'quality'],
+    source: 'Tenable frontend job description',
+    answer: `Interview framing:
+Testing should protect important behavior without making refactors painful. The pyramid is useful, but product risk matters more than dogma.
+
+Testing layers:
+1) Unit tests:
+- Pure functions, reducers, validators, formatters, permissions, and state transitions.
+- Fast and stable.
+
+2) Component tests:
+- Render a component and interact with it like a user.
+- Assert visible behavior, not implementation details.
+
+3) Integration tests:
+- Verify components, routing, API clients, and state management work together.
+- Mock network at the boundary.
+
+4) End-to-end tests:
+- Cover critical user journeys: login, search, save, dashboard workflows.
+- Fewer tests, high confidence, run in CI and before releases.
+
+5) Accessibility:
+- Add automated checks for labels, roles, contrast, keyboard flow where possible.
+- Manually test important keyboard interactions.
+
+Mocking strategy:
+- Mock unstable external services.
+- Prefer realistic fixtures and MSW-style request mocks over mocking every function.
+
+What not to over-test:
+- CSS implementation details.
+- Framework internals.
+- Snapshots that change often and catch little.
+
+Good answer:
+"I want many cheap tests around logic, focused component tests around UI behavior, and a small number of E2E tests around business-critical flows."`,
+  },
+  {
+    id: 'tenable-api-data-loading-states',
+    companies: ['Tenable'],
+    title: 'Handle API data flow, loading, errors, and stale requests',
+    difficulty: 'medium',
+    category: 'Async & Promises',
+    description:
+      'Explain how to build reliable frontend API flows: loading states, errors, retries, cancellation, stale response guards, caching, pagination, and optimistic updates.',
+    answerType: 'mixed',
+    tags: ['API', 'async', 'loading states', 'race conditions', 'caching'],
+    source: 'Tenable frontend job description',
+    answer: `Interview framing:
+Frontend API code is about user experience and correctness. The hard parts are not fetch itself; they are state, races, retries, and stale data.
+
+State model:
+- idle: request not started
+- loading: request in flight
+- success: data available
+- error: request failed with recoverable message
+- refreshing: old data visible while new data loads
+
+Race condition example:
+\`\`\`ts
+let latestRequest = 0
+
+async function loadUser(id: string) {
+  const requestId = ++latestRequest
+  setState({ status: 'loading' })
+
+  try {
+    const data = await api.getUser(id)
+    if (requestId !== latestRequest) return
+    setState({ status: 'success', data })
+  } catch (error) {
+    if (requestId !== latestRequest) return
+    setState({ status: 'error', error })
+  }
+}
+\`\`\`
+
+Best practices:
+- Use AbortController to cancel stale fetches.
+- Show useful empty/error states, not only spinners.
+- Retry only safe/idempotent operations, ideally with backoff.
+- Cache data with a clear invalidation strategy.
+- Keep old data visible during refresh when possible.
+- Use pagination or virtualization for large result sets.
+- For optimistic updates, have rollback behavior on failure.
+
+Security and correctness:
+- Never trust API data blindly.
+- Validate important shapes at boundaries.
+- Handle 401/403 distinctly from 500/network failures.`,
+  },
+  {
+    id: 'tenable-responsive-css-layout',
+    companies: ['Tenable'],
+    title: 'Build responsive layouts with CSS, Flexbox, and Grid',
+    difficulty: 'easy',
+    category: 'DOM & Browser',
+    description:
+      'Explain how to build maintainable responsive UI: semantic HTML, Flexbox vs Grid, media/container queries, fluid sizing, accessibility, and common layout bugs.',
+    answerType: 'text',
+    tags: ['CSS', 'responsive design', 'Flexbox', 'Grid', 'accessibility'],
+    source: 'Tenable frontend job description',
+    answer: `Interview framing:
+Responsive CSS is about content adapting cleanly across screen sizes, not just adding media queries.
+
+Core points:
+1) Start with semantic HTML:
+- Good structure helps accessibility, keyboard navigation, and styling.
+
+2) Flexbox vs Grid:
+- Flexbox is best for one-dimensional layout: row or column.
+- Grid is best for two-dimensional layout: rows and columns together.
+
+3) Responsive sizing:
+- Use relative units where appropriate: %, rem, em, vw/vh, min(), max(), clamp().
+- Avoid fixed pixel widths for containers that need to shrink.
+
+4) Breakpoints:
+- Use content-based breakpoints, not only device names.
+- Container queries can be better when a component depends on parent width.
+
+5) Common bugs:
+- overflow hidden clipping dropdowns/tooltips.
+- long text breaking cards.
+- missing min-width: 0 in flex children.
+- images without max-width: 100%.
+- z-index issues caused by stacking contexts.
+
+6) Accessibility:
+- Preserve focus outlines.
+- Ensure sufficient contrast.
+- Keep tap targets large enough.
+- Test with keyboard and zoom.
+
+Good closing:
+"I prefer building components that are fluid by default and only adding breakpoints when the content actually needs a layout change."`,
+  },
+  {
+    id: 'tenable-component-library-architecture',
+    companies: ['Tenable'],
+    title: 'Design reusable components and a frontend component library',
+    difficulty: 'hard',
+    category: 'System Design',
+    description:
+      'Design a reusable component system for a large SaaS product. Cover API design, composition, theming, accessibility, testing, versioning, documentation, and avoiding over-abstraction.',
+    answerType: 'text',
+    tags: ['component library', 'design system', 'architecture', 'accessibility'],
+    source: 'Tenable frontend job description',
+    answer: `Interview framing:
+A component library should make product teams faster while keeping UX consistent. The hard part is designing APIs that are flexible without becoming vague.
+
+Design principles:
+1) Start from real product use cases:
+- Extract components after repeated patterns appear.
+- Avoid abstracting one-off UI too early.
+
+2) Separate primitives and product components:
+- Primitives: Button, Input, Modal, Tooltip, Table.
+- Product components: VulnerabilityCard, RiskBadge, AssetSelector.
+
+3) Component APIs:
+- Prefer composition for complex components.
+- Keep props predictable and typed.
+- Avoid boolean prop explosions like primary + danger + outlined + compact.
+
+4) Accessibility:
+- Keyboard behavior, focus management, ARIA, labels, and screen reader behavior are part of the component contract.
+
+5) Theming:
+- Use design tokens for color, spacing, typography, radius, shadows.
+- Support dark mode/high contrast if required.
+
+6) Testing and documentation:
+- Unit/component tests for behavior.
+- Visual regression for design-sensitive components.
+- Storybook or equivalent docs with examples and edge cases.
+
+7) Versioning:
+- Communicate breaking changes.
+- Provide migration notes or codemods for large changes.
+
+Pitfalls:
+- Too much configurability makes components hard to reason about.
+- Too little flexibility causes teams to fork or bypass the library.
+- Accessibility cannot be patched at the end.`,
+  },
+  {
+    id: 'tenable-browser-compatibility-quirks',
+    companies: ['Tenable'],
+    title: 'Handle browser compatibility and frontend quirks',
+    difficulty: 'medium',
+    category: 'DOM & Browser',
+    description:
+      'Explain how to diagnose and fix browser-specific frontend issues across rendering, JavaScript APIs, CSS support, polyfills, transpilation, and progressive enhancement.',
+    answerType: 'text',
+    tags: ['browser compatibility', 'polyfills', 'CSS', 'debugging'],
+    source: 'Tenable UI job description',
+    answer: `Interview framing:
+Browser compatibility is a production discipline: know supported browsers, test them, and degrade gracefully when features are missing.
+
+Approach:
+1) Define support matrix:
+- Which browsers and versions matter for customers?
+- Enterprise SaaS products may need stricter support than consumer apps.
+
+2) Detect the class of issue:
+- CSS rendering difference.
+- Missing JS/Web API.
+- Event behavior difference.
+- Performance issue on specific hardware/browser.
+- Mobile viewport/input quirk.
+
+3) Use compatibility tools:
+- BrowserStack/Sauce Labs or real devices.
+- MDN/caniuse for feature support.
+- DevTools device emulation only as a first pass.
+
+4) Polyfills and transpilation:
+- Babel/TypeScript can transpile syntax.
+- Polyfills are needed for missing runtime APIs.
+- Load only what you need to avoid bundle bloat.
+
+5) Progressive enhancement:
+- Use feature detection instead of browser sniffing when possible.
+- Provide fallback UI/behavior for unsupported features.
+
+Common examples:
+- CSS gap support in older flexbox implementations.
+- position: sticky failures inside overflow containers.
+- mobile viewport height issues with browser chrome.
+- date/input behavior differences.
+- passive event listener and scroll performance differences.
+
+Good closing:
+"I try to fix compatibility with standards-based feature detection and small fallbacks, not browser-specific hacks unless there is no better option."`,
+  },
+  {
+    id: 'tenable-data-visualization-dashboard',
+    companies: ['Tenable'],
+    title: 'Design frontend data visualization for a security dashboard',
+    difficulty: 'hard',
+    category: 'System Design',
+    description:
+      'Design a frontend dashboard that visualizes vulnerability or attack-path data with charts, tables, filters, drilldowns, and performance constraints.',
+    answerType: 'text',
+    tags: ['data visualization', 'dashboard', 'performance', 'security SaaS'],
+    source: 'Tenable frontend job description',
+    answer: `Interview framing:
+For Tenable-style products, visualization is not decoration. It helps users prioritize security risk and make decisions from complex data.
+
+Design approach:
+1) Clarify the user goal:
+- Are users finding critical vulnerabilities, understanding trends, exploring attack paths, or reporting status?
+
+2) Choose the right visualization:
+- Table for precise comparison and workflows.
+- Line/bar charts for trends and counts.
+- Graph visualization for relationships and attack paths.
+- Heatmaps for density or severity distribution.
+
+3) Data pipeline:
+- Fetch summarized data for overview.
+- Fetch details lazily on drilldown.
+- Keep filters encoded in URL for shareable state.
+- Debounce expensive filter/search actions.
+
+4) Performance:
+- Virtualize large tables.
+- Aggregate server-side when datasets are large.
+- Memoize expensive transformations.
+- Use Web Workers for heavy layout/graph calculations.
+- Avoid rendering thousands of SVG nodes if canvas/WebGL is more appropriate.
+
+5) UX:
+- Show loading, empty, and error states.
+- Make severity/risk color palettes accessible.
+- Add legends, tooltips, and clear units.
+- Preserve user context when filters change.
+
+6) Security/product concerns:
+- Avoid leaking sensitive asset names in logs.
+- Respect RBAC in every API response, not only hidden UI controls.
+- Make export/share flows permission-aware.
+
+Good follow-up:
+"I would validate the dashboard with realistic data volume, because visualization choices that work for 100 nodes often fail at 50,000."`,
   },
 ]
