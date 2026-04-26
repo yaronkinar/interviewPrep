@@ -1457,5 +1457,385 @@
     "source": "Tenable frontend job description",
     "answer": "Interview framing:\nFor Tenable-style products, visualization is not decoration. It helps users prioritize security risk and make decisions from complex data.\n\nDesign approach:\n1) Clarify the user goal:\n- Are users finding critical vulnerabilities, understanding trends, exploring attack paths, or reporting status?\n\n2) Choose the right visualization:\n- Table for precise comparison and workflows.\n- Line/bar charts for trends and counts.\n- Graph visualization for relationships and attack paths.\n- Heatmaps for density or severity distribution.\n\n3) Data pipeline:\n- Fetch summarized data for overview.\n- Fetch details lazily on drilldown.\n- Keep filters encoded in URL for shareable state.\n- Debounce expensive filter/search actions.\n\n4) Performance:\n- Virtualize large tables.\n- Aggregate server-side when datasets are large.\n- Memoize expensive transformations.\n- Use Web Workers for heavy layout/graph calculations.\n- Avoid rendering thousands of SVG nodes if canvas/WebGL is more appropriate.\n\n5) UX:\n- Show loading, empty, and error states.\n- Make severity/risk color palettes accessible.\n- Add legends, tooltips, and clear units.\n- Preserve user context when filters change.\n\n6) Security/product concerns:\n- Avoid leaking sensitive asset names in logs.\n- Respect RBAC in every API response, not only hidden UI controls.\n- Make export/share flows permission-aware.\n\nGood follow-up:\n\"I would validate the dashboard with realistic data volume, because visualization choices that work for 100 nodes often fail at 50,000.\"",
     "order": 70
+  },
+  {
+    "id": "plainid-react-saas-architecture",
+    "companies": [
+      "PlainID"
+    ],
+    "title": "Architect a scalable React frontend for an enterprise SaaS platform",
+    "difficulty": "hard",
+    "category": "System Design",
+    "description": "Design the frontend architecture for a complex React-based cybersecurity SaaS product. Cover routing, feature boundaries, shared components, state management, API clients, multi-tenant concerns, performance, and testing.",
+    "answerType": "text",
+    "tags": [
+      "React",
+      "frontend architecture",
+      "SaaS",
+      "multi-tenant",
+      "testing"
+    ],
+    "source": "PlainID senior frontend job description",
+    "answer": "Interview framing:\nFor a senior role, show that architecture is about boundaries, change tolerance, and observability, not only folder structure.\n\nArchitecture approach:\n1) Feature boundaries:\n- Organize by product domain: policies, identities, resources, decisions, audit, admin.\n- Keep feature-specific components, hooks, and API calls close together.\n- Put only truly reusable primitives in a shared layer.\n\n2) Routing and layout:\n- Use route-level loading/error states.\n- Keep tenant, workspace, and environment selection explicit in the URL or app shell.\n- Protect routes in the frontend for UX, but enforce permissions on the backend.\n\n3) State management:\n- Server data should live in a query/cache layer.\n- Local UI state belongs near the component.\n- Complex form/workflow state can use reducers or state machines.\n\n4) API boundary:\n- Centralize auth headers, error normalization, retries, cancellation, and tracing IDs.\n- Validate important response shapes at runtime when data is security-sensitive.\n\n5) Performance:\n- Code-split large routes.\n- Virtualize large tables.\n- Memoize expensive policy/resource transformations.\n- Measure slow interactions with real production-like data.\n\n6) Testing:\n- Unit-test pure logic and permission helpers.\n- Component-test forms, tables, and policy builders.\n- Add focused E2E tests for critical tenant and policy workflows.\n\nStrong closing:\n\"I would optimize the architecture for product teams to ship independently while keeping auth, audit, error handling, and design-system behavior consistent across the platform.\"",
+    "order": 71
+  },
+  {
+    "id": "plainid-authentication-vs-authorization",
+    "companies": [
+      "PlainID"
+    ],
+    "title": "Explain authentication vs authorization in a modern SaaS app",
+    "difficulty": "medium",
+    "category": "System Design",
+    "description": "Explain the difference between authentication and authorization, then describe how a frontend should work with tokens, sessions, scopes, roles, permissions, and backend access decisions.",
+    "answerType": "text",
+    "tags": [
+      "authentication",
+      "authorization",
+      "RBAC",
+      "ABAC",
+      "PBAC",
+      "security"
+    ],
+    "source": "PlainID authorization platform domain",
+    "answer": "Interview framing:\nAuthentication answers \"who are you?\" Authorization answers \"what are you allowed to do right now?\" A strong answer separates UX hints from enforceable security.\n\nKey concepts:\n1) Authentication:\n- Login, identity proof, MFA, sessions, tokens, and identity provider integration.\n- The frontend can store and refresh session state, but should avoid exposing secrets.\n\n2) Authorization:\n- Determines whether a subject can perform an action on a resource under a context.\n- Inputs can include role, attributes, tenant, resource ownership, device, risk, time, and environment.\n\n3) Frontend responsibility:\n- Hide or disable actions the user cannot take to improve UX.\n- Request allowed actions/capabilities from the backend when possible.\n- Treat frontend checks as non-security boundaries because users can modify client code.\n\n4) Backend responsibility:\n- Enforce every sensitive read/write/API call server-side.\n- Return 401 for unauthenticated, 403 for authenticated but unauthorized.\n- Audit denied and sensitive allowed decisions.\n\n5) Models:\n- RBAC maps users to roles.\n- ABAC evaluates attributes.\n- PBAC centralizes business policies that combine identity, resource, action, and context.\n\nGood closing:\n\"In the UI I can make authorization visible and usable, but the final decision must be enforced by trusted backend or policy infrastructure.\"",
+    "order": 72
+  },
+  {
+    "id": "plainid-policy-builder-ui",
+    "companies": [
+      "PlainID"
+    ],
+    "title": "Design a policy builder UI for non-developer security admins",
+    "difficulty": "hard",
+    "category": "System Design",
+    "description": "Design a frontend experience that lets security or IT admins create policy-based access rules. Cover UX, validation, draft state, previews, conflict detection, accessibility, and auditability.",
+    "answerType": "text",
+    "tags": [
+      "policy builder",
+      "UX",
+      "forms",
+      "validation",
+      "authorization"
+    ],
+    "source": "PlainID PBAC platform domain",
+    "answer": "Interview framing:\nA policy builder is a high-risk UI: it must be understandable for admins and precise enough to avoid accidental over-permissioning.\n\nDesign approach:\n1) Model the policy clearly:\n- Subject: who gets access.\n- Action: what they can do.\n- Resource: what they act on.\n- Context: when or under what conditions.\n- Effect: allow, deny, mask, filter, or require approval depending on product model.\n\n2) UX structure:\n- Use a guided flow or composable rule blocks instead of a blank expression editor.\n- Provide plain-language summaries like \"Finance analysts can view invoices in EMEA during business hours.\"\n- Show examples and inline help for domain terms.\n\n3) Validation:\n- Validate required fields, invalid combinations, unreachable conditions, and overly broad rules.\n- Warn before wildcard-like access such as all users or all resources.\n\n4) Preview and simulation:\n- Let admins test sample users/resources before publishing.\n- Explain why a decision was allowed or denied.\n- Show conflicts and policy precedence clearly.\n\n5) Draft and publishing flow:\n- Autosave drafts.\n- Require review/approval for risky changes.\n- Keep version history and audit logs.\n\n6) Accessibility and reliability:\n- Ensure keyboard operation for rule blocks.\n- Avoid color-only status indicators.\n- Preserve unsaved changes across navigation.\n\nStrong closing:\n\"The most important feature is confidence: admins should understand exactly what the policy will do before it affects production access.\"",
+    "order": 73
+  },
+  {
+    "id": "plainid-access-decision-simulator",
+    "companies": [
+      "PlainID"
+    ],
+    "title": "Build an access decision simulator in React",
+    "difficulty": "medium",
+    "category": "Async & Promises",
+    "description": "Design and implement the frontend flow for a simulator that evaluates whether a selected user can perform an action on a selected resource. Handle async requests, cancellation, errors, explainability, and stale responses.",
+    "answerType": "mixed",
+    "tags": [
+      "React",
+      "async",
+      "authorization",
+      "race conditions",
+      "UX"
+    ],
+    "source": "PlainID authorization platform domain",
+    "answer": "Interview framing:\nA simulator must be responsive and trustworthy. Users will change inputs quickly, so stale decisions are a real correctness bug.\n\nState model:\n- inputs: subject, action, resource, environment/context.\n- status: idle | loading | success | error.\n- result: allow/deny plus explanation, matched policies, warnings, and timestamp.\n\nRace-safe request pattern:\n```ts\nlet latestRequest = 0\nlet controller: AbortController | null = null\n\nasync function simulateAccess(payload: SimulationInput) {\n  const requestId = ++latestRequest\n  controller?.abort()\n  controller = new AbortController()\n  setState({ status: 'loading', result: null })\n\n  try {\n    const result = await api.simulate(payload, { signal: controller.signal })\n    if (requestId !== latestRequest) return\n    setState({ status: 'success', result })\n  } catch (error) {\n    if (requestId !== latestRequest || controller.signal.aborted) return\n    setState({ status: 'error', error })\n  }\n}\n```\n\nUX details:\n- Debounce free-text identity/resource search.\n- Keep previous valid result visible while refreshing if useful.\n- Label results clearly: Allowed, Denied, Partial, or Needs approval.\n- Explain the decision with matched policies and missing conditions.\n- Distinguish validation errors from backend failures.\n\nSecurity details:\n- Do not expose policy internals to users without permission.\n- Audit simulator runs if they reveal sensitive authorization data.\n- Enforce simulator permissions server-side.\n\nGood closing:\n\"I would treat stale response prevention as part of correctness because showing the wrong allow/deny answer can mislead an admin.\"",
+    "order": 74
+  },
+  {
+    "id": "plainid-large-policy-table-performance",
+    "companies": [
+      "PlainID"
+    ],
+    "title": "Optimize a large policy management table",
+    "difficulty": "medium",
+    "category": "Performance",
+    "description": "A policy management page renders thousands of policies with filters, sorting, bulk actions, and expandable details. Explain how you would diagnose and improve frontend performance.",
+    "answerType": "text",
+    "tags": [
+      "performance",
+      "React",
+      "tables",
+      "virtualization",
+      "profiling"
+    ],
+    "source": "PlainID senior frontend job description",
+    "answer": "Interview framing:\nStart with measurement. Table performance problems can come from too many DOM nodes, expensive filtering, unstable renders, network payloads, or layout thrashing.\n\nDiagnosis:\n1) Reproduce with realistic data volume.\n2) Use React Profiler to find components that render too often.\n3) Use browser Performance tools to identify scripting, rendering, layout, and paint costs.\n4) Check network payload size and API latency separately from rendering.\n\nOptimizations:\n- Server-side pagination/filtering/sorting for very large datasets.\n- Virtualize rows when the user needs long scrolling.\n- Memoize columns, row actions, and derived policy summaries.\n- Keep row props stable with useMemo/useCallback only where it reduces real churn.\n- Avoid expanding many heavy detail panels at once.\n- Debounce search and cancel stale requests.\n- Split bulk selection state from row rendering where possible.\n- Use skeletons or progressive loading for perceived performance.\n\nCommon React pitfalls:\n- Inline objects/functions causing memoized rows to rerender.\n- Expensive formatters running on every render.\n- Using array index keys when rows reorder.\n- Global state updates invalidating the whole table.\n\nGood closing:\n\"I would set a performance budget around the slowest critical interaction, such as filtering or selecting bulk rows, then keep a regression test or profiler scenario for it.\"",
+    "order": 75
+  },
+  {
+    "id": "plainid-component-integration-testing",
+    "companies": [
+      "PlainID"
+    ],
+    "title": "Test complex React components and integration flows",
+    "difficulty": "medium",
+    "category": "System Design",
+    "description": "Describe a testing strategy for a React SaaS feature such as a policy editor or access review page. Include unit tests, component tests, integration tests, E2E tests, mocks, accessibility, and CI trade-offs.",
+    "answerType": "text",
+    "tags": [
+      "testing",
+      "React Testing Library",
+      "integration tests",
+      "E2E",
+      "CI"
+    ],
+    "source": "PlainID senior frontend job description",
+    "answer": "Interview framing:\nFor complex enterprise UI, tests should protect workflows and business rules without locking the implementation in place.\n\nTesting layers:\n1) Unit tests:\n- Policy validation helpers.\n- Permission/capability mapping.\n- Data formatters and reducers.\n- Edge cases around missing attributes or conflicting rules.\n\n2) Component tests:\n- Render policy forms and interact with them as a user.\n- Assert visible behavior: validation messages, disabled publish button, warning banners, result summaries.\n- Prefer role/label queries over test IDs when possible.\n\n3) Integration tests:\n- Mock API boundaries with realistic fixtures.\n- Test loading, success, empty, 401/403, validation error, and server error states.\n- Verify stale request handling for search/simulation flows.\n\n4) E2E tests:\n- Cover a few critical paths: create draft, simulate decision, publish, audit entry visible.\n- Keep them stable and focused; avoid duplicating all component cases.\n\n5) Accessibility:\n- Automated checks for labels, roles, keyboard access, and color-independent status.\n- Manual keyboard checks for custom dropdowns/rule builders.\n\nCI trade-offs:\n- Fast unit/component tests on every PR.\n- E2E smoke tests in CI or preview environments.\n- More expensive suites can run nightly or before release.\n\nGood closing:\n\"I want confidence in user-visible behavior and security-sensitive rules, not brittle snapshots of every markup detail.\"",
+    "order": 76
+  },
+  {
+    "id": "plainid-ai-assisted-development",
+    "companies": [
+      "PlainID"
+    ],
+    "title": "Use AI-assisted development tools responsibly in a senior frontend workflow",
+    "difficulty": "medium",
+    "category": "ES6+",
+    "description": "Explain how you use AI coding tools such as Cursor or GitHub Copilot for implementation, refactoring, tests, and documentation while preserving code quality, security, and ownership.",
+    "answerType": "text",
+    "tags": [
+      "AI-assisted development",
+      "Cursor",
+      "code review",
+      "refactoring",
+      "quality"
+    ],
+    "source": "PlainID senior frontend job description",
+    "answer": "Interview framing:\nThe strongest answer is not \"AI writes code for me.\" It is that AI accelerates work while the engineer remains accountable for design, correctness, and security.\n\nPractical workflow:\n1) Exploration:\n- Ask AI to summarize unfamiliar files, trace data flow, or identify related tests.\n- Verify conclusions by reading the code and running the app/tests.\n\n2) Implementation:\n- Use AI for boilerplate, repetitive component variants, migration steps, and draft tests.\n- Keep changes small enough to review carefully.\n\n3) Refactoring:\n- Ask for candidate simplifications, but preserve public contracts and behavior.\n- Use tests and diffs to confirm no accidental rewrites.\n\n4) Testing:\n- Generate edge-case ideas and initial test cases.\n- Edit tests so they assert product behavior, not AI-generated assumptions.\n\n5) Security and privacy:\n- Do not paste secrets, customer data, or sensitive policy details into tools without approval.\n- Review generated code for injection, auth bypasses, overbroad permissions, and dependency risks.\n\n6) Team practice:\n- Document non-obvious AI-assisted changes like any other change.\n- Treat AI output as junior-draft code: useful, but always reviewed.\n\nGood closing:\n\"AI helps me move faster, but I still own the architecture, trade-offs, test coverage, and production risk.\"",
+    "order": 77
+  },
+  {
+    "id": "plainid-frontend-backend-contracts",
+    "companies": [
+      "PlainID"
+    ],
+    "title": "Design frontend-backend contracts for authorization workflows",
+    "difficulty": "hard",
+    "category": "System Design",
+    "description": "Design API contracts between a React frontend and backend services for policy search, policy editing, access simulation, publishing, and audit history. Cover typing, errors, optimistic updates, versioning, and security.",
+    "answerType": "text",
+    "tags": [
+      "API design",
+      "authorization",
+      "contracts",
+      "TypeScript",
+      "backend integration"
+    ],
+    "source": "PlainID senior frontend job description",
+    "answer": "Interview framing:\nGood frontend-backend contracts reduce ambiguity. For authorization workflows, they also prevent dangerous UI assumptions.\n\nContract design:\n1) Typed DTOs:\n- Define request/response types for policies, subjects, resources, actions, simulation results, and audit entries.\n- Prefer explicit enums for status/effect over loose strings.\n- Include server-generated IDs, versions, timestamps, and actor metadata.\n\n2) Error model:\n- Return structured errors with code, message, field errors, and retryability.\n- Distinguish 401, 403, 404, validation errors, conflicts, and server failures.\n- Avoid leaking sensitive policy details in errors.\n\n3) Concurrency:\n- Use policy versions or ETags to avoid overwriting someone else’s change.\n- Show conflict resolution UI when a draft is stale.\n\n4) Publishing flow:\n- Separate draft save from publish.\n- Return validation warnings and policy impact summaries before activation.\n- Audit publish events with actor, diff, and timestamp.\n\n5) Optimistic updates:\n- Safe for low-risk UI preferences.\n- Be cautious for policy changes; prefer confirmed writes for security-sensitive state.\n\n6) Versioning:\n- Keep contracts backwards-compatible across rolling deployments.\n- Add fields instead of changing meaning.\n- Use generated clients or schema validation when available.\n\nGood closing:\n\"For authorization products, the frontend can guide the workflow, but the backend contract must be explicit about decisions, errors, versions, and auditability.\"",
+    "order": 78
+  },
+  {
+    "id": "plainid-react-reconciliation-fiber",
+    "companies": [
+      "PlainID"
+    ],
+    "title": "Explain React reconciliation and Fiber architecture",
+    "difficulty": "hard",
+    "category": "Performance",
+    "description": "Explain how React updates the UI when state changes. Cover reconciliation, keys, render vs commit phases, Fiber, interruptible work, and why this matters for performance debugging.",
+    "answerType": "text",
+    "tags": [
+      "React",
+      "reconciliation",
+      "Fiber",
+      "rendering",
+      "performance"
+    ],
+    "source": "Senior frontend interview research",
+    "answer": "Interview framing:\nThis is not about reciting internals for trivia. The goal is to connect React's update model to real bugs like unnecessary renders, wrong keys, and slow interactions.\n\nCore explanation:\n1) State or props change:\n- React creates a new description of the UI tree.\n- It compares the new tree with the previous one during reconciliation.\n\n2) Diffing assumptions:\n- Different element types produce different subtrees.\n- Stable keys let React match list items across renders.\n- Bad keys, especially array indexes in changing lists, can cause wrong state reuse and extra work.\n\n3) Render phase:\n- React calculates what should change.\n- This phase can be interrupted, restarted, or deprioritized in modern React.\n- Components should stay pure because render can happen more than once.\n\n4) Commit phase:\n- React applies changes to the DOM and runs layout/effect work.\n- This phase is synchronous because the visible UI is being mutated.\n\n5) Fiber:\n- Fiber represents units of work in the component tree.\n- It lets React split rendering work and prioritize urgent updates.\n\nPractical debugging:\n- Use React Profiler to find slow components.\n- Check unstable keys, broad state updates, expensive derived values, and unnecessary context invalidation.\n\nGood closing:\n\"I use these internals to reason about observable behavior: why a component rendered, whether the DOM actually changed, and where the expensive work happened.\"",
+    "order": 79
+  },
+  {
+    "id": "plainid-react-server-components-boundaries",
+    "companies": [
+      "PlainID"
+    ],
+    "title": "Explain React Server Components vs Client Components",
+    "difficulty": "medium",
+    "category": "System Design",
+    "description": "Explain the difference between React Server Components and Client Components. Cover data fetching, bundle size, interactivity, serialization boundaries, and when each belongs in an enterprise app.",
+    "answerType": "text",
+    "tags": [
+      "React",
+      "Server Components",
+      "Next.js",
+      "bundle size",
+      "architecture"
+    ],
+    "source": "Senior frontend interview research",
+    "answer": "Interview framing:\nA strong answer focuses on boundaries. Server Components reduce client JavaScript, while Client Components provide browser interactivity.\n\nServer Components:\n- Run only on the server.\n- Can fetch data close to the source.\n- Can use server-only dependencies without shipping them to the browser.\n- Cannot use browser APIs, event handlers, useState, or useEffect.\n- Must pass serializable props to Client Components.\n\nClient Components:\n- Run in the browser after hydration.\n- Handle interactions, local state, effects, browser APIs, and event handlers.\n- Add JavaScript to the client bundle, so use them intentionally.\n\nGood architecture:\n- Keep data-heavy shells and read-only content on the server where possible.\n- Move only interactive widgets into Client Components.\n- Avoid passing huge data blobs across the server/client boundary.\n- Keep security-sensitive checks on the server; do not rely on hidden client UI.\n\nPlainID-style example:\n- A policy details page can fetch policy metadata on the server.\n- The rule editor, simulator controls, and unsaved draft state likely need Client Components.\n\nGood closing:\n\"I choose the boundary by asking: does this code need browser interactivity, or can it stay server-side to reduce bundle size and simplify data access?\"",
+    "order": 80
+  },
+  {
+    "id": "plainid-concurrent-react-transitions",
+    "companies": [
+      "PlainID"
+    ],
+    "title": "Use concurrent React features for responsive filtering",
+    "difficulty": "medium",
+    "category": "Performance",
+    "description": "A search box filters a large policy list and typing feels laggy. Explain how you would use profiling, debouncing, useTransition, useDeferredValue, memoization, and virtualization to keep the UI responsive.",
+    "answerType": "mixed",
+    "tags": [
+      "React",
+      "useTransition",
+      "useDeferredValue",
+      "search",
+      "performance"
+    ],
+    "source": "Senior frontend interview research",
+    "answer": "Interview framing:\nConcurrent features help prioritize urgent input updates over expensive rendering, but they do not replace profiling or data-size fixes.\n\nInvestigation:\n- Profile typing to see whether the bottleneck is filtering, rendering rows, network requests, or layout.\n- Check how many DOM nodes render and whether row props are stable.\n\nTools and fixes:\n1) Debounce network search:\n- Useful when every keystroke triggers an API request.\n- Still handle cancellation and stale responses.\n\n2) useTransition:\n```tsx\nconst [isPending, startTransition] = useTransition()\n\nfunction onSearchChange(value: string) {\n  setInput(value)\n  startTransition(() => {\n    setQuery(value)\n  })\n}\n```\n- Keeps the input update urgent.\n- Marks the expensive list update as lower priority.\n\n3) useDeferredValue:\n- Lets the input display immediately while the list catches up to a deferred query.\n- Good when derived rendering is expensive.\n\n4) Memoization:\n- Memoize expensive filtering or row components only after measuring.\n- Stable props are required for memoized rows to help.\n\n5) Virtualization:\n- If thousands of rows are rendered, render only visible rows.\n\nGood closing:\n\"I would combine UX-level fixes with data-size fixes: keep typing responsive, cancel stale work, and avoid rendering more rows than the user can see.\"",
+    "order": 81
+  },
+  {
+    "id": "plainid-memoization-tradeoffs",
+    "companies": [
+      "PlainID"
+    ],
+    "title": "When can React memoization hurt performance?",
+    "difficulty": "medium",
+    "category": "Performance",
+    "description": "Explain when React.memo, useMemo, and useCallback are useful and when they add unnecessary complexity or overhead. Include how you would prove a memoization change is worthwhile.",
+    "answerType": "text",
+    "tags": [
+      "React",
+      "memoization",
+      "React.memo",
+      "useMemo",
+      "useCallback",
+      "profiling"
+    ],
+    "source": "Senior frontend interview research",
+    "answer": "Interview framing:\nSenior frontend performance is about measured trade-offs. Memoization is a tool, not a default coding style.\n\nWhen memoization helps:\n- A component renders often and rendering is measurably expensive.\n- A child component receives stable props and can skip work.\n- A derived value is expensive to recompute.\n- A callback identity matters because it is passed to memoized children or effect dependencies.\n\nWhen memoization hurts:\n- The component is cheap to render.\n- Props are always new objects/functions, so React.memo never skips.\n- Dependency arrays become complex and bug-prone.\n- The comparison cost is higher than the render cost.\n- It hides poor state ownership or broad context updates.\n\nHow to prove it:\n- Use React Profiler before and after.\n- Compare render count and render duration for the interaction users care about.\n- Check whether the code became harder to maintain.\n\nBetter first questions:\n- Is state too high in the tree?\n- Is context invalidating too much UI?\n- Are we rendering a huge list?\n- Are expensive calculations happening inside render unnecessarily?\n\nGood closing:\n\"I prefer to profile first, fix state ownership and data volume, then use memoization surgically where it removes real measured work.\"",
+    "order": 82
+  },
+  {
+    "id": "plainid-frontend-state-boundaries",
+    "companies": [
+      "PlainID"
+    ],
+    "title": "Decide where frontend state should live",
+    "difficulty": "medium",
+    "category": "System Design",
+    "description": "Explain how you decide whether state belongs in a component, URL, context, external store, server cache, or backend. Use examples from a policy management SaaS application.",
+    "answerType": "text",
+    "tags": [
+      "state management",
+      "React",
+      "URL state",
+      "server state",
+      "architecture"
+    ],
+    "source": "Senior frontend interview research",
+    "answer": "Interview framing:\nState placement is an architecture decision. The right owner reduces bugs, rerenders, and coordination cost.\n\nDecision framework:\n1) Local component state:\n- Use for temporary UI state: open menus, focused fields, local form sections.\n- Keeps updates close to the UI that uses them.\n\n2) URL state:\n- Use for shareable and restorable state: filters, selected tenant, active tab, search query.\n- Important for admin tools where users share exact views.\n\n3) Server cache/query state:\n- Use for remote data: policies, users, resources, audit records.\n- Needs loading, error, stale, refetch, and invalidation behavior.\n\n4) Context:\n- Use for low-frequency cross-cutting state: theme, locale, current tenant, current capabilities.\n- Avoid putting rapidly changing data in broad context because it rerenders many consumers.\n\n5) External store:\n- Useful for complex client workflows shared by distant components.\n- Examples: policy builder draft, simulator workspace, collaborative editor state.\n\n6) Backend-owned state:\n- Use for source-of-truth data, security decisions, published policy versions, and audit history.\n\nPlainID-style examples:\n- Policy filters belong in the URL.\n- Published policy state belongs on the backend.\n- Draft editor state may live in a feature store with autosave.\n- Allowed actions should come from backend capabilities, not local assumptions.\n\nGood closing:\n\"I keep state as local as possible, make shareable state explicit, and keep security-sensitive state owned by the backend.\"",
+    "order": 83
+  },
+  {
+    "id": "plainid-accessible-admin-ui",
+    "companies": [
+      "PlainID"
+    ],
+    "title": "Make a complex React admin UI accessible",
+    "difficulty": "medium",
+    "category": "DOM & Browser",
+    "description": "Explain how you would make policy editors, modals, dropdowns, tables, toasts, and async validation accessible in a React application.",
+    "answerType": "text",
+    "tags": [
+      "accessibility",
+      "React",
+      "ARIA",
+      "keyboard",
+      "admin UI"
+    ],
+    "source": "Senior frontend interview research",
+    "answer": "Interview framing:\nAccessibility is not only semantic HTML. Complex React apps need deliberate focus management, keyboard behavior, announcements, and testing.\n\nKey practices:\n1) Semantic structure:\n- Use real buttons, links, labels, headings, tables, and form controls where possible.\n- Add ARIA only when semantic HTML is not enough.\n\n2) Focus management:\n- Move focus into modals and trap it while open.\n- Restore focus to the trigger when a modal closes.\n- Move focus meaningfully after route changes or major async updates.\n\n3) Keyboard support:\n- Dropdowns, menus, tabs, dialogs, and custom rule builders must work without a mouse.\n- Use expected keys: Tab, Shift+Tab, Escape, Enter, Space, Arrow keys where appropriate.\n\n4) Async feedback:\n- Use aria-live for important validation, save, and error messages.\n- Do not rely on color alone for allow/deny/warning states.\n\n5) Forms:\n- Associate labels with controls.\n- Link field errors with aria-describedby.\n- Keep validation messages specific and actionable.\n\n6) Tables:\n- Use headers and captions when helpful.\n- Preserve keyboard access for row actions and bulk selection.\n\nTesting:\n- Use eslint accessibility rules, axe/Lighthouse, React Testing Library queries, and manual keyboard checks.\n- Screen-reader smoke tests are valuable for high-risk workflows.\n\nGood closing:\n\"For security admin tools, accessibility also protects correctness: every admin must be able to understand and safely operate policy-changing workflows.\"",
+    "order": 84
+  },
+  {
+    "id": "plainid-auth-guards-api-interceptors",
+    "companies": [
+      "PlainID"
+    ],
+    "title": "Implement auth guards and API interceptors in a React app",
+    "difficulty": "medium",
+    "category": "Async & Promises",
+    "description": "Design frontend auth guards and API request/response interceptors for a SaaS application. Cover session loading, token refresh, 401 vs 403 handling, route protection, capabilities, and security limits.",
+    "answerType": "mixed",
+    "tags": [
+      "authentication",
+      "authorization",
+      "API clients",
+      "route guards",
+      "security"
+    ],
+    "source": "Senior frontend interview research",
+    "answer": "Interview framing:\nAuth guards and interceptors improve UX and consistency, but they are not the final security boundary. Backend enforcement is mandatory.\n\nAuth guard responsibilities:\n- Wait for initial session loading before redirecting.\n- Redirect unauthenticated users to login and preserve the intended destination.\n- Show unauthorized or request-access states for authenticated users without required capability.\n- Avoid flicker by modeling loading, authenticated, unauthenticated, and forbidden states explicitly.\n\nAPI client responsibilities:\n- Attach auth/session headers consistently.\n- Add request IDs or correlation IDs when useful.\n- Normalize errors into a predictable shape.\n- Handle 401 by refreshing session or redirecting to login.\n- Handle 403 as authenticated but not allowed.\n- Cancel stale requests where interactions change quickly.\n\nExample shape:\n```ts\nasync function request<T>(path: string, options: RequestInit = {}): Promise<T> {\n  const response = await fetch(path, {\n    ...options,\n    headers: {\n      ...options.headers,\n      Authorization: `Bearer ${getAccessToken()}`,\n    },\n  })\n\n  if (response.status === 401) throw new AuthError('Session expired')\n  if (response.status === 403) throw new ForbiddenError('Not allowed')\n  if (!response.ok) throw await toApiError(response)\n  return response.json() as Promise<T>\n}\n```\n\nSecurity limits:\n- Do not trust localStorage role flags for enforcement.\n- Do not expose sensitive data and then hide it in the UI.\n- Every sensitive API must validate permissions server-side.\n\nGood closing:\n\"The frontend should make auth state understandable and consistent, while the backend remains responsible for the actual access decision.\"",
+    "order": 85
+  },
+  {
+    "id": "plainid-core-web-vitals-performance-budget",
+    "companies": [
+      "PlainID"
+    ],
+    "title": "Set frontend performance budgets with Core Web Vitals",
+    "difficulty": "medium",
+    "category": "Performance",
+    "description": "Explain how you would define, measure, and enforce frontend performance budgets for an enterprise SaaS application. Cover LCP, INP, CLS, bundle size, route-level budgets, and regression prevention.",
+    "answerType": "text",
+    "tags": [
+      "Core Web Vitals",
+      "INP",
+      "LCP",
+      "CLS",
+      "performance budget"
+    ],
+    "source": "Senior frontend interview research",
+    "answer": "Interview framing:\nPerformance budgets translate \"make it fast\" into measurable constraints that can be tracked in CI and production.\n\nMetrics:\n- LCP: how quickly the main content appears.\n- INP: how responsive interactions feel throughout the session.\n- CLS: whether layout shifts unexpectedly.\n- Bundle size: how much JavaScript is shipped per route.\n- Route transition time and API latency can matter more in authenticated SaaS apps.\n\nBudget examples:\n- Initial authenticated shell under a defined JS budget.\n- Policy list interaction under 200ms for common filters.\n- No unexpected layout shift during loading states.\n- Large editor dependencies loaded only on editor routes.\n\nMeasurement:\n- Lab tools: Lighthouse, browser Performance, bundle analyzer.\n- Real-user monitoring: collect metrics from production users by browser, device, tenant size, and route.\n- Profiling: use React Profiler for component-level render work.\n\nEnforcement:\n- CI warnings or failures for bundle regressions.\n- Performance smoke tests for critical routes.\n- Dashboards and alerts for production regressions.\n- Review checklist for adding heavy dependencies.\n\nTrade-offs:\n- Admin dashboards may prioritize interaction speed over SEO.\n- Some heavy features are justified if lazy-loaded and measured.\n- Budgets should reflect user-critical flows, not vanity scores.\n\nGood closing:\n\"I want performance to be owned like test coverage: visible, measured, and protected from regressions.\"",
+    "order": 86
+  },
+  {
+    "id": "plainid-layout-thrashing-browser-rendering",
+    "companies": [
+      "PlainID"
+    ],
+    "title": "Explain layout thrashing and the browser rendering pipeline",
+    "difficulty": "medium",
+    "category": "DOM & Browser",
+    "description": "Explain how the browser renders a page and what layout thrashing is. Include how direct DOM reads/writes, useLayoutEffect, animations, and large tables can cause jank.",
+    "answerType": "text",
+    "tags": [
+      "browser rendering",
+      "layout thrashing",
+      "DOM",
+      "performance",
+      "animations"
+    ],
+    "source": "Senior frontend interview research",
+    "answer": "Interview framing:\nThis question checks whether you can reason below React when UI feels janky. React is not the whole rendering pipeline.\n\nBrowser pipeline:\n1) Parse HTML and CSS into DOM/CSSOM.\n2) Build the render tree.\n3) Calculate layout: element sizes and positions.\n4) Paint pixels.\n5) Composite layers to the screen.\n\nLayout thrashing:\n- Happens when JavaScript alternates DOM writes and layout reads.\n- Reads like offsetHeight, getBoundingClientRect, or computed styles can force layout.\n- If this repeats in a loop, the browser recalculates layout many times.\n\nExample problem:\n- Write a row height.\n- Read another row's bounding box.\n- Write again.\n- Repeat for hundreds of rows.\n\nPrevention:\n- Batch DOM reads before writes.\n- Prefer CSS transforms and opacity for animations.\n- Avoid measuring layout in large loops.\n- Use requestAnimationFrame for coordinated visual updates.\n- Be careful with useLayoutEffect because it runs before paint and can block rendering.\n- Virtualize large tables/lists.\n\nDebugging:\n- Use Chrome Performance panel to look for long layout/recalculate style tasks.\n- Check whether scroll or typing interactions trigger repeated layout work.\n\nGood closing:\n\"When React optimization does not fix jank, I look at the browser pipeline: layout, paint, compositing, and forced synchronous measurements.\"",
+    "order": 87
+  },
+  {
+    "id": "plainid-mission-critical-loading-error-states",
+    "companies": [
+      "PlainID"
+    ],
+    "title": "Design loading, empty, and error states for mission-critical pages",
+    "difficulty": "medium",
+    "category": "System Design",
+    "description": "Design loading, empty, partial, stale, and error states for a security admin page where users manage policies or access decisions. Cover UX trust, retries, permissions, accessibility, and data correctness.",
+    "answerType": "text",
+    "tags": [
+      "UX",
+      "loading states",
+      "error handling",
+      "accessibility",
+      "data fetching"
+    ],
+    "source": "Senior frontend interview research",
+    "answer": "Interview framing:\nMission-critical UI should keep users oriented and avoid implying certainty when data is missing, stale, or unauthorized.\n\nState types:\n1) Initial loading:\n- Use skeletons when layout is predictable.\n- Avoid blank screens without context.\n\n2) Empty state:\n- Explain whether there is no data, no matching filter result, or no permission to view data.\n- Provide the next useful action if allowed.\n\n3) Partial state:\n- Show available sections while clearly marking failed sections.\n- Do not block the whole page if one secondary panel fails.\n\n4) Refreshing/stale state:\n- Keep old data visible if that is safer than flicker.\n- Label stale data or show last updated time when decisions are time-sensitive.\n\n5) Error state:\n- Distinguish validation, network, 401, 403, 404, conflict, and server errors.\n- Offer retry only when retry makes sense.\n- Preserve user input after failures.\n\n6) Permission state:\n- 403 should explain lack of access without leaking sensitive resource details.\n- Offer request-access or contact-admin flows if product supports them.\n\nAccessibility:\n- Announce important async changes with live regions.\n- Move focus to critical errors when a submit fails.\n- Ensure loading indicators have text alternatives.\n\nGood closing:\n\"The UI should be honest about confidence: what loaded, what failed, what is stale, and what the user can safely do next.\"",
+    "order": 88
   }
 ]

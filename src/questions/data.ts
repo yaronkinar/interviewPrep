@@ -46,4 +46,5 @@ export const COMPANIES = [
   { id: 'DriveNets', emoji: '🟢', color: '#22C55E' },
   { id: 'CrowdStrike', emoji: '🔴', color: '#EC0000' },
   { id: 'Tenable', emoji: '🟢', color: '#00A86B' },
+  { id: 'PlainID', emoji: '🟣', color: '#6D5DF6' },
 ]
