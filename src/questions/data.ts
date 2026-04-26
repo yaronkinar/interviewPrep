@@ -45,6 +45,7 @@ export const COMPANIES = [
   { id: 'Uber',    emoji: '⚫', color: '#000000' },
   { id: 'DriveNets', emoji: '🟢', color: '#22C55E' },
   { id: 'CrowdStrike', emoji: '🔴', color: '#EC0000' },
+  { id: 'Tenable', emoji: '🟢', color: '#00A86B' },
 ]
 
 export const QUESTIONS: Question[] = [
@@ -2865,5 +2866,95 @@ for (const event of events) {
 // - Always pair with server-side rate limiting; client-side is a politeness layer.
 // - For multi-tab apps, coordinate via BroadcastChannel or a SharedWorker so
 //   tabs don't each get their own quota.`,
+  },
+  {
+    id: 'what-happens-when-typing-url',
+    companies: ['Tenable'],
+    title: 'What happens when a user types a URL and sees the page?',
+    difficulty: 'medium',
+    category: 'DOM & Browser',
+    description:
+      'Describe the full browser-to-screen flow after a user enters a URL: URL parsing, DNS, TCP/TLS, HTTP, server response, browser parsing, rendering, JavaScript execution, and paint.',
+    answerType: 'text',
+    tags: ['browser', 'networking', 'DNS', 'HTTP', 'rendering', 'performance'],
+    source: 'Tenable interview',
+    answer: `Interview framing:
+The interviewer wants a clear end-to-end mental model. Start from the address bar, then move through networking, backend response, browser parsing, rendering, and follow-up loading.
+
+Step-by-step flow:
+1) User enters a URL:
+- The browser parses the input into scheme, host, port, path, query, and hash.
+- If no scheme is provided, it usually assumes https://.
+- It checks browser features like autocomplete, history, search fallback, HSTS, and service worker scope.
+
+2) Browser checks caches:
+- It may find a valid response in the HTTP cache, memory cache, disk cache, or service worker cache.
+- If cached content is fresh, the browser can skip some network work.
+- If stale, it may revalidate with headers like If-None-Match / ETag or If-Modified-Since.
+
+3) DNS lookup:
+- The browser needs the IP address for the domain.
+- It checks DNS caches: browser cache, OS cache, router/ISP cache, then recursive DNS.
+- The resolver walks from root servers to TLD servers to authoritative name servers if needed.
+- Result: an A/AAAA record mapping the domain to an IPv4/IPv6 address.
+
+4) Connection setup:
+- For HTTPS over HTTP/1.1 or HTTP/2, the browser opens a TCP connection to the server IP and port, usually 443.
+- TCP performs a three-way handshake: SYN, SYN-ACK, ACK.
+- TLS handshake follows: protocol negotiation, certificate validation, key exchange, and session keys.
+- For HTTP/3, this is usually QUIC over UDP, combining transport and TLS concepts.
+
+5) HTTP request:
+- The browser sends a request such as GET /path HTTP/2 with headers.
+- Headers include Host, User-Agent, Accept, Accept-Encoding, cookies, cache validators, and more.
+- Cookies for the domain/path are attached automatically, subject to SameSite/Secure rules.
+
+6) Server/CDN/proxy handling:
+- A CDN or reverse proxy may terminate TLS, serve cached content, compress assets, or route to an origin server.
+- The application server handles the request, reads data if needed, renders HTML or returns a static file/API response.
+- The server sends an HTTP response with status code, headers, and body.
+- Important headers can include Content-Type, Cache-Control, Set-Cookie, Content-Encoding, CSP, and redirects.
+
+7) Browser receives the response:
+- If the response is a redirect (301/302/307/308), the browser follows the Location header and repeats the relevant steps.
+- If it is compressed, the browser decompresses it.
+- If it is HTML, the browser starts parsing it incrementally as bytes arrive.
+
+8) HTML parsing and resource discovery:
+- The browser builds the DOM from HTML.
+- It discovers subresources like CSS, JavaScript, images, fonts, and preload links.
+- CSS files are fetched and parsed into the CSSOM.
+- Scripts can block parsing unless they use defer, async, module behavior, or are loaded later.
+
+9) JavaScript execution:
+- Blocking scripts execute during parsing and can read/change the DOM.
+- defer scripts run after HTML parsing, before DOMContentLoaded.
+- async scripts run as soon as they download, independent of parsing order.
+- JS may trigger more network requests, hydrate server-rendered markup, register event listeners, or mutate layout.
+
+10) Rendering pipeline:
+- Browser combines DOM + CSSOM into the render tree.
+- It calculates layout: size and position of visible elements.
+- It paints pixels for text, backgrounds, borders, shadows, and images.
+- It composites layers, often using the GPU, and presents the final frame on screen.
+
+11) Page lifecycle events:
+- DOMContentLoaded fires after HTML is parsed and deferred scripts have run.
+- load fires after dependent resources like images and stylesheets are loaded.
+- The user can often see and interact with part of the page before load, depending on streaming, CSS, JS, and rendering strategy.
+
+12) After first paint:
+- The browser continues fetching lazy resources, running JS, rendering animations, and responding to user input.
+- Performance is measured with metrics like TTFB, First Contentful Paint, Largest Contentful Paint, Interaction to Next Paint, and Cumulative Layout Shift.
+
+Common follow-ups:
+- Q: What can make this slow?
+- A: Slow DNS, connection setup, TLS, backend TTFB, render-blocking CSS/JS, large bundles, unoptimized images, long main-thread tasks, and layout thrashing.
+- Q: Why is CSS render-blocking?
+- A: The browser needs CSS before it can safely paint styled content; otherwise users would see unstable flashes.
+- Q: How do defer and async differ?
+- A: defer preserves script order and runs after parsing; async runs whenever downloaded and can execute out of order.
+- Q: Where do service workers fit?
+- A: After navigation starts, a matching service worker can intercept the request and respond from cache, network, or generated content.`,
   },
 ]
