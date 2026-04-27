@@ -204,19 +204,15 @@ h3,
   z-index: 0;
 }
 
-/* â”€â”€ NAV (fixed centered pill — React Questions / Sandbox mocks) â”€â”€ */
+/* â”€â”€ NAV (centered pill — React Questions / Sandbox mocks) â”€â”€ */
 .nav-shell {
   box-sizing: border-box;
-  left: 50%;
+  margin: 1.75rem auto 0;
   max-width: 80rem;
   padding: 0 max(0.75rem, env(safe-area-inset-left)) 0 max(0.75rem, env(safe-area-inset-right));
   pointer-events: none;
-  position: fixed;
-  top: 1rem;
-  transform: translateX(-50%);
+  position: static;
   width: min(95%, calc(100vw - 1.25rem));
-  /* Below Sheet overlay/content (z-50) so the mobile drawer stacks correctly */
-  z-index: 40;
 }
 .nav-shell .nav {
   pointer-events: auto;
@@ -244,7 +240,7 @@ h3,
 }
 .nav-inner {
   margin: 0 auto;
-  padding: 0 1.25rem;
+  padding: 0.45rem clamp(1.75rem, 3vw, 2.75rem);
   min-height: 52px;
   height: auto;
   display: flex;
@@ -256,7 +252,7 @@ h3,
   align-items: center;
   display: flex;
   flex: 1;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 0.65rem;
   justify-content: flex-end;
   min-width: 0;
@@ -478,7 +474,7 @@ button.nav-mobile-drawer-close:hover {
 
 @media (max-width: 720px) {
   .nav-shell {
-    top: 0.65rem;
+    margin-top: 0.65rem;
     width: min(96%, calc(100vw - 0.85rem));
   }
 
@@ -494,7 +490,7 @@ button.nav-mobile-drawer-close:hover {
     flex-wrap: nowrap;
     gap: 0.6rem;
     min-height: 48px;
-    padding: 0 0.75rem;
+    padding: 0.35rem 0.95rem;
   }
 
   .nav-toolbar {
@@ -527,8 +523,7 @@ button.nav-mobile-drawer-close:hover {
 .main {
   flex: 1;
   min-width: 0;
-  /* Clear fixed nav (top-4 + bar height), Stitch mock uses ~pt-32 */
-  padding: clamp(5.75rem, 5rem + 4vw, 8rem) 1.5rem 2.5rem;
+  padding: clamp(2rem, 1.5rem + 2vw, 3rem) 1.5rem 2.5rem;
 }
 
 .site-footer {

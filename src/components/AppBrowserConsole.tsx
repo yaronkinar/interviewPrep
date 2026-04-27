@@ -29,6 +29,19 @@ function formatArgs(args: unknown[]): string {
     .join(' ')
 }
 
+function isNoisyInspectorWarning(args: unknown[]): boolean {
+  const message = formatArgs(args)
+  return (
+    message.includes('getReactComponentInfo') &&
+    (
+      message.includes('`searchParams` is a Promise') ||
+      message.includes('`params` is a Promise') ||
+      message.includes('keys of `searchParams` were accessed directly') ||
+      message.includes('params are being enumerated')
+    )
+  )
+}
+
 let idSeq = 0
 
 export default function AppBrowserConsole() {
@@ -63,10 +76,12 @@ export default function AppBrowserConsole() {
       orig.info(...a)
     }
     console.warn = (...a: unknown[]) => {
+      if (isNoisyInspectorWarning(a)) return
       push('warn', a)
       orig.warn(...a)
     }
     console.error = (...a: unknown[]) => {
+      if (isNoisyInspectorWarning(a)) return
       push('error', a)
       orig.error(...a)
     }
