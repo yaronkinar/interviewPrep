@@ -1,10 +1,57 @@
 import { getDb } from '@/lib/mongodb'
 import type { QuestionDocument, QuestionInput } from '@/lib/models/Question'
-import { CATEGORIES, type Category, type Difficulty, type Question } from '@/questions/data'
+import { CATEGORIES, COMPANIES, type Category, type Difficulty, type Question } from '@/questions/data'
 
 const COLLECTION_NAME = 'questions'
 const DIFFICULTIES = ['easy', 'medium', 'hard'] as const
 const ANSWER_TYPES = ['code', 'text', 'mixed'] as const
+const DEFAULT_SEARCH_LIMIT = 8
+const MAX_SEARCH_LIMIT = 20
+
+const SEARCH_STOP_WORDS = new Set([
+  'a',
+  'an',
+  'and',
+  'are',
+  'for',
+  'find',
+  'give',
+  'i',
+  'interview',
+  'me',
+  'of',
+  'on',
+  'please',
+  'question',
+  'questions',
+  'show',
+  'the',
+  'to',
+  'with',
+])
+
+const SEARCH_FIELD_WEIGHTS = {
+  title: 12,
+  tags: 9,
+  category: 7,
+  companies: 6,
+  description: 3,
+} as const
+
+type QuestionSearchField = keyof typeof SEARCH_FIELD_WEIGHTS
+
+export type QuestionSearchMatch = {
+  question: Question
+  score: number
+  matchedFields: QuestionSearchField[]
+  snippet: string
+}
+
+export type QuestionSearchFilters = {
+  difficulty?: Difficulty
+  category?: Category
+  company?: string
+}
 
 let indexesReadyPromise: Promise<unknown> | null = null
 
@@ -52,6 +99,183 @@ function slugify(value: string): string {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
+}
+
+function normalizeForSearch(value: string) {
+  return value
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim()
+}
+
+function tokenizeForSearch(value: string) {
+  return normalizeForSearch(value)
+    .split(/\s+/)
+    .filter(token => token.length > 1 && !SEARCH_STOP_WORDS.has(token))
+}
+
+function clampSearchLimit(value: number | undefined) {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return DEFAULT_SEARCH_LIMIT
+  return Math.min(MAX_SEARCH_LIMIT, Math.max(1, Math.floor(value)))
+}
+
+function boundedLevenshtein(a: string, b: string, maxDistance: number) {
+  if (a === b) return 0
+  if (Math.abs(a.length - b.length) > maxDistance) return maxDistance + 1
+
+  const previous = Array.from({ length: b.length + 1 }, (_, index) => index)
+  const current = new Array<number>(b.length + 1)
+
+  for (let i = 1; i <= a.length; i += 1) {
+    current[0] = i
+    let rowMin = current[0]
+
+    for (let j = 1; j <= b.length; j += 1) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1
+      current[j] = Math.min(
+        previous[j] + 1,
+        current[j - 1] + 1,
+        previous[j - 1] + cost,
+      )
+      rowMin = Math.min(rowMin, current[j])
+    }
+
+    if (rowMin > maxDistance) return maxDistance + 1
+    for (let j = 0; j <= b.length; j += 1) previous[j] = current[j]
+  }
+
+  return previous[b.length]
+}
+
+function fuzzyDistanceForToken(token: string) {
+  if (token.length >= 7) return 2
+  if (token.length >= 4) return 1
+  return 0
+}
+
+function scoreTokenAgainstField(token: string, fieldText: string) {
+  const normalized = normalizeForSearch(fieldText)
+  if (!normalized) return 0
+
+  const fieldTokens = normalized.split(/\s+/).filter(Boolean)
+  if (fieldTokens.includes(token)) return 1
+  if (normalized.includes(token)) return 0.82
+
+  for (const fieldToken of fieldTokens) {
+    if (fieldToken.startsWith(token) || token.startsWith(fieldToken)) return 0.72
+  }
+
+  const maxDistance = fuzzyDistanceForToken(token)
+  if (maxDistance === 0) return 0
+
+  for (const fieldToken of fieldTokens) {
+    if (Math.min(token.length, fieldToken.length) < 4) continue
+    if (boundedLevenshtein(token, fieldToken, maxDistance) <= maxDistance) return 0.62
+  }
+
+  return 0
+}
+
+function fieldText(question: Question, field: QuestionSearchField) {
+  if (field === 'title') return question.title
+  if (field === 'description') return question.description
+  if (field === 'category') return question.category
+  if (field === 'tags') return question.tags.join(' ')
+  return question.companies.join(' ')
+}
+
+function buildSearchSnippet(question: Question, tokens: string[]) {
+  const sources = [question.description, question.title, question.tags.join(', ')]
+  const fallback = question.description || question.title
+
+  for (const source of sources) {
+    const normalized = normalizeForSearch(source)
+    const token = tokens.find(item => normalized.includes(item))
+    if (!token) continue
+
+    const lower = source.toLowerCase()
+    const index = lower.indexOf(token)
+    if (index < 0) return source.slice(0, 180)
+
+    const start = Math.max(0, index - 70)
+    const end = Math.min(source.length, index + token.length + 120)
+    return `${start > 0 ? '...' : ''}${source.slice(start, end).trim()}${end < source.length ? '...' : ''}`
+  }
+
+  return fallback.length > 190 ? `${fallback.slice(0, 190).trim()}...` : fallback
+}
+
+function removeFilterTerms(query: string, filters: QuestionSearchFilters) {
+  let normalized = ` ${normalizeForSearch(query)} `
+  if (filters.difficulty) normalized = normalized.replace(` ${filters.difficulty} `, ' ')
+  if (filters.company) normalizeForSearch(filters.company).split(/\s+/).forEach(token => {
+    normalized = normalized.replace(` ${token} `, ' ')
+  })
+  if (filters.category) normalizeForSearch(filters.category).split(/\s+/).forEach(token => {
+    normalized = normalized.replace(` ${token} `, ' ')
+  })
+  return normalized.trim()
+}
+
+function inferQuestionSearchFilters(query: string, explicitFilters: QuestionSearchFilters = {}): QuestionSearchFilters {
+  const normalized = ` ${normalizeForSearch(query)} `
+  const difficulty = explicitFilters.difficulty ?? DIFFICULTIES.find(item => normalized.includes(` ${item} `))
+  const company = explicitFilters.company ?? COMPANIES.find(companyItem =>
+    normalized.includes(` ${normalizeForSearch(companyItem.id)} `),
+  )?.id
+  const category = explicitFilters.category ?? CATEGORIES.find(categoryItem =>
+    normalizeForSearch(categoryItem)
+      .split(/\s+/)
+      .some(token => token.length > 3 && normalized.includes(` ${token} `)),
+  )
+
+  return {
+    ...explicitFilters,
+    ...(difficulty ? { difficulty } : {}),
+    ...(company ? { company } : {}),
+    ...(category ? { category } : {}),
+  }
+}
+
+function scoreQuestionSearchMatch(question: Question, tokens: string[]) {
+  if (tokens.length === 0) {
+    return { score: 1, matchedFields: [] as QuestionSearchField[] }
+  }
+
+  let score = 0
+  let matchedTokenCount = 0
+  const matchedFields = new Set<QuestionSearchField>()
+
+  for (const token of tokens) {
+    let bestTokenScore = 0
+
+    for (const field of Object.keys(SEARCH_FIELD_WEIGHTS) as QuestionSearchField[]) {
+      const fieldScore = scoreTokenAgainstField(token, fieldText(question, field))
+      if (fieldScore <= 0) continue
+
+      bestTokenScore = Math.max(bestTokenScore, fieldScore)
+      matchedFields.add(field)
+      score += fieldScore * SEARCH_FIELD_WEIGHTS[field]
+    }
+
+    if (bestTokenScore > 0) matchedTokenCount += 1
+  }
+
+  if (matchedTokenCount === 0) {
+    return { score: 0, matchedFields: [] as QuestionSearchField[] }
+  }
+
+  const coverage = matchedTokenCount / tokens.length
+  if (tokens.length > 1 && coverage < 0.5) {
+    return { score: 0, matchedFields: [] as QuestionSearchField[] }
+  }
+
+  return {
+    score: Math.round(score * coverage * 100) / 100,
+    matchedFields: [...matchedFields],
+  }
 }
 
 export function normalizeQuestionInput(raw: unknown): { ok: true; question: QuestionInput } | { ok: false; error: string } {
@@ -137,6 +361,51 @@ export async function getQuestionById(id: string, options: { includeArchived?: b
   const filter = options.includeArchived ? { id } : { id, archivedAt: null }
   const doc = await questions.findOne(filter)
   return doc ? toPublicQuestion(doc) : null
+}
+
+export async function searchQuestions(options: {
+  query: string
+  limit?: number
+  filters?: QuestionSearchFilters
+}) {
+  const inferredFilters = inferQuestionSearchFilters(options.query, options.filters)
+  const queryWithoutFilters = removeFilterTerms(options.query, inferredFilters)
+  const tokens = tokenizeForSearch(queryWithoutFilters)
+  const limit = clampSearchLimit(options.limit)
+  const collection = await getQuestionsCollection()
+  const filter: Partial<QuestionDocument> = { archivedAt: null }
+
+  if (inferredFilters.difficulty) filter.difficulty = inferredFilters.difficulty
+  if (inferredFilters.category) filter.category = inferredFilters.category
+
+  const docs = await collection.find(filter).sort({ order: 1, title: 1 }).toArray()
+  const companyFilter = inferredFilters.company ? normalizeForSearch(inferredFilters.company) : ''
+
+  const matches = docs
+    .map(toPublicQuestion)
+    .filter(question => {
+      if (!companyFilter) return true
+      return question.companies.some(company => normalizeForSearch(company) === companyFilter)
+    })
+    .map(question => {
+      const { score, matchedFields } = scoreQuestionSearchMatch(question, tokens)
+      return {
+        question,
+        score,
+        matchedFields,
+        snippet: buildSearchSnippet(question, tokens),
+      }
+    })
+    .filter(match => tokens.length === 0 || match.score > 0)
+    .sort((a, b) => b.score - a.score || a.question.title.localeCompare(b.question.title))
+    .slice(0, limit)
+
+  return {
+    query: options.query,
+    tokens,
+    filters: inferredFilters,
+    matches,
+  }
 }
 
 export async function countQuestions() {

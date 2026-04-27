@@ -592,6 +592,7 @@ export default function QuestionsPage() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const search = searchParams.get('q') ?? ''
+  const questionId = searchParams.get('question') ?? ''
   const { isSaved, toggleSaved } = useSavedQuestions()
   const {
     questions: catalogQuestions,
@@ -606,6 +607,7 @@ export default function QuestionsPage() {
       const t = value.trim()
       if (t) next.set('q', t)
       else next.delete('q')
+      next.delete('question')
       const qs = next.toString()
       router.replace(qs ? `?${qs}` : '?', { scroll: false })
     },
@@ -660,13 +662,14 @@ export default function QuestionsPage() {
 
   const filtered = useMemo(() => {
     return allQuestions.filter((question) => {
+      if (questionId && question.id !== questionId) return false
       if (company && !question.companies.includes(company)) return false
       if (difficulty && question.difficulty !== difficulty) return false
       if (category && question.category !== category) return false
       if (!questionMatchesSearchQuery(question, search)) return false
       return true
     })
-  }, [search, company, difficulty, category, allQuestions])
+  }, [search, questionId, company, difficulty, category, allQuestions])
 
   const clearFilters = useCallback(() => {
     router.replace('?', { scroll: false })
@@ -727,6 +730,7 @@ export default function QuestionsPage() {
   }
 
   const hasFilters = search || company || difficulty || category
+  const hasActiveFilters = hasFilters || questionId
 
   const selectedCompanyTotal = company
     ? allQuestions.filter((q) => q.companies.includes(company)).length
@@ -824,7 +828,7 @@ export default function QuestionsPage() {
             <span className="questions-stitch-filter-meta-text">
               {ui.questions.displayingQuestions.replace('{count}', String(filtered.length))}
             </span>
-            {hasFilters && (
+            {hasActiveFilters && (
               <button type="button" className="questions-stitch-clear" onClick={clearFilters}>
                 {ui.questions.clearFilters}
               </button>

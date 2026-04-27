@@ -8,6 +8,7 @@ import Nav from '@/Nav'
 import { LocaleProvider, useLocale } from '@/i18n/LocaleContext'
 import { ThemeProvider } from '@/theme/ThemeContext'
 import { AUTHOR_LINKEDIN_URL } from '@/site'
+import GlobalQuestionFinderChat from '@/questions/GlobalQuestionFinderChat'
 import { preloadQuestionCatalog } from '@/questions/useQuestionCatalog'
 import type { ReactNode } from 'react'
 
@@ -94,6 +95,7 @@ function AppShellInner({ children }: { children: ReactNode }) {
       </footer>
       <Analytics />
       <AppBrowserConsole />
+      <GlobalQuestionFinderChat />
       <GaTracker />
       <QuestionCatalogPreloader />
     </div>
