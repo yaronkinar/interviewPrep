@@ -81,6 +81,14 @@ export type UiStrings = {
     filterCategoryPlaceholder: string
     filterCategoryAll: string
     filterCompanyAll: string
+    sortByLabel: string
+    sortCurated: string
+    sortTitleAsc: string
+    sortTitleDesc: string
+    sortNewest: string
+    sortRecentlyUpdated: string
+    sortDifficulty: string
+    sortCategory: string
     /** Use {count} */
     displayingQuestions: string
     thinkingProcessLabel: string
@@ -255,6 +263,14 @@ const en: UiStrings = {
     filterCategoryPlaceholder: 'Categories',
     filterCategoryAll: 'All categories',
     filterCompanyAll: 'All companies',
+    sortByLabel: 'Sort by',
+    sortCurated: 'Curated order',
+    sortTitleAsc: 'Title (A–Z)',
+    sortTitleDesc: 'Title (Z–A)',
+    sortNewest: 'Newest first',
+    sortRecentlyUpdated: 'Recently updated',
+    sortDifficulty: 'Difficulty (easy → hard)',
+    sortCategory: 'Category (A–Z)',
     displayingQuestions: 'Displaying {count} questions',
     thinkingProcessLabel: 'Thinking process',
     editorialExplanationLabel: 'Editorial explanation',
@@ -445,6 +461,14 @@ const he: UiStrings = {
     filterCategoryPlaceholder: 'קטגוריות',
     filterCategoryAll: 'כל הקטגוריות',
     filterCompanyAll: 'כל החברות',
+    sortByLabel: 'מיון',
+    sortCurated: 'סדר ערוך',
+    sortTitleAsc: 'כותרת (א–ת)',
+    sortTitleDesc: 'כותרת (ת–א)',
+    sortNewest: 'החדשות ביותר',
+    sortRecentlyUpdated: 'עודכנו לאחרונה',
+    sortDifficulty: 'רמת קושי (קל → קשה)',
+    sortCategory: 'קטגוריה (א–ת)',
     displayingQuestions: 'מוצגות {count} שאלות',
     thinkingProcessLabel: 'תהליך חשיבה',
     editorialExplanationLabel: 'הסבר עריכתי',

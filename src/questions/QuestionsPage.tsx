@@ -40,6 +40,7 @@ import { DEFAULT_OPENAI_MODEL } from './openaiConstants'
 import { useSavedQuestions } from '../hooks/useSavedQuestions'
 import FilterSearchBar from '../components/filters/FilterSearchBar'
 import { PATH_FOR_PAGE } from '../routes'
+import { type CatalogSortMode, sortCatalogQuestions } from '@/lib/questions/sortCatalogQuestions'
 
 const DIFFICULTY_COLOR: Record<Difficulty, string> = {
   easy: '#34d399',
@@ -617,6 +618,7 @@ export default function QuestionsPage() {
   const [company, setCompany] = useState<string | null>(null)
   const [difficulty, setDifficulty] = useState<Difficulty | null>(null)
   const [category, setCategory] = useState<Category | null>(null)
+  const [catalogSort, setCatalogSort] = useState<CatalogSortMode>('curated')
 
   const [customQuestions, setCustomQuestions] = useState<Question[]>(() =>
     loadCustomQuestionsFromStorage(),
@@ -671,11 +673,17 @@ export default function QuestionsPage() {
     })
   }, [search, questionId, company, difficulty, category, allQuestions])
 
+  const sortedQuestions = useMemo(
+    () => sortCatalogQuestions(filtered, catalogSort),
+    [filtered, catalogSort],
+  )
+
   const clearFilters = useCallback(() => {
     router.replace('?', { scroll: false })
     setCompany(null)
     setDifficulty(null)
     setCategory(null)
+    setCatalogSort('curated')
   }, [router])
 
   function mergeUploaded(questions: Question[]) {
@@ -730,7 +738,7 @@ export default function QuestionsPage() {
   }
 
   const hasFilters = search || company || difficulty || category
-  const hasActiveFilters = hasFilters || questionId
+  const hasActiveFilters = hasFilters || questionId || catalogSort !== 'curated'
 
   const selectedCompanyTotal = company
     ? allQuestions.filter((q) => q.companies.includes(company)).length
@@ -822,6 +830,20 @@ export default function QuestionsPage() {
                 </option>
               ))}
             </select>
+            <select
+              className="questions-stitch-select"
+              aria-label={ui.questions.sortByLabel}
+              value={catalogSort}
+              onChange={(e) => setCatalogSort(e.target.value as CatalogSortMode)}
+            >
+              <option value="curated">{ui.questions.sortCurated}</option>
+              <option value="newest">{ui.questions.sortNewest}</option>
+              <option value="recently-updated">{ui.questions.sortRecentlyUpdated}</option>
+              <option value="title-asc">{ui.questions.sortTitleAsc}</option>
+              <option value="title-desc">{ui.questions.sortTitleDesc}</option>
+              <option value="difficulty-asc">{ui.questions.sortDifficulty}</option>
+              <option value="category-asc">{ui.questions.sortCategory}</option>
+            </select>
           </div>
           <div className="questions-stitch-filter-meta">
             <ListFilter className="questions-stitch-filter-meta-icon" size={20} strokeWidth={2} aria-hidden />
@@ -864,7 +886,7 @@ export default function QuestionsPage() {
           ) : (
             <>
               <div className="questions-stitch-list">
-                {filtered.map((q) => (
+                {sortedQuestions.map((q) => (
                   <QuestionCard
                     key={q.id}
                     editorial

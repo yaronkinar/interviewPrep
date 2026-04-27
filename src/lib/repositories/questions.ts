@@ -327,6 +327,8 @@ export function toPublicQuestion(document: QuestionDocument): Question {
     answer: document.answer,
     answerType: document.answerType,
     tags: document.tags,
+    createdAt: document.createdAt.toISOString(),
+    updatedAt: document.updatedAt.toISOString(),
     ...(document.source ? { source: document.source } : {}),
   }
 }

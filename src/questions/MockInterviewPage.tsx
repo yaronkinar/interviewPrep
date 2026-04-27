@@ -31,6 +31,7 @@ import { formatApiError, streamLlmChat } from './llmStream'
 import {
   loadCustomQuestionsFromStorage,
 } from './customQuestions'
+import { type CatalogSortMode, sortCatalogQuestions } from '@/lib/questions/sortCatalogQuestions'
 import {
   type MockTrainingStyle,
   buildMockSystemPrompt,
@@ -1199,6 +1200,7 @@ export default function MockInterviewPage() {
   const [company, setCompany] = useState<string | null>(null)
   const [difficulty, setDifficulty] = useState<Difficulty | null>(null)
   const [category, setCategory] = useState<Category | null>(null)
+  const [catalogSort, setCatalogSort] = useState<CatalogSortMode>('curated')
   const { questions: catalogQuestions, loading: catalogLoading, error: catalogError, reload: reloadCatalog } = useQuestionCatalog()
 
   const [customQuestions] = useState<Question[]>(() => loadCustomQuestionsFromStorage())
@@ -1255,12 +1257,17 @@ export default function MockInterviewPage() {
     })
   }, [search, company, difficulty, category, allQuestions])
 
+  const sortedFiltered = useMemo(
+    () => sortCatalogQuestions(filtered, catalogSort),
+    [filtered, catalogSort],
+  )
+
   const selectedQuestion = useMemo(() => {
-    if (filtered.length === 0) return undefined
-    const inFilter = filtered.find((q) => q.id === selectedId)
+    if (sortedFiltered.length === 0) return undefined
+    const inFilter = sortedFiltered.find((q) => q.id === selectedId)
     if (inFilter) return inFilter
-    return filtered[0]
-  }, [filtered, selectedId])
+    return sortedFiltered[0]
+  }, [sortedFiltered, selectedId])
 
   const selectedGuide = useMemo(
     () => (selectedQuestion ? buildSolveGuide(selectedQuestion) : null),
@@ -1274,13 +1281,14 @@ export default function MockInterviewPage() {
     }
   }, [filtered, selectedId])
 
-  const hasFilters = search || company || difficulty || category
+  const hasFilters = search || company || difficulty || category || catalogSort !== 'curated'
 
   function clearFilters() {
     setSearch('')
     setCompany(null)
     setDifficulty(null)
     setCategory(null)
+    setCatalogSort('curated')
   }
 
   return (
@@ -1414,6 +1422,23 @@ export default function MockInterviewPage() {
               ))}
             </FilterRow>
 
+            <label className="mock-interview-select-label" style={{ marginTop: '0.75rem' }}>
+              <span className="mock-interview-select-title">{ui.questions.sortByLabel}</span>
+              <select
+                className="mock-interview-select"
+                value={catalogSort}
+                onChange={(e) => setCatalogSort(e.target.value as CatalogSortMode)}
+              >
+                <option value="curated">{ui.questions.sortCurated}</option>
+                <option value="newest">{ui.questions.sortNewest}</option>
+                <option value="recently-updated">{ui.questions.sortRecentlyUpdated}</option>
+                <option value="title-asc">{ui.questions.sortTitleAsc}</option>
+                <option value="title-desc">{ui.questions.sortTitleDesc}</option>
+                <option value="difficulty-asc">{ui.questions.sortDifficulty}</option>
+                <option value="category-asc">{ui.questions.sortCategory}</option>
+              </select>
+            </label>
+
             {catalogLoading ? (
               <p className="q-empty">Loading questions...</p>
             ) : catalogError ? (
@@ -1433,7 +1458,7 @@ export default function MockInterviewPage() {
                   value={selectedQuestion?.id ?? ''}
                   onChange={(e) => setSelectedId(e.target.value)}
                 >
-                  {filtered.map((q) => (
+                  {sortedFiltered.map((q) => (
                     <option key={q.id} value={q.id}>
                       [{difficultyUiLabel(mi, q.difficulty)}] {q.title}
                     </option>

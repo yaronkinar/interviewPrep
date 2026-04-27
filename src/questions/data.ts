@@ -31,6 +31,9 @@ export interface Question {
   answerType: 'code' | 'text' | 'mixed'
   tags: string[]
   source?: string
+  /** ISO 8601 timestamps from the server catalog; omitted for custom/local questions */
+  createdAt?: string
+  updatedAt?: string
 }
 
 export const COMPANIES = [
