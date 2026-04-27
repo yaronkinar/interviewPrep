@@ -53,7 +53,9 @@ function NavLinks({ className, linkClassName, onNavigate, isAdmin }: NavLinksPro
     <div className={className}>
       {PUBLIC_TAB_IDS.map(id => {
         const to = PATH_FOR_PAGE[id]
-        const isActive = pathname === to || (to !== '/' && pathname.startsWith(to))
+        // Match exact path or a child segment (`/quest` must not match `/questions`).
+        const isActive =
+          to === '/' ? pathname === '/' : pathname === to || pathname.startsWith(`${to}/`)
         return (
           <Link
             key={id}
