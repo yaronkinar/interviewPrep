@@ -90,7 +90,8 @@ export async function suggestInterviewQuestions(params: {
         role: 'system',
         content:
           'You generate structured frontend interview questions for a MongoDB-backed question catalog. ' +
-          'Return only valid JSON with a top-level "questions" array. Do not include markdown.',
+          'Return only valid JSON: a single object with exactly one property "questions" (an array of question objects). ' +
+          'Do not add any other top-level keys (no sources, notes, or summaries). Do not include markdown.',
       },
       {
         role: 'user',
@@ -116,6 +117,78 @@ export async function suggestInterviewQuestions(params: {
   const content = completion.choices[0]?.message.content
   if (!content) {
     throw new Error('Question search returned no content.')
+  }
+
+  const parsed = parseSuggestionResponse(content)
+  const rawQuestions = Array.isArray(parsed.questions) ? parsed.questions : []
+  const normalized: QuestionInput[] = []
+
+  for (const rawQuestion of rawQuestions) {
+    const result = normalizeQuestionInput(rawQuestion)
+    if (result.ok) normalized.push(result.question)
+  }
+
+  return dedupeSuggestions(normalized, existingIds, existingTitles)
+}
+
+export async function suggestInterviewQuestionsFromWebContext(params: {
+  apiKey: string
+  model: string
+  query: string
+  company?: string
+  count: number
+  webContext: string
+}) {
+  const existing = await listQuestionDocuments({ includeArchived: true })
+  const existingIds = new Set(existing.map(question => question.id))
+  const existingTitles = new Set(existing.map(question => normalizedExistingKey(question.title)))
+  const existingContext = existing
+    .slice(-40)
+    .map(question => `- ${question.title} (${question.id})`)
+    .join('\n')
+
+  const client = new OpenAI({ apiKey: params.apiKey })
+  const completion = await client.chat.completions.create({
+    model: params.model,
+    response_format: { type: 'json_object' },
+    messages: [
+      {
+        role: 'system',
+        content:
+          'You generate structured frontend interview questions for a MongoDB-backed question catalog, grounded in the provided web search context. ' +
+          'If the context is weak or off-topic, still output plausible, accurate frontend interview content; put the most relevant page URL in each question "source" field when possible. ' +
+          'Return only valid JSON: a single object with exactly one property "questions" (an array of question objects). ' +
+          'Do not add any other top-level keys (no sources, notes, or summaries). Do not include markdown.',
+      },
+      {
+        role: 'user',
+        content: [
+          `User topic: ${params.query}`,
+          params.company ? `Preferred company tag: ${params.company}` : '',
+          '',
+          'Use this web context as primary inspiration (paraphrase; do not copy long passages verbatim):',
+          params.webContext,
+          '',
+          `Create ${params.count} new interview questions aligned with the user topic. Prefer themes that the web context supports; avoid inventing false claims about specific companies or products.`,
+          `Allowed categories: ${CATEGORIES.join(', ')}`,
+          `Known companies: ${COMPANIES.map(item => item.id).join(', ')}`,
+          'Each question must include: id, title, description, difficulty, category, answerType, tags, companies, source, answer.',
+          'The "source" field should be a short citation string, ideally including a URL from the context when relevant.',
+          'Use lowercase kebab-case ids. difficulty must be easy, medium, or hard. answerType must be text, code, or mixed.',
+          params.company
+            ? 'Use the preferred company in the companies array unless the question clearly fits additional known companies.'
+            : 'No preferred company is set. Choose relevant known company tags only when appropriate; otherwise use an empty companies array for general frontend questions.',
+          'Make answers concise but interview-ready, with practical bullets and trade-offs.',
+          'Avoid duplicates or near-duplicates of these existing recent questions:',
+          existingContext,
+        ].filter(Boolean).join('\n'),
+      },
+    ],
+  })
+
+  const content = completion.choices[0]?.message.content
+  if (!content) {
+    throw new Error('Web-assisted question search returned no content.')
   }
 
   const parsed = parseSuggestionResponse(content)

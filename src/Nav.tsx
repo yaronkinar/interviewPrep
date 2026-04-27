@@ -84,6 +84,13 @@ function NavLinks({ className, linkClassName, onNavigate, isAdmin }: NavLinksPro
             Admin Questions
           </Link>
           <Link
+            href="/admin/companies"
+            className={linkClassName({ isActive: pathname === '/admin/companies' })}
+            onClick={onNavigate}
+          >
+            Admin Companies
+          </Link>
+          <Link
             href="/admin/users"
             className={linkClassName({ isActive: pathname === '/admin/users' })}
             onClick={onNavigate}

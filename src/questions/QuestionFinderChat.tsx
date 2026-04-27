@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react'
 import { MessageCircle, Search, X } from 'lucide-react'
 import { useLocale } from '@/i18n/LocaleContext'
 import { isRtlLocale, type Locale } from '@/i18n/locale'
-import type { Category, Difficulty, Question } from './data'
+import { COMPANIES, type Category, type Difficulty, type Question } from './data'
 
 type QuestionFinderMatch = {
   question: Question
@@ -71,6 +71,46 @@ type FinderCopy = {
   noResults: (query: string) => string
   found: (count: number, filters: string) => string
   presets: Record<FinderPresetKey, string>
+  add?: Partial<AddQuestionCopy>
+}
+
+type AddQuestionCopy = {
+  suggestButton: string
+  suggesting: string
+  webSearchButton: string
+  webSearching: string
+  suggestedQuestions: string
+  companyWhenAdding: string
+  addQuestion: string
+  addingQuestion: string
+  suggestFallbackError: string
+  addFallbackError: string
+  unauthorized: string
+  noSuggestions: (query: string) => string
+  suggested: (count: number) => string
+  webSuggested: (count: number) => string
+  webNoResults: (query: string) => string
+  added: (title: string) => string
+}
+
+const defaultAddQuestionCopy: AddQuestionCopy = {
+  suggestButton: 'Suggest new questions',
+  suggesting: 'Suggesting...',
+  webSearchButton: 'Search web (AI)',
+  webSearching: 'Searching the web...',
+  suggestedQuestions: 'Suggested questions',
+  companyWhenAdding: 'Company tag (when adding)',
+  addQuestion: 'Add question',
+  addingQuestion: 'Adding...',
+  suggestFallbackError: 'Failed to suggest questions.',
+  addFallbackError: 'Failed to add question.',
+  unauthorized: 'Only signed-in admins can add questions.',
+  noSuggestions: query => `I could not suggest new questions for "${query}". Try a more specific topic.`,
+  suggested: count => `I suggested ${count} new question${count === 1 ? '' : 's'} you can add to the catalog.`,
+  webSuggested: count =>
+    `I generated ${count} question${count === 1 ? '' : 's'} from web results; review and add the ones you want to MongoDB.`,
+  webNoResults: query => `Web search did not return usable results for "${query}". Try a different phrasing or topic.`,
+  added: title => `Added "${title}" to the catalog.`,
 }
 
 const finderCopyByLocale = {
@@ -80,7 +120,8 @@ const finderCopyByLocale = {
     closeAria: 'Close question finder chat',
     kicker: 'Fuzzy finder',
     title: 'Find questions by chatting',
-    welcome: 'Tell me what kind of interview questions you want. I search the existing catalog with fuzzy matching.',
+    welcome:
+      'Tell me what kind of interview questions you want. I search the existing catalog. Admins can also generate questions with AI, or use web search, then add them to the database.',
     finder: 'Finder',
     you: 'You',
     searching: 'Searching...',
@@ -95,6 +136,7 @@ const finderCopyByLocale = {
     fallbackError: 'Failed to search questions.',
     noResults: (query: string) => `I could not find existing questions for "${query}". Try a broader topic or a company/category name.`,
     found: (count: number, filters: string) => `I found ${count} existing question${count === 1 ? '' : 's'}${filters ? ` using ${filters}` : ''}.`,
+    add: defaultAddQuestionCopy,
     presets: {
       googleAsync: 'Google hard async',
       reactPerformance: 'React performance',
@@ -498,6 +540,15 @@ function buildAssistantSummary(query: string, result: QuestionFinderResponse, co
   return copy.found(count, filters.join(', '))
 }
 
+function buildQuestionMatch(question: Question): QuestionFinderMatch {
+  return {
+    question,
+    score: 100,
+    matchedFields: [],
+    snippet: question.description,
+  }
+}
+
 export default function QuestionFinderChat({
   onApplySearch,
   onOpenQuestion,
@@ -506,16 +557,24 @@ export default function QuestionFinderChat({
 }: QuestionFinderChatProps) {
   const { locale } = useLocale()
   const copy: FinderCopy = finderCopyByLocale[locale]
+  const addCopy = { ...defaultAddQuestionCopy, ...copy.add }
   const rtl = isRtlLocale(locale)
   const [open, setOpen] = useState(variant === 'inline')
   const [input, setInput] = useState('')
   const [messages, setMessages] = useState<FinderMessage[]>([])
   const [matches, setMatches] = useState<QuestionFinderMatch[]>([])
+  const [suggestions, setSuggestions] = useState<Question[]>([])
+  /** When set, overrides `companies` on save and is sent to suggest/web APIs as a hint. */
+  const [addCompany, setAddCompany] = useState('')
+  const [addingQuestionIds, setAddingQuestionIds] = useState<Set<string>>(new Set())
   const [lastQuery, setLastQuery] = useState('')
   const [loading, setLoading] = useState(false)
+  const [suggesting, setSuggesting] = useState(false)
+  const [webSearching, setWebSearching] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const canSearch = input.trim().length > 0 && !loading
+  const busy = loading || suggesting || webSearching
+  const canSearch = input.trim().length > 0 && !busy
   const nextMessageId = useMemo(
     () => messages.reduce((max, message) => Math.max(max, message.id), 0) + 1,
     [messages],
@@ -523,7 +582,7 @@ export default function QuestionFinderChat({
 
   async function searchCatalog(rawQuery = input) {
     const query = rawQuery.trim()
-    if (!query || loading) return
+    if (!query || busy) return
 
     setInput('')
     setLoading(true)
@@ -563,6 +622,174 @@ export default function QuestionFinderChat({
       ])
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function suggestQuestions(rawQuery = input) {
+    const query = rawQuery.trim()
+    if (!query || busy) return
+
+    setInput('')
+    setSuggesting(true)
+    setError(null)
+    setLastQuery(query)
+    setMessages(prev => [
+      ...prev,
+      { id: nextMessageId, role: 'user', content: query },
+    ])
+
+    try {
+      const response = await fetch('/api/admin/questions/suggest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query, count: 3, company: addCompany || undefined }),
+      })
+      const data = (await response.json().catch(() => null)) as { questions?: Question[]; error?: string } | null
+
+      if (!response.ok) {
+        const fallback = response.status === 401 || response.status === 403
+          ? addCopy.unauthorized
+          : addCopy.suggestFallbackError
+        throw new Error(response.status === 401 || response.status === 403 ? fallback : data?.error ?? fallback)
+      }
+
+      const nextSuggestions = Array.isArray(data?.questions) ? data.questions : []
+      setSuggestions(nextSuggestions)
+      setMessages(prev => [
+        ...prev,
+        {
+          id: nextMessageId + 1,
+          role: 'assistant',
+          content: nextSuggestions.length
+            ? addCopy.suggested(nextSuggestions.length)
+            : addCopy.noSuggestions(query),
+        },
+      ])
+    } catch (err) {
+      const message = err instanceof Error ? err.message : addCopy.suggestFallbackError
+      setError(message)
+      setSuggestions([])
+      setMessages(prev => [
+        ...prev,
+        { id: nextMessageId + 1, role: 'assistant', content: message },
+      ])
+    } finally {
+      setSuggesting(false)
+    }
+  }
+
+  async function webSearchQuestions(rawQuery = input) {
+    const query = rawQuery.trim()
+    if (!query || busy) return
+
+    setInput('')
+    setWebSearching(true)
+    setError(null)
+    setLastQuery(query)
+    setMessages(prev => [
+      ...prev,
+      { id: nextMessageId, role: 'user', content: query },
+    ])
+
+    try {
+      const response = await fetch('/api/admin/questions/web-search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query, count: 3, company: addCompany || undefined }),
+      })
+      const data = (await response.json().catch(() => null)) as {
+        questions?: Question[]
+        note?: string
+        error?: string
+      } | null
+
+      if (!response.ok) {
+        const fallback = response.status === 401 || response.status === 403
+          ? addCopy.unauthorized
+          : addCopy.suggestFallbackError
+        throw new Error(response.status === 401 || response.status === 403 ? fallback : data?.error ?? fallback)
+      }
+
+      const nextSuggestions = Array.isArray(data?.questions) ? data.questions : []
+      setSuggestions(nextSuggestions)
+
+      const note = typeof data?.note === 'string' && data.note.trim() ? data.note.trim() : ''
+      setMessages(prev => [
+        ...prev,
+        {
+          id: nextMessageId + 1,
+          role: 'assistant',
+          content: nextSuggestions.length
+            ? addCopy.webSuggested(nextSuggestions.length)
+            : [note, addCopy.webNoResults(query)].filter(Boolean).join(' '),
+        },
+      ])
+    } catch (err) {
+      const message = err instanceof Error ? err.message : addCopy.suggestFallbackError
+      setError(message)
+      setSuggestions([])
+      setMessages(prev => [
+        ...prev,
+        { id: nextMessageId + 1, role: 'assistant', content: message },
+      ])
+    } finally {
+      setWebSearching(false)
+    }
+  }
+
+  async function addSuggestedQuestion(question: Question) {
+    if (addingQuestionIds.has(question.id)) return
+
+    setError(null)
+    setAddingQuestionIds(prev => new Set(prev).add(question.id))
+
+    try {
+      const payload: Question = addCompany
+        ? { ...question, companies: [addCompany] }
+        : question
+
+      const response = await fetch('/api/admin/questions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+      const data = (await response.json().catch(() => null)) as { question?: Question; error?: string } | null
+
+      if (!response.ok) {
+        const fallback = response.status === 401 || response.status === 403
+          ? addCopy.unauthorized
+          : addCopy.addFallbackError
+        throw new Error(response.status === 401 || response.status === 403 ? fallback : data?.error ?? fallback)
+      }
+
+      const createdQuestion = data?.question ?? question
+      setSuggestions(prev => prev.filter(item => item.id !== question.id))
+      setMatches(prev => [buildQuestionMatch(createdQuestion), ...prev.filter(match => match.question.id !== createdQuestion.id)])
+      setMessages(prev => [
+        ...prev,
+        {
+          id: prev.reduce((max, message) => Math.max(max, message.id), 0) + 1,
+          role: 'assistant',
+          content: addCopy.added(createdQuestion.title),
+        },
+      ])
+    } catch (err) {
+      const message = err instanceof Error ? err.message : addCopy.addFallbackError
+      setError(message)
+      setMessages(prev => [
+        ...prev,
+        {
+          id: prev.reduce((max, item) => Math.max(max, item.id), 0) + 1,
+          role: 'assistant',
+          content: message,
+        },
+      ])
+    } finally {
+      setAddingQuestionIds(prev => {
+        const next = new Set(prev)
+        next.delete(question.id)
+        return next
+      })
     }
   }
 
@@ -627,6 +854,22 @@ export default function QuestionFinderChat({
             </div>
           </div>
         )}
+        {suggesting && (
+          <div className="q-chat-bubble q-chat-bubble--assistant">
+            <span className="q-chat-role">{copy.finder}</span>
+            <div className="q-chat-text">
+              <span className="q-chat-typing">{addCopy.suggesting}</span>
+            </div>
+          </div>
+        )}
+        {webSearching && (
+          <div className="q-chat-bubble q-chat-bubble--assistant">
+            <span className="q-chat-role">{copy.finder}</span>
+            <div className="q-chat-text">
+              <span className="q-chat-typing">{addCopy.webSearching}</span>
+            </div>
+          </div>
+        )}
       </div>
 
       <form
@@ -648,11 +891,19 @@ export default function QuestionFinderChat({
             }
           }}
           placeholder={copy.placeholder}
-          disabled={loading}
+          disabled={busy}
         />
-        <button type="submit" className="secondary" disabled={!canSearch}>
-          {copy.searchButton}
-        </button>
+        <div className="q-finder-chat-actions">
+          <button type="submit" className="secondary" disabled={!canSearch}>
+            {copy.searchButton}
+          </button>
+          <button type="button" className="secondary" disabled={!canSearch} onClick={() => void suggestQuestions()}>
+            {suggesting ? addCopy.suggesting : addCopy.suggestButton}
+          </button>
+          <button type="button" className="secondary" disabled={!canSearch} onClick={() => void webSearchQuestions()}>
+            {webSearching ? addCopy.webSearching : addCopy.webSearchButton}
+          </button>
+        </div>
       </form>
 
       <div className="q-finder-presets">
@@ -664,7 +915,7 @@ export default function QuestionFinderChat({
               type="button"
               className="q-finder-example"
               onClick={() => void searchCatalog(search.query)}
-              disabled={loading}
+              disabled={busy}
               title={search.query}
             >
             {copy.presets[search.key]}
@@ -673,7 +924,66 @@ export default function QuestionFinderChat({
         </div>
       </div>
 
+      <div className="q-finder-company">
+        <label htmlFor="q-finder-company-select" className="q-finder-company-label">
+          {addCopy.companyWhenAdding}
+        </label>
+        <select
+          id="q-finder-company-select"
+          className="q-finder-company-select"
+          value={addCompany}
+          onChange={event => setAddCompany(event.target.value)}
+          disabled={busy}
+        >
+          <option value="">—</option>
+          {COMPANIES.map(company => (
+            <option key={company.id} value={company.id}>
+              {company.id}
+            </option>
+          ))}
+        </select>
+      </div>
+
       {error && <div className="q-chat-error">{error}</div>}
+
+      {suggestions.length > 0 && (
+        <div className="q-finder-results">
+          <div className="q-finder-results-head">
+            <p className="q-finder-results-title">{addCopy.suggestedQuestions}</p>
+          </div>
+          <div className="q-finder-result-list">
+            {suggestions.map(question => {
+              const isAdding = addingQuestionIds.has(question.id)
+
+              return (
+                <article key={question.id} className="q-finder-result-card">
+                  <div className="q-finder-result-meta">
+                    <span>{question.category}</span>
+                    <span>{question.difficulty}</span>
+                    {question.companies.slice(0, 2).map(company => (
+                      <span key={company}>{company}</span>
+                    ))}
+                  </div>
+                  <h3 className="q-finder-result-title">{question.title}</h3>
+                  <p className="q-finder-result-snippet">{question.description}</p>
+                  <div className="q-finder-result-foot">
+                    <span>{question.answerType}</span>
+                    {question.tags.length > 0 && <span>{question.tags.slice(0, 3).join(', ')}</span>}
+                  </div>
+                  <button
+                    type="button"
+                    className="q-finder-open-question"
+                    onClick={() => void addSuggestedQuestion(question)}
+                    disabled={isAdding}
+                  >
+                    {isAdding ? addCopy.addingQuestion : addCopy.addQuestion}
+                  </button>
+                </article>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       {matches.length > 0 && (
         <div className="q-finder-results">

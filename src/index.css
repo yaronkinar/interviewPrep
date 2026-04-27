@@ -4188,6 +4188,18 @@ input:focus { border-color: var(--accent); }
     grid-template-columns: minmax(0, 1fr) auto;
   }
 }
+.q-finder-chat-actions {
+  display: flex;
+  flex-direction: column;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  min-width: min(100%, 12rem);
+}
+@media (min-width: 760px) {
+  .q-finder-chat-actions {
+    align-items: stretch;
+  }
+}
 .q-finder-presets {
   display: grid;
   gap: 0.4rem;
@@ -4199,6 +4211,27 @@ input:focus { border-color: var(--accent); }
   letter-spacing: 0.06em;
   margin: 0;
   text-transform: uppercase;
+}
+.q-finder-company {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.75rem;
+  margin-top: 0.65rem;
+}
+.q-finder-company-label {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  margin: 0;
+}
+.q-finder-company-select {
+  background: var(--surface-deep);
+  border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+  border-radius: 0.5rem;
+  color: var(--text);
+  font-size: 0.8rem;
+  max-width: 100%;
+  padding: 0.35rem 0.55rem;
 }
 .q-finder-chat-examples {
   display: flex;
@@ -4234,6 +4267,17 @@ input:focus { border-color: var(--accent); }
   color: var(--text);
   font-weight: 700;
   margin: 0;
+}
+.q-finder-web-sources {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  list-style: disc;
+  margin: 0 0 0.5rem;
+  padding-left: 1.25rem;
+}
+.q-finder-web-sources a {
+  color: var(--accent);
+  text-decoration: underline;
 }
 .q-finder-result-list {
   display: grid;
