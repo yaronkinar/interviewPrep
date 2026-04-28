@@ -1837,5 +1837,114 @@
     "source": "Senior frontend interview research",
     "answer": "Interview framing:\nMission-critical UI should keep users oriented and avoid implying certainty when data is missing, stale, or unauthorized.\n\nState types:\n1) Initial loading:\n- Use skeletons when layout is predictable.\n- Avoid blank screens without context.\n\n2) Empty state:\n- Explain whether there is no data, no matching filter result, or no permission to view data.\n- Provide the next useful action if allowed.\n\n3) Partial state:\n- Show available sections while clearly marking failed sections.\n- Do not block the whole page if one secondary panel fails.\n\n4) Refreshing/stale state:\n- Keep old data visible if that is safer than flicker.\n- Label stale data or show last updated time when decisions are time-sensitive.\n\n5) Error state:\n- Distinguish validation, network, 401, 403, 404, conflict, and server errors.\n- Offer retry only when retry makes sense.\n- Preserve user input after failures.\n\n6) Permission state:\n- 403 should explain lack of access without leaking sensitive resource details.\n- Offer request-access or contact-admin flows if product supports them.\n\nAccessibility:\n- Announce important async changes with live regions.\n- Move focus to critical errors when a submit fails.\n- Ensure loading indicators have text alternatives.\n\nGood closing:\n\"The UI should be honest about confidence: what loaded, what failed, what is stale, and what the user can safely do next.\"",
     "order": 88
+  },
+  {
+    "id": "react-build-counter-component",
+    "companies": [
+      "Meta",
+      "Airbnb",
+      "Stripe"
+    ],
+    "title": "Build a Counter React component",
+    "difficulty": "easy",
+    "category": "DOM & Browser",
+    "description": "Implement a `Counter` component: show the current count, buttons to increment and decrement, and a reset button. The count must never go below zero. Use idiomatic React (functional component + hooks).",
+    "answerType": "code",
+    "tags": [
+      "react",
+      "useState",
+      "components",
+      "event handlers"
+    ],
+    "source": "common React screen interview",
+    "answer": "function Counter() {\n  const [count, setCount] = React.useState(0)\n\n  return (\n    <section aria-label=\"Counter\">\n      <p>Count: {count}</p>\n      <button type=\"button\" onClick={() => setCount((c) => c + 1)}>\n        +\n      </button>\n      <button\n        type=\"button\"\n        onClick={() => setCount((c) => Math.max(0, c - 1))}\n      >\n        −\n      </button>\n      <button type=\"button\" onClick={() => setCount(0)}>\n        Reset\n      </button>\n    </section>\n  )\n}\n\n// Interview talking points:\n// - Functional updates avoid stale closures when multiple updates batch.\n// - Math.max(0, c - 1) encodes the business rule in one place.\n// - Prefer type=\"button\" inside forms so you do not accidentally submit.",
+    "order": 89
+  },
+  {
+    "id": "react-build-expandable-panel",
+    "companies": [
+      "Meta",
+      "Google",
+      "TikTok"
+    ],
+    "title": "Build an expandable panel (single accordion item)",
+    "difficulty": "easy",
+    "category": "DOM & Browser",
+    "description": "Build a component with a header and collapsible body. Clicking the header toggles visibility. The header must be keyboard accessible (Enter/Space) and expose `aria-expanded` on the control that opens/closes the panel.",
+    "answerType": "code",
+    "tags": [
+      "react",
+      "accessibility",
+      "ARIA",
+      "useState"
+    ],
+    "source": "common React screen interview",
+    "answer": "function ExpandablePanel({ title, children }) {\n  const [open, setOpen] = React.useState(false)\n  const id = React.useId()\n  const headerId = `${id}-header`\n  const panelId = `${id}-panel`\n\n  const onKeyDown = (e) => {\n    if (e.key === 'Enter' || e.key === ' ') {\n      e.preventDefault()\n      setOpen((o) => !o)\n    }\n  }\n\n  return (\n    <div>\n      <button\n        id={headerId}\n        type=\"button\"\n        aria-expanded={open}\n        aria-controls={panelId}\n        onClick={() => setOpen((o) => !o)}\n        onKeyDown={onKeyDown}\n      >\n        {title}\n      </button>\n      <div id={panelId} role=\"region\" aria-labelledby={headerId} hidden={!open}>\n        {open ? children : null}\n      </div>\n    </div>\n  )\n}\n\n// Alternative: keep content in DOM but hide with CSS for SEO/animations;\n// then use aria-hidden and inert on the collapsed body instead of hidden.\n\n// Interview notes:\n// - aria-expanded belongs on the element that controls the panel.\n// - Linking aria-controls helps assistive tech; ids must be unique (useId).\n// - For a real accordion group, only one section open at a time lives in parent state.",
+    "order": 90
+  },
+  {
+    "id": "react-build-debounced-search-input",
+    "companies": [
+      "Amazon",
+      "Uber",
+      "Netflix"
+    ],
+    "title": "Build a debounced SearchInput component",
+    "difficulty": "medium",
+    "category": "DOM & Browser",
+    "description": "Create a search field that calls `onSearch(term: string)` only after the user stops typing for `delayMs` (e.g. 300ms). Clear the timer on unmount and whenever the delay restarts. The input should remain responsive (updates every keystroke).",
+    "answerType": "code",
+    "tags": [
+      "react",
+      "debounce",
+      "useEffect",
+      "controlled input"
+    ],
+    "source": "common React screen interview",
+    "answer": "function SearchInput({ onSearch, delayMs = 300, ...inputProps }) {\n  const [value, setValue] = React.useState('')\n\n  React.useEffect(() => {\n    const id = window.setTimeout(() => {\n      onSearch(value)\n    }, delayMs)\n    return () => window.clearTimeout(id)\n  }, [value, delayMs, onSearch])\n\n  return (\n    <input\n      {...inputProps}\n      value={value}\n      onChange={(e) => setValue(e.target.value)}\n    />\n  )\n}\n\n// Interview follow-ups:\n// 1) If parent passes an unstable onSearch, the effect re-runs every render —\n//    wrap parent callbacks in useCallback or debounce inside a ref-stable API.\n// 2) For immediate first run on mount, either call onSearch('') once or skip\n//    until value.length >= minChars — state that assumption.\n// 3) AbortController pairs naturally with fetch inside the parent onSearch.\n\n// Stable callback variant (parent should still memoize onSearch):\n// const onSearchRef = React.useRef(onSearch)\n// React.useEffect(() => { onSearchRef.current = onSearch })\n// useEffect(() => { const t = setTimeout(() => onSearchRef.current(value), delayMs); ... }, [value, delayMs])",
+    "order": 91
+  },
+  {
+    "id": "react-build-todo-list-usereducer",
+    "companies": [
+      "Meta",
+      "Airbnb",
+      "Apple"
+    ],
+    "title": "Build a small todo list with useReducer",
+    "difficulty": "medium",
+    "category": "DOM & Browser",
+    "description": "Implement add (text from a controlled field), toggle `done`, and delete. Keep todos in an array of `{ id, text, done }`. Use `useReducer` for all mutations. Show counts of active (not done) items.",
+    "answerType": "code",
+    "tags": [
+      "react",
+      "useReducer",
+      "lists",
+      "state management"
+    ],
+    "source": "common React screen interview",
+    "answer": "const initial = { todos: [], draft: '' }\n\nfunction reducer(state, action) {\n  switch (action.type) {\n    case 'draft':\n      return { ...state, draft: action.value }\n    case 'add': {\n      const text = state.draft.trim()\n      if (!text) return state\n      const todo = { id: crypto.randomUUID(), text, done: false }\n      return { draft: '', todos: [...state.todos, todo] }\n    }\n    case 'toggle':\n      return {\n        ...state,\n        todos: state.todos.map((t) =>\n          t.id === action.id ? { ...t, done: !t.done } : t,\n        ),\n      }\n    case 'remove':\n      return {\n        ...state,\n        todos: state.todos.filter((t) => t.id !== action.id),\n      }\n    default:\n      return state\n  }\n}\n\nfunction TodoList() {\n  const [state, dispatch] = React.useReducer(reducer, initial)\n  const activeCount = state.todos.filter((t) => !t.done).length\n\n  return (\n    <div>\n      <form\n        onSubmit={(e) => {\n          e.preventDefault()\n          dispatch({ type: 'add' })\n        }}\n      >\n        <input\n          value={state.draft}\n          onChange={(e) => dispatch({ type: 'draft', value: e.target.value })}\n        />\n        <button type=\"submit\">Add</button>\n      </form>\n      <p>Active: {activeCount}</p>\n      <ul>\n        {state.todos.map((t) => (\n          <li key={t.id}>\n            <label>\n              <input\n                type=\"checkbox\"\n                checked={t.done}\n                onChange={() => dispatch({ type: 'toggle', id: t.id })}\n              />\n              {t.text}\n            </label>\n            <button type=\"button\" onClick={() => dispatch({ type: 'remove', id: t.id })}>\n              Delete\n            </button>\n          </li>\n        ))}\n      </ul>\n    </div>\n  )\n}\n\n// Interview talking points:\n// - useReducer shines when many actions touch the same state shape.\n// - Immutability: map/filter/spread, never mutate todos[i].done in place.\n// - Keys: stable id, never array index, if list reorder or deletes exist.",
+    "order": 92
+  },
+  {
+    "id": "react-build-star-rating",
+    "companies": [
+      "Google",
+      "Stripe",
+      "Airbnb"
+    ],
+    "title": "Build a StarRating component",
+    "difficulty": "medium",
+    "category": "DOM & Browser",
+    "description": "Controlled component: props `value` (1–maxStars) and `onChange(next: number)`. Render `maxStars` clickable stars (or buttons). Clicking star `k` sets rating to `k`. Optional follow-up: discuss hover preview without committing value.",
+    "answerType": "code",
+    "tags": [
+      "react",
+      "controlled components",
+      "forms"
+    ],
+    "source": "common React screen interview",
+    "answer": "function StarRating({ value, onChange, maxStars = 5 }) {\n  return (\n    <div role=\"group\" aria-label=\"Rating\">\n      {Array.from({ length: maxStars }, (_, i) => {\n        const star = i + 1\n        const filled = star <= value\n        return (\n          <button\n            key={star}\n            type=\"button\"\n            aria-pressed={filled}\n            aria-label={`${star} star${star > 1 ? 's' : ''}`}\n            onClick={() => onChange(star)}\n          >\n            {filled ? '★' : '☆'}\n          </button>\n        )\n      })}\n    </div>\n  )\n}\n\n// Usage\nfunction Demo() {\n  const [rating, setRating] = React.useState(0)\n  return <StarRating value={rating} onChange={setRating} />\n}\n\n// Hover preview pattern: keep committed `value` and local `hover` state;\n// render filled state from hover ?? value; clear hover on mouseLeave.\n\n// Accessibility improvements in a longer interview:\n// - roving tabindex for arrow-key navigation between stars\n// - ensure focus outline is visible",
+    "order": 93
   }
 ]
