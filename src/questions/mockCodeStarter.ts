@@ -88,6 +88,18 @@ export function questionTsFileName(q: Question): string {
   return `${questionCodeFileBase(q.id)}.ts`
 }
 
+/** React component-building cards (`react-build-*`) use live Sandpack preview (react-ts). */
+export function questionUsesReactSandpackPreview(q: Question): boolean {
+  return q.id.startsWith('react-build-')
+}
+
+/** Virtual filename for the mock editor (Monaco URI tab) — `.tsx` for React preview questions. */
+export function questionEditorFileName(q: Question): string {
+  return questionUsesReactSandpackPreview(q)
+    ? `${questionCodeFileBase(q.id)}.tsx`
+    : questionTsFileName(q)
+}
+
 /**
  * Ambient declarations for this card — completions for INTERVIEW_PROBLEM.* in the editor.
  */
@@ -139,4 +151,43 @@ function ${fnName}(/* parameters — align with ${typesName} and the problem abo
   // return INTERVIEW_PROBLEM.title
 }
 `
+}
+
+/**
+ * Starter for React component mock questions — visible preview placeholder, `App` export for Sandpack wrapper.
+ */
+export function buildMockReactComponentStarter(q: Question): string {
+  const title = escapeJsdocLine(q.title.trim())
+  const descLines = q.description
+    .trim()
+    .split('\n')
+    .map((line) => ` * ${escapeJsdocLine(line)}`)
+    .join('\n')
+
+  return `/**
+ * ${title}
+ *
+${descLines}
+ *
+ * ${q.category} · ${q.difficulty}
+ *
+ * Export a named component as \`App\`, \`Preview\`, or \`Demo\` so the live preview can mount it.
+ */
+
+export function App() {
+  return (
+    <section style={{ padding: 16, fontFamily: 'system-ui, sans-serif' }}>
+      <p style={{ margin: 0, color: '#94a3b8' }}>Live preview — replace with your solution.</p>
+    </section>
+  )
+}
+`
+}
+
+/** Initial editor buffer: React component starter or classic function / types stub. */
+export function buildMockCodeEditorStarter(q: Question): string {
+  if (questionUsesReactSandpackPreview(q)) {
+    return buildMockReactComponentStarter(q)
+  }
+  return buildMockCodeReviewStarter(q)
 }

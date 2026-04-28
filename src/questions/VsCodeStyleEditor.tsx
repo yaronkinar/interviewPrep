@@ -1,7 +1,7 @@
 import Editor, { type BeforeMount, type OnMount } from '@monaco-editor/react'
 import { useEffect, useRef, useState } from 'react'
 import type { Question } from './data'
-import { buildQuestionAmbientTypes, questionTsFileName } from './mockCodeStarter'
+import { buildQuestionAmbientTypes, questionEditorFileName } from './mockCodeStarter'
 import { configureMonacoInterviewTypeScript } from './monacoTsxInterview'
 
 const beforeMount: BeforeMount = (monaco) => {
@@ -36,7 +36,7 @@ function resolveModelPath(
     return modelPath.startsWith('file:///') ? modelPath : `file:///${modelPath.replace(/^\//, '')}`
   }
   if (question) {
-    return `file:///interview/${questionTsFileName(question)}`
+    return `file:///interview/${questionEditorFileName(question)}`
   }
   const name = fileLabel.includes('.') ? fileLabel : `${fileLabel}.ts`
   return `file:///interview/${name.replace(/^\//, '')}`
@@ -55,7 +55,7 @@ export default function VsCodeStyleEditor({
   const surfaceHeight = typeof height === 'number' ? `${height}px` : height
   const resolvedPath = resolveModelPath(modelPath, question, fileLabel)
   const tabLabel = question
-    ? questionTsFileName(question)
+    ? questionEditorFileName(question)
     : /\.(tsx?|jsx?)$/i.test(fileLabel)
       ? fileLabel
       : `${fileLabel.replace(/\.(tsx?|jsx?)$/i, '')}.ts`

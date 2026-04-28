@@ -5,7 +5,7 @@ import { stripModuleSyntax } from './compileReactPreview'
 const REACT_HOOKS_IMPORT = `import { useState, useEffect, useMemo, useCallback, useRef, useId, Fragment } from 'react'
 `
 
-const APP_WRAPPER = `import * as U from './UserPreview'
+export const APP_WRAPPER = `import * as U from './UserPreview'
 
 const Cmp = U.App ?? U.Preview ?? U.Demo
 

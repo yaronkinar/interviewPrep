@@ -44,15 +44,17 @@ import {
 import {
   Brain,
   Code2,
+  Maximize2,
   MessageSquare,
   Mic,
+  Minimize2,
   Play,
   Plug,
   Send,
   Terminal,
   User,
 } from 'lucide-react'
-import { buildMockCodeReviewStarter } from './mockCodeStarter'
+import { buildMockCodeEditorStarter } from './mockCodeStarter'
 import { useSpeechDictation } from './useSpeechDictation'
 import { useInterviewerSpeech } from './useInterviewerSpeech'
 import {
@@ -74,6 +76,17 @@ import FilterSearchBar from '../components/filters/FilterSearchBar'
 
 const VsCodeStyleEditor = lazy(() => import('./VsCodeStyleEditor'))
 const MockInterviewSandpackEditor = lazy(() => import('./MockInterviewSandpackEditor'))
+
+const MOCK_CODE_EDITOR_EXPAND_KEY = 'mockInterview:codeEditorExpanded'
+
+function readMockCodeEditorExpanded(): boolean {
+  if (typeof window === 'undefined') return false
+  try {
+    return window.sessionStorage.getItem(MOCK_CODE_EDITOR_EXPAND_KEY) === '1'
+  } catch {
+    return false
+  }
+}
 
 /** Renders plain text with https URLs turned into links (voice / TTS status lines). */
 function TextWithAutoLinks({ text }: { text: string }) {
@@ -260,8 +273,24 @@ function MockInterviewSession({
     question.category,
   )
   const [codeDraft, setCodeDraft] = useState(() =>
-    mockStyleUsesCodeEditor(style) ? buildMockCodeReviewStarter(question) : '',
+    mockStyleUsesCodeEditor(style) ? buildMockCodeEditorStarter(question) : '',
   )
+
+  const [codeEditorExpanded, setCodeEditorExpanded] = useState(readMockCodeEditorExpanded)
+
+  const toggleCodeEditorExpanded = useCallback(() => {
+    setCodeEditorExpanded((prev) => {
+      const next = !prev
+      try {
+        window.sessionStorage.setItem(MOCK_CODE_EDITOR_EXPAND_KEY, next ? '1' : '0')
+      } catch {
+        /* ignore quota / private mode */
+      }
+      return next
+    })
+  }, [])
+
+  const codeEditorSurfaceHeight = codeEditorExpanded ? 'min(74vh, 960px)' : 'min(48vh, 500px)'
 
   useEffect(() => {
     if (initialCode !== null && mockStyleUsesCodeEditor(style)) {
@@ -441,7 +470,7 @@ function MockInterviewSession({
     setStreaming('')
     setError(null)
     setSessionStartedAt(null)
-    setCodeDraft(mockStyleUsesCodeEditor(style) ? buildMockCodeReviewStarter(question) : '')
+    setCodeDraft(mockStyleUsesCodeEditor(style) ? buildMockCodeEditorStarter(question) : '')
     setInput('')
     autoStartLockRef.current = false
   }, [style, question, stopInterviewerSpeech])
@@ -1164,9 +1193,25 @@ function MockInterviewSession({
                     </p>
                   </div>
                 </div>
-                <span className={`mis-diff-pill mis-diff-pill--${question.difficulty}`}>
-                  {difficultyUiLabel(mock, question.difficulty)}
-                </span>
+                <div className="mis-code-head-meta">
+                  <button
+                    type="button"
+                    className="mis-editor-expand-btn"
+                    onClick={toggleCodeEditorExpanded}
+                    aria-pressed={codeEditorExpanded}
+                    aria-label={codeEditorExpanded ? mock.editorShrinkCodeArea : mock.editorExpandCodeArea}
+                    title={codeEditorExpanded ? mock.editorShrinkCodeArea : mock.editorExpandCodeArea}
+                  >
+                    {codeEditorExpanded ? (
+                      <Minimize2 size={18} strokeWidth={2} aria-hidden />
+                    ) : (
+                      <Maximize2 size={18} strokeWidth={2} aria-hidden />
+                    )}
+                  </button>
+                  <span className={`mis-diff-pill mis-diff-pill--${question.difficulty}`}>
+                    {difficultyUiLabel(mock, question.difficulty)}
+                  </span>
+                </div>
               </div>
               <div className="mis-editor-wrap">
                 <Suspense
@@ -1184,7 +1229,7 @@ function MockInterviewSession({
                         setCodeDraft(v)
                         onCodingAnswerChange(v)
                       }}
-                      height="min(42vh, 360px)"
+                      height={codeEditorSurfaceHeight}
                     />
                   ) : (
                     <VsCodeStyleEditor
@@ -1194,7 +1239,7 @@ function MockInterviewSession({
                         setCodeDraft(v)
                         onCodingAnswerChange(v)
                       }}
-                      height="min(42vh, 360px)"
+                      height={codeEditorSurfaceHeight}
                       windowTitle={
                         style === 'code_review'
                           ? mock.editorWindowCodeReview
@@ -1209,7 +1254,7 @@ function MockInterviewSession({
                   <button
                     type="button"
                     className="mis-editor-fab"
-                    onClick={() => setCodeDraft(buildMockCodeReviewStarter(question))}
+                    onClick={() => setCodeDraft(buildMockCodeEditorStarter(question))}
                   >
                     {mock.resetEditor}
                   </button>

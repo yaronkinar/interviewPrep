@@ -90,6 +90,8 @@ export type MockInterviewStrings = {
   editorWindowCodeReview: string
   editorWindowInterviewer: string
   resetEditor: string
+  editorExpandCodeArea: string
+  editorShrinkCodeArea: string
   runTests: string
   runTestsDisabledTitle: string
   sendCodeToChat: string
@@ -233,6 +235,8 @@ export const mockInterviewEn: MockInterviewStrings = {
   editorWindowCodeReview: 'Mock interview — code',
   editorWindowInterviewer: 'Mock interview — interviewer',
   resetEditor: 'Reset',
+  editorExpandCodeArea: 'Expand code area',
+  editorShrinkCodeArea: 'Compact code area',
   runTests: 'Run tests',
   runTestsDisabledTitle: 'Not available in this trainer',
   sendCodeToChat: 'Send code',
@@ -379,6 +383,8 @@ export const mockInterviewHe: MockInterviewStrings = {
   editorWindowCodeReview: 'ראיון דמה — קוד',
   editorWindowInterviewer: 'ראיון דמה — מראיין',
   resetEditor: 'איפוס',
+  editorExpandCodeArea: 'הרחבת אזור הקוד',
+  editorShrinkCodeArea: 'צמצום אזור הקוד',
   runTests: 'הרץ בדיקות',
   runTestsDisabledTitle: 'לא זמין במאמן זה',
   sendCodeToChat: 'שליחת קוד',
