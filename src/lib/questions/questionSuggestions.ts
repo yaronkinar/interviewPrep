@@ -1,11 +1,27 @@
 import OpenAI from 'openai'
 import type { QuestionInput } from '@/lib/models/Question'
-import { listQuestionDocuments, normalizeQuestionInput } from '@/lib/repositories/questions'
-import { CATEGORIES, COMPANIES } from '@/questions/data'
+import { listCompaniesMergedWithSeed } from '@/lib/repositories/companies'
+import { listQuestionDocuments, normalizeQuestionInput, distinctCompanyTagsFromQuestions } from '@/lib/repositories/questions'
+import { CATEGORIES } from '@/questions/data'
 import { DEFAULT_OPENAI_MODEL } from '@/questions/openaiConstants'
 
 type SuggestedQuestionPayload = {
   questions?: unknown
+}
+
+async function buildKnownCompaniesPromptLine(): Promise<string> {
+  const merged = await listCompaniesMergedWithSeed()
+  const tags = await distinctCompanyTagsFromQuestions()
+  const idByLower = new Map<string, string>()
+  for (const c of merged) {
+    idByLower.set(c.id.toLowerCase(), c.id)
+  }
+  for (const t of tags) {
+    if (!idByLower.has(t.toLowerCase())) {
+      idByLower.set(t.toLowerCase(), t)
+    }
+  }
+  return [...idByLower.values()].sort((a, b) => a.localeCompare(b)).join(', ')
 }
 
 export const MAX_QUESTION_SUGGESTIONS = 8
@@ -81,6 +97,8 @@ export async function suggestInterviewQuestions(params: {
     .map(question => `- ${question.title} (${question.id})`)
     .join('\n')
 
+  const knownCompaniesLine = await buildKnownCompaniesPromptLine()
+
   const client = new OpenAI({ apiKey: params.apiKey })
   const completion = await client.chat.completions.create({
     model: params.model,
@@ -100,7 +118,7 @@ export async function suggestInterviewQuestions(params: {
           params.company ? `Preferred company tag: ${params.company}` : '',
           '',
           `Allowed categories: ${CATEGORIES.join(', ')}`,
-          `Known companies: ${COMPANIES.map(item => item.id).join(', ')}`,
+          `Known companies: ${knownCompaniesLine}`,
           'Each question must include: id, title, description, difficulty, category, answerType, tags, companies, source, answer.',
           'Use lowercase kebab-case ids. difficulty must be easy, medium, or hard. answerType must be text, code, or mixed.',
           params.company
@@ -147,6 +165,8 @@ export async function suggestInterviewQuestionsFromWebContext(params: {
     .map(question => `- ${question.title} (${question.id})`)
     .join('\n')
 
+  const knownCompaniesLine = await buildKnownCompaniesPromptLine()
+
   const client = new OpenAI({ apiKey: params.apiKey })
   const completion = await client.chat.completions.create({
     model: params.model,
@@ -171,7 +191,7 @@ export async function suggestInterviewQuestionsFromWebContext(params: {
           '',
           `Create ${params.count} new interview questions aligned with the user topic. Prefer themes that the web context supports; avoid inventing false claims about specific companies or products.`,
           `Allowed categories: ${CATEGORIES.join(', ')}`,
-          `Known companies: ${COMPANIES.map(item => item.id).join(', ')}`,
+          `Known companies: ${knownCompaniesLine}`,
           'Each question must include: id, title, description, difficulty, category, answerType, tags, companies, source, answer.',
           'The "source" field should be a short citation string, ideally including a URL from the context when relevant.',
           'Use lowercase kebab-case ids. difficulty must be easy, medium, or hard. answerType must be text, code, or mixed.',

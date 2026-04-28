@@ -2,8 +2,9 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useAuth } from '@clerk/nextjs'
-import { CATEGORIES, COMPANIES, type Category, type Difficulty, type Question } from '@/questions/data'
+import { CATEGORIES, type Category, type Difficulty, type Question } from '@/questions/data'
 import { preloadQuestionCatalog } from '@/questions/useQuestionCatalog'
+import { useCompaniesCatalog } from '@/questions/useCompaniesCatalog'
 import {
   DEFAULT_OPENAI_MODEL,
   OPENAI_API_KEY_LOCAL_KEY,
@@ -128,6 +129,8 @@ export function QuestionsAdminPanel() {
   const [recentCronCreatedIds, setRecentCronCreatedIds] = useState<string[]>([])
   const [adminSortBy, setAdminSortBy] = useState<AdminQuestionSortField>('order')
   const [adminSortDir, setAdminSortDir] = useState<SortDirection>('asc')
+
+  const { companies: adminCompanyOptions } = useCompaniesCatalog()
 
   const editingQuestion = useMemo(
     () => questions.find(question => question.id === editingId) ?? null,
@@ -440,7 +443,7 @@ export function QuestionsAdminPanel() {
           />
           <select className="questions-stitch-select" value={searchCompany} onChange={e => setSearchCompany(e.target.value)}>
             <option value="">No company tag</option>
-            {COMPANIES.map(company => (
+            {adminCompanyOptions.map(company => (
               <option key={company.id} value={company.id}>{company.id}</option>
             ))}
           </select>
@@ -556,7 +559,7 @@ export function QuestionsAdminPanel() {
           <input className="questions-stitch-select" placeholder="Tags, comma separated" value={form.tags} onChange={e => updateForm('tags', e.target.value)} />
           <input
             className="questions-stitch-select"
-            placeholder={`Companies, comma separated. Known: ${COMPANIES.map(company => company.id).join(', ')}`}
+            placeholder={`Companies, comma separated. Known: ${adminCompanyOptions.map(company => company.id).join(', ')}`}
             value={form.companies}
             onChange={e => updateForm('companies', e.target.value)}
           />

@@ -365,7 +365,8 @@ const en: UiStrings = {
     sandbox: {
       title: 'Code Sandbox',
       hint: 'Ctrl + Enter to run',
-      description: 'Write any JavaScript. memoize, debounce, and throttle are available as globals.',
+      description:
+        'Write any JavaScript. memoize, debounce, and throttle are provided (Monaco: globals; Sandpack: imported from a helper file).',
       runButton: 'Run',
       clearOutput: 'Clear output',
       reset: 'Reset',

@@ -20,6 +20,24 @@ export type HomeStrings = {
     cv: { title: string; body: string }
   }
   cta: string
+  /** Signed-in: short line under the hero about saved progress */
+  progressInvite: string
+  /** Per module: both count and last activity; use {count} and {when} placeholders */
+  progressLineBoth: string
+  /** Per module: only completion count; use {count} */
+  progressLineCountOnly: string
+  /** Per module: only last visit; use {when} */
+  progressLineVisitedOnly: string
+  /** Per module: nothing saved yet */
+  progressNotStarted: string
+  /** Signed-in dashboard: short heading above aggregate stats */
+  progressSummaryHeading: string
+  /**
+   * Placeholders: {active} = areas with a visit or bookmarks, {total} = number of tracks,
+   * {bookmarks} = count from Company Q&A “saved” synced to progress.
+   */
+  progressSummaryCounts: string
+  progressLoading: string
 }
 
 export type CvPageStrings = {
@@ -236,6 +254,8 @@ const CV_PAGE_PROMPT_BY_LOCALE: Record<Locale, CvPagePromptSections> = {
 
 export type AppStrings = {
   nav: Record<Page, string>
+  /** Shown when signed in; links to bookmarked / tracked activity. */
+  navSaved: string
   home: HomeStrings
   cvPage: CvPageStrings
   cvThemePage: CvThemePageStrings
@@ -439,6 +459,7 @@ const en: AppStrings = {
     cvThemes: 'CV themes',
     quest: 'JS Quest',
   },
+  navSaved: 'Saved',
   home: {
     metaTitle: 'Interview Prep — practice in the browser',
     heroTitle: 'Interview Prep',
@@ -477,6 +498,15 @@ const en: AppStrings = {
       },
     },
     cta: 'Choose a section from the navigation above to get started.',
+    progressInvite:
+      'Visits and saved questions update this panel automatically — details on each card below.',
+    progressLineBoth: '{count} questions tracked · Last active {when}',
+    progressLineCountOnly: '{count} questions tracked',
+    progressLineVisitedOnly: 'Last active {when}',
+    progressNotStarted: 'No activity tracked yet',
+    progressSummaryHeading: 'Your saved activity',
+    progressSummaryCounts: '{active} of {total} practice areas · {bookmarks} bookmarked in Q&A',
+    progressLoading: 'Loading your activity…',
   },
   cvPage: CV_PAGE_EN,
   cvThemePage: CV_THEME_PAGE_EN,
@@ -497,6 +527,7 @@ const he: AppStrings = {
     cvThemes: 'ערכות קו״ח',
     quest: 'משחק JS',
   },
+  navSaved: 'שמורים',
   home: {
     metaTitle: 'הכנה לראיונות — תרגול בדפדפן',
     heroTitle: 'הכנה לראיונות',
@@ -534,6 +565,15 @@ const he: AppStrings = {
       },
     },
     cta: 'בחרו אזור מהתפריט למעלה כדי להתחיל.',
+    progressInvite:
+      'ביקורים ושאלות שמורות מעדכנים את הלוח הזה — פירוט בכל כרטיס למטה.',
+    progressLineBoth: '{count} שאלות במעקב · פעילות אחרונה {when}',
+    progressLineCountOnly: '{count} שאלות במעקב',
+    progressLineVisitedOnly: 'פעילות אחרונה {when}',
+    progressNotStarted: 'עדיין לא נשמר פעילות',
+    progressSummaryHeading: 'הפעילות השמורה שלך',
+    progressSummaryCounts: '{active} מתוך {total} אזורי תרגול · {bookmarks} שאלות שמורות ב־Q&A',
+    progressLoading: 'טוען פעילות…',
   },
   cvPage: CV_PAGE_HE,
   cvThemePage: CV_THEME_PAGE_HE,
@@ -552,6 +592,7 @@ const es: AppStrings = {
     cvThemes: 'Temas CV',
     quest: 'Aventura JS',
   },
+  navSaved: 'Guardados',
   home: {
     metaTitle: 'Preparación para entrevistas — práctica en el navegador',
     heroTitle: 'Preparación para entrevistas',
@@ -589,6 +630,15 @@ const es: AppStrings = {
       },
     },
     cta: 'Elige una sección en la barra superior para empezar.',
+    progressInvite:
+      'Sesión iniciada: tu avance se guarda al entrar en cada zona y cuando marcas preguntas.',
+    progressLineBoth: '{count} preguntas registradas · Última actividad {when}',
+    progressLineCountOnly: '{count} preguntas registradas',
+    progressLineVisitedOnly: 'Última actividad {when}',
+    progressNotStarted: 'Sin actividad registrada',
+    progressSummaryHeading: 'Your saved activity',
+    progressSummaryCounts: '{active} of {total} practice areas · {bookmarks} bookmarked in Q&A',
+    progressLoading: 'Loading your activity…',
   },
   cvPage: CV_PAGE_EN,
   cvThemePage: CV_THEME_PAGE_EN,
@@ -607,6 +657,7 @@ const fr: AppStrings = {
     cvThemes: 'Thèmes CV',
     quest: 'Aventure JS',
   },
+  navSaved: 'Enregistrés',
   home: {
     metaTitle: 'Préparation entretiens — pratique dans le navigateur',
     heroTitle: 'Préparation entretiens',
@@ -644,6 +695,15 @@ const fr: AppStrings = {
       },
     },
     cta: 'Choisissez une section dans la barre du haut pour commencer.',
+    progressInvite:
+      'Connecté — votre progression est enregistrée en ouvrant chaque section et lorsque vous enregistrez des questions.',
+    progressLineBoth: '{count} questions suivies · Dernière activité {when}',
+    progressLineCountOnly: '{count} questions suivies',
+    progressLineVisitedOnly: 'Dernière activité {when}',
+    progressNotStarted: 'Aucune activité enregistrée',
+    progressSummaryHeading: 'Your saved activity',
+    progressSummaryCounts: '{active} of {total} practice areas · {bookmarks} bookmarked in Q&A',
+    progressLoading: 'Loading your activity…',
   },
   cvPage: CV_PAGE_EN,
   cvThemePage: CV_THEME_PAGE_EN,
@@ -662,6 +722,7 @@ const de: AppStrings = {
     cvThemes: 'CV-Themes',
     quest: 'JS-Abenteuer',
   },
+  navSaved: 'Gespeichert',
   home: {
     metaTitle: 'Interview Prep — Übung im Browser',
     heroTitle: 'Interview Prep',
@@ -699,6 +760,15 @@ const de: AppStrings = {
       },
     },
     cta: 'Wähle oben in der Navigation einen Bereich, um zu starten.',
+    progressInvite:
+      'Angemeldet — der Fortschritt wird gespeichert, wenn du jeden Bereich öffnest und Fragen zur Übung bookmarkst.',
+    progressLineBoth: '{count} Fragen gespeichert · Zuletzt aktiv {when}',
+    progressLineCountOnly: '{count} Fragen gespeichert',
+    progressLineVisitedOnly: 'Zuletzt aktiv {when}',
+    progressNotStarted: 'Noch keine Aktivität',
+    progressSummaryHeading: 'Your saved activity',
+    progressSummaryCounts: '{active} of {total} practice areas · {bookmarks} bookmarked in Q&A',
+    progressLoading: 'Loading your activity…',
   },
   cvPage: CV_PAGE_EN,
   cvThemePage: CV_THEME_PAGE_EN,
@@ -717,6 +787,7 @@ const pt: AppStrings = {
     cvThemes: 'Temas CV',
     quest: 'Aventura JS',
   },
+  navSaved: 'Salvos',
   home: {
     metaTitle: 'Preparação para entrevistas — prática no navegador',
     heroTitle: 'Preparação para entrevistas',
@@ -754,6 +825,15 @@ const pt: AppStrings = {
       },
     },
     cta: 'Escolha uma seção na barra acima para começar.',
+    progressInvite:
+      'Sessão iniciada — seu progresso é guardado ao abrir cada área e ao marcar perguntas para praticar.',
+    progressLineBoth: '{count} perguntas registadas · Última atividade {when}',
+    progressLineCountOnly: '{count} perguntas registadas',
+    progressLineVisitedOnly: 'Última atividade {when}',
+    progressNotStarted: 'Ainda sem atividade',
+    progressSummaryHeading: 'Your saved activity',
+    progressSummaryCounts: '{active} of {total} practice areas · {bookmarks} bookmarked in Q&A',
+    progressLoading: 'Loading your activity…',
   },
   cvPage: CV_PAGE_EN,
   cvThemePage: CV_THEME_PAGE_EN,
@@ -772,6 +852,7 @@ const ja: AppStrings = {
     cvThemes: '履歴書のテーマ',
     quest: 'JS クエスト',
   },
+  navSaved: '保存済み',
   home: {
     metaTitle: '面接対策 — ブラウザで練習',
     heroTitle: '面接対策',
@@ -809,6 +890,15 @@ const ja: AppStrings = {
       },
     },
     cta: '上のナビからセクションを選んで始めてください。',
+    progressInvite:
+      'ログイン中 — 各エリアを開いたときと、質問をブックマークしたときに進捗が保存されます。',
+    progressLineBoth: '追跡中 {count} 問 · 最後の更新 {when}',
+    progressLineCountOnly: '追跡中 {count} 問',
+    progressLineVisitedOnly: '最後の更新 {when}',
+    progressNotStarted: 'まだ記録がありません',
+    progressSummaryHeading: 'Your saved activity',
+    progressSummaryCounts: '{active} of {total} practice areas · {bookmarks} bookmarked in Q&A',
+    progressLoading: 'Loading your activity…',
   },
   cvPage: CV_PAGE_EN,
   cvThemePage: CV_THEME_PAGE_EN,
@@ -827,6 +917,7 @@ const zh: AppStrings = {
     cvThemes: '简历主题',
     quest: 'JS 闯关',
   },
+  navSaved: '已保存',
   home: {
     metaTitle: '面试准备 — 在浏览器中练习',
     heroTitle: '面试准备',
@@ -864,6 +955,15 @@ const zh: AppStrings = {
       },
     },
     cta: '请从上方导航选择要开始的区域。',
+    progressInvite:
+      '已登录 — 打开各板块并将题目加入书签练习时，会保存你的进度。',
+    progressLineBoth: '已记录 {count} 题 · 最近活动 {when}',
+    progressLineCountOnly: '已记录 {count} 题',
+    progressLineVisitedOnly: '最近活动 {when}',
+    progressNotStarted: '暂无记录',
+    progressSummaryHeading: 'Your saved activity',
+    progressSummaryCounts: '{active} of {total} practice areas · {bookmarks} bookmarked in Q&A',
+    progressLoading: 'Loading your activity…',
   },
   cvPage: CV_PAGE_EN,
   cvThemePage: CV_THEME_PAGE_EN,
@@ -882,6 +982,7 @@ const ar: AppStrings = {
     cvThemes: 'سمات السيرة',
     quest: 'مغامرة JS',
   },
+  navSaved: 'المحفوظات',
   home: {
     metaTitle: 'التحضير للمقابلات — تمرّن في المتصفح',
     heroTitle: 'التحضير للمقابلات',
@@ -919,6 +1020,15 @@ const ar: AppStrings = {
       },
     },
     cta: 'اختر قسماً من شريط التنقل أعلاه للبدء.',
+    progressInvite:
+      'مسجّل الدخول — يُحفظ تقدمك عند فتح كل قسم وحفظ الأسئلة للتمرّن.',
+    progressLineBoth: '{count} أسئلة متابَعة · آخر نشاط {when}',
+    progressLineCountOnly: '{count} أسئلة متابَعة',
+    progressLineVisitedOnly: 'آخر نشاط {when}',
+    progressNotStarted: 'لا يوجد نشاط مسجَّل بعد',
+    progressSummaryHeading: 'Your saved activity',
+    progressSummaryCounts: '{active} of {total} practice areas · {bookmarks} bookmarked in Q&A',
+    progressLoading: 'Loading your activity…',
   },
   cvPage: CV_PAGE_EN,
   cvThemePage: CV_THEME_PAGE_EN,
@@ -937,6 +1047,7 @@ const ru: AppStrings = {
     cvThemes: 'Темы резюме',
     quest: 'Квест JS',
   },
+  navSaved: 'Сохранённое',
   home: {
     metaTitle: 'Подготовка к собеседованиям — в браузере',
     heroTitle: 'Подготовка к собеседованиям',
@@ -974,6 +1085,15 @@ const ru: AppStrings = {
       },
     },
     cta: 'Выберите раздел в верхней навигации, чтобы начать.',
+    progressInvite:
+      'Вы вошли — прогресс сохраняется при переходах по разделам и при сохранении вопросов.',
+    progressLineBoth: '{count} вопросов в учёте · Последняя активность {when}',
+    progressLineCountOnly: '{count} вопросов в учёте',
+    progressLineVisitedOnly: 'Последняя активность {when}',
+    progressNotStarted: 'Пока нет сохранённой активности',
+    progressSummaryHeading: 'Your saved activity',
+    progressSummaryCounts: '{active} of {total} practice areas · {bookmarks} bookmarked in Q&A',
+    progressLoading: 'Loading your activity…',
   },
   cvPage: CV_PAGE_EN,
   cvThemePage: CV_THEME_PAGE_EN,
@@ -992,6 +1112,7 @@ const hi: AppStrings = {
     cvThemes: 'CV थीम',
     quest: 'JS क्वेस्ट',
   },
+  navSaved: 'सहेजे गए',
   home: {
     metaTitle: 'इंटरव्यू तैयारी — ब्राउज़र में अभ्यास',
     heroTitle: 'इंटरव्यू तैयारी',
@@ -1029,6 +1150,15 @@ const hi: AppStrings = {
       },
     },
     cta: 'शुरू करने के लिए ऊपर नेविगेशन से एक खंड चुनें।',
+    progressInvite:
+      'साइन इन हैं — प्रत्येक क्षेत्र खोलने और अभ्यास के लिए सवाल सहेजने पर प्रोग्रेस संग्रहित होता है.',
+    progressLineBoth: '{count} सवाल ट्रैक किए गए · पिछली गतिविधि {when}',
+    progressLineCountOnly: '{count} सवाल ट्रैक किए गए',
+    progressLineVisitedOnly: 'पिछली गतिविधि {when}',
+    progressNotStarted: 'अभी कोई गतिविधि नहीं',
+    progressSummaryHeading: 'Your saved activity',
+    progressSummaryCounts: '{active} of {total} practice areas · {bookmarks} bookmarked in Q&A',
+    progressLoading: 'Loading your activity…',
   },
   cvPage: CV_PAGE_EN,
   cvThemePage: CV_THEME_PAGE_EN,
@@ -1047,6 +1177,7 @@ const pl: AppStrings = {
     cvThemes: 'Motywy CV',
     quest: 'Misja JS',
   },
+  navSaved: 'Zapisane',
   home: {
     metaTitle: 'Przygotowanie do rozmów — w przeglądarce',
     heroTitle: 'Przygotowanie do rozmów',
@@ -1084,6 +1215,15 @@ const pl: AppStrings = {
       },
     },
     cta: 'Wybierz sekcję w górnym menu, aby zacząć.',
+    progressInvite:
+      'Zalogowano — postępy zapisują się po wejściu do każdej sekcji i dodaniu pytań.',
+    progressLineBoth: '{count} śledzonych pytań · Ostatnia aktywność {when}',
+    progressLineCountOnly: '{count} śledzonych pytań',
+    progressLineVisitedOnly: 'Ostatnia aktywność {when}',
+    progressNotStarted: 'Brak zapisanej aktywności',
+    progressSummaryHeading: 'Your saved activity',
+    progressSummaryCounts: '{active} of {total} practice areas · {bookmarks} bookmarked in Q&A',
+    progressLoading: 'Loading your activity…',
   },
   cvPage: CV_PAGE_EN,
   cvThemePage: CV_THEME_PAGE_EN,
@@ -1102,6 +1242,7 @@ const ko: AppStrings = {
     cvThemes: '이력서 테마',
     quest: 'JS 퀘스트',
   },
+  navSaved: '저장됨',
   home: {
     metaTitle: '면접 준비 — 브라우저에서 연습',
     heroTitle: '면접 준비',
@@ -1139,6 +1280,15 @@ const ko: AppStrings = {
       },
     },
     cta: '위에서 시작할 섹션을 선택하세요.',
+    progressInvite:
+      '로그인됨 — 각 영역을 열거나 질문을 북마크할 때 진행 상태가 저장됩니다.',
+    progressLineBoth: '{count}개 질문 추적 중 · 마지막 활동 {when}',
+    progressLineCountOnly: '{count}개 질문 추적 중',
+    progressLineVisitedOnly: '마지막 활동 {when}',
+    progressNotStarted: '아직 기록 없음',
+    progressSummaryHeading: 'Your saved activity',
+    progressSummaryCounts: '{active} of {total} practice areas · {bookmarks} bookmarked in Q&A',
+    progressLoading: 'Loading your activity…',
   },
   cvPage: CV_PAGE_EN,
   cvThemePage: CV_THEME_PAGE_EN,

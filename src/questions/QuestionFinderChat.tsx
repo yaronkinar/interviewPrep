@@ -4,7 +4,8 @@ import { useMemo, useState } from 'react'
 import { MessageCircle, Search, X } from 'lucide-react'
 import { useLocale } from '@/i18n/LocaleContext'
 import { isRtlLocale, type Locale } from '@/i18n/locale'
-import { COMPANIES, type Category, type Difficulty, type Question } from './data'
+import { useCompaniesCatalog, preloadCompaniesCatalog } from './useCompaniesCatalog'
+import type { Category, Difficulty, Question } from './data'
 
 type QuestionFinderMatch = {
   question: Question
@@ -559,6 +560,7 @@ export default function QuestionFinderChat({
   const copy: FinderCopy = finderCopyByLocale[locale]
   const addCopy = { ...defaultAddQuestionCopy, ...copy.add }
   const rtl = isRtlLocale(locale)
+  const { companies: finderCompanies } = useCompaniesCatalog()
   const [open, setOpen] = useState(variant === 'inline')
   const [input, setInput] = useState('')
   const [messages, setMessages] = useState<FinderMessage[]>([])
@@ -595,6 +597,9 @@ export default function QuestionFinderChat({
 
     try {
       const params = new URLSearchParams({ q: query, limit: '6' })
+      if (addCompany.trim()) {
+        params.set('company', addCompany.trim())
+      }
       const response = await fetch(`/api/questions/search?${params.toString()}`)
       const data = (await response.json().catch(() => null)) as QuestionFinderResponse | null
 
@@ -604,6 +609,7 @@ export default function QuestionFinderChat({
 
       const nextMatches = Array.isArray(data?.matches) ? data.matches : []
       setMatches(nextMatches)
+      void preloadCompaniesCatalog({ force: true })
       setMessages(prev => [
         ...prev,
         {
@@ -936,7 +942,7 @@ export default function QuestionFinderChat({
           disabled={busy}
         >
           <option value="">—</option>
-          {COMPANIES.map(company => (
+          {finderCompanies.map(company => (
             <option key={company.id} value={company.id}>
               {company.id}
             </option>

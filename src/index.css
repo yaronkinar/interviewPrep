@@ -558,6 +558,45 @@ button.nav-mobile-drawer-close:hover {
 .home-hero {
   margin-bottom: 2.75rem;
 }
+.home-hero-stack {
+  margin: 0 auto;
+  max-width: 1200px;
+}
+.home-progress-panel {
+  margin-top: 1.35rem;
+  padding: 1.1rem 1.35rem;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--border) 14%, var(--surface) 86%);
+}
+.home-progress-summary-heading {
+  margin: 0 0 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.home-progress-summary-counts {
+  margin: 0 0 0.65rem;
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  line-height: 1.4;
+}
+.home-progress-invite {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.52;
+  color: var(--text-muted);
+  max-width: 68ch;
+}
+.home-progress-loading {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--text-muted);
+}
 .home-hero-title {
   font-size: clamp(1.75rem, 4vw, 2.25rem);
   font-weight: 800;
@@ -623,6 +662,13 @@ button.nav-mobile-drawer-close:hover {
   flex: 1;
   font-size: 0.9rem;
   line-height: 1.5;
+  color: var(--text-muted);
+}
+.home-card-progress {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  font-weight: 600;
   color: var(--text-muted);
 }
 .home-card-link {
@@ -858,6 +904,25 @@ button.nav-mobile-drawer-close:hover {
 .editorial-page--cv .cv-analysis-result-bubble {
   margin-top: 0.5rem;
 }
+/* Markdown in CV analysis: code blocks / inline code vs bubble background (--panel) */
+.editorial-page--cv .cv-analysis-result-bubble .q-chat-md-pre,
+.editorial-page--cv .cv-analysis-result-bubble .q-chat-md-pre-wrap {
+  background: color-mix(in srgb, var(--surface-deep) 94%, var(--text) 6%);
+  border-color: color-mix(in srgb, var(--border) 70%, var(--accent) 30%);
+}
+.editorial-page--cv .cv-analysis-result-bubble .q-chat-md-pre code {
+  color: var(--text);
+}
+.editorial-page--cv .cv-analysis-result-bubble .q-chat-md-code-inline {
+  background: color-mix(in srgb, var(--accent) 14%, var(--surface-deep));
+  border: 1px solid color-mix(in srgb, var(--accent) 22%, transparent);
+  color: var(--text);
+}
+.editorial-page--cv .cv-analysis-textarea::selection,
+.editorial-page--cv .cv-analysis-job-url-input::selection {
+  background: color-mix(in srgb, var(--accent) 28%, transparent);
+  color: var(--text);
+}
 .editorial-page--cv .cv-analysis-privacy {
   font-size: 0.78rem;
   color: var(--text-muted);
@@ -1049,8 +1114,8 @@ button.nav-mobile-drawer-close:hover {
 .editorial-page--cv .cv-analysis-dim-fill {
   background: linear-gradient(
     90deg,
-    color-mix(in srgb, var(--accent) 88%, #2f7fff),
-    color-mix(in srgb, var(--accent) 55%, var(--surface-deep))
+    color-mix(in srgb, var(--accent) 75%, var(--text)),
+    color-mix(in srgb, var(--accent) 42%, var(--surface-deep))
   );
   border-radius: 999px;
   height: 100%;
@@ -1176,6 +1241,10 @@ button.nav-mobile-drawer-close:hover {
   box-shadow:
     0 0 0 2px color-mix(in srgb, var(--chip-accent, var(--accent)) 35%, var(--surface)),
     0 2px 6px color-mix(in srgb, var(--chip-fg, var(--text)) 12%, transparent);
+}
+.editorial-page--cv.cv-theme-page .cv-theme-preset-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .editorial-page--cv.cv-theme-page .cv-theme-preview-block {
@@ -1993,6 +2062,16 @@ input:focus { border-color: var(--accent); }
   grid-template-columns: minmax(0, 1.8fr) minmax(0, 1fr);
 }
 @media (max-width: 720px) { .sandbox-body { grid-template-columns: 1fr; } }
+
+.sandbox-body--sandpack {
+  grid-template-columns: 1fr;
+}
+.sandbox-sandpack .sp-layout {
+  border: 1px solid var(--border, #1e293b);
+  border-radius: 8px;
+  min-height: 420px;
+  overflow: hidden;
+}
 
 .sandbox-editor {
   border: 1px solid var(--border);
@@ -4894,6 +4973,19 @@ input:focus { border-color: var(--accent); }
   min-height: 280px;
 }
 
+.q-react-preview-sandpack .sp-layout {
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.12));
+  border-radius: 8px;
+  margin-top: 0.5rem;
+  overflow: hidden;
+}
+
+.mock-sandpack-editor .sp-layout {
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.12));
+  border-radius: 8px;
+  overflow: hidden;
+}
+
 .mock-interview-lead {
   max-width: 720px;
 }
@@ -6634,6 +6726,27 @@ button.mockv2-start-btn:hover {
 }
 .mis-editor-fab:hover {
   background: rgb(255 255 255 / 0.14);
+}
+.mis-editor-send-chat {
+  align-items: center;
+  background: color-mix(in srgb, var(--btn) 88%, transparent);
+  border: 1px solid color-mix(in srgb, var(--btn) 40%, transparent);
+  border-radius: 8px;
+  box-shadow: 0 2px 10px color-mix(in srgb, var(--btn) 25%, transparent);
+  color: var(--btn-fg);
+  cursor: pointer;
+  display: flex;
+  font-size: 0.65rem;
+  font-weight: 700;
+  gap: 0.35rem;
+  padding: 0.35rem 0.75rem;
+}
+.mis-editor-send-chat:hover:not(:disabled) {
+  filter: brightness(1.07);
+}
+.mis-editor-send-chat:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
 }
 .mis-editor-run {
   align-items: center;

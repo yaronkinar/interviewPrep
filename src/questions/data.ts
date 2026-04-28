@@ -50,4 +50,5 @@ export const COMPANIES = [
   { id: 'CrowdStrike', emoji: '🔴', color: '#EC0000' },
   { id: 'Tenable', emoji: '🟢', color: '#00A86B' },
   { id: 'PlainID', emoji: '🟣', color: '#6D5DF6' },
+  { id: 'Perion', emoji: '🔷', color: '#0891B2' },
 ]

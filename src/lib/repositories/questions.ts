@@ -1,6 +1,6 @@
 import { getDb } from '@/lib/mongodb'
 import type { QuestionDocument, QuestionInput } from '@/lib/models/Question'
-import { CATEGORIES, COMPANIES, type Category, type Difficulty, type Question } from '@/questions/data'
+import { CATEGORIES, type Category, type Difficulty, type Question } from '@/questions/data'
 
 const COLLECTION_NAME = 'questions'
 const DIFFICULTIES = ['easy', 'medium', 'hard'] as const
@@ -219,12 +219,16 @@ function removeFilterTerms(query: string, filters: QuestionSearchFilters) {
   return normalized.trim()
 }
 
-function inferQuestionSearchFilters(query: string, explicitFilters: QuestionSearchFilters = {}): QuestionSearchFilters {
+function inferQuestionSearchFilters(
+  query: string,
+  explicitFilters: QuestionSearchFilters,
+  searchableCompanyIds: readonly string[],
+): QuestionSearchFilters {
   const normalized = ` ${normalizeForSearch(query)} `
   const difficulty = explicitFilters.difficulty ?? DIFFICULTIES.find(item => normalized.includes(` ${item} `))
-  const company = explicitFilters.company ?? COMPANIES.find(companyItem =>
-    normalized.includes(` ${normalizeForSearch(companyItem.id)} `),
-  )?.id
+  const company =
+    explicitFilters.company ??
+    searchableCompanyIds.find(id => normalized.includes(` ${normalizeForSearch(id)} `))
   const category = explicitFilters.category ?? CATEGORIES.find(categoryItem =>
     normalizeForSearch(categoryItem)
       .split(/\s+/)
@@ -365,12 +369,52 @@ export async function getQuestionById(id: string, options: { includeArchived?: b
   return doc ? toPublicQuestion(doc) : null
 }
 
+/** Every company string stored on non-archived questions (for search filter inference). */
+export async function distinctCompanyTagsFromQuestions() {
+  const questions = await getQuestionsCollection()
+  const values = await questions.distinct('companies', { archivedAt: null })
+  return [...new Set(values.filter((item): item is string => typeof item === 'string' && item.trim().length > 0).map(s => s.trim()))]
+}
+
+/** Tokens from the catalog search query worth considering as a company name (normalized lowercase). */
+export function catalogSearchTokensForAutoCompany(
+  rawQuery: string,
+  inferredFilters: QuestionSearchFilters,
+): string[] {
+  const stripped = removeFilterTerms(rawQuery.trim(), inferredFilters)
+  const tokens = tokenizeForSearch(stripped)
+  return tokens.filter(
+    t =>
+      t.length >= 4 &&
+      !DIFFICULTIES.some(d => d === t),
+  )
+}
+
+/** True if matched question body mentions the token (titles, descriptions, tags, company tags)—not category label alone. */
+export function questionSupportsAutoCompanyFromToken(question: Question, normalizedLowerToken: string): boolean {
+  if (normalizedLowerToken.length < 4) return false
+  const hay = normalizeForSearch(
+    [question.title, question.description, question.tags.join(' '), question.companies.join(' ')].join(' '),
+  )
+  const words = new Set(hay.split(/\s+/).filter(Boolean))
+  if (words.has(normalizedLowerToken)) return true
+  if (normalizedLowerToken.length >= 6 && hay.includes(normalizedLowerToken)) return true
+  return false
+}
+
+export function proposeCompanyDisplayIdFromSearchToken(normalizedLowerToken: string): string {
+  const t = normalizedLowerToken.trim()
+  if (!t) return t
+  return t.charAt(0).toUpperCase() + t.slice(1).toLowerCase()
+}
+
 export async function searchQuestions(options: {
   query: string
   limit?: number
   filters?: QuestionSearchFilters
+  searchableCompanyIds: readonly string[]
 }) {
-  const inferredFilters = inferQuestionSearchFilters(options.query, options.filters)
+  const inferredFilters = inferQuestionSearchFilters(options.query, options.filters ?? {}, options.searchableCompanyIds)
   const queryWithoutFilters = removeFilterTerms(options.query, inferredFilters)
   const tokens = tokenizeForSearch(queryWithoutFilters)
   const limit = clampSearchLimit(options.limit)

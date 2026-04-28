@@ -92,6 +92,8 @@ export type MockInterviewStrings = {
   resetEditor: string
   runTests: string
   runTestsDisabledTitle: string
+  sendCodeToChat: string
+  sendCodeToChatTitle: string
   outputConsole: string
   terminalReady: string
   voiceToTextUnavailable: string
@@ -233,6 +235,9 @@ export const mockInterviewEn: MockInterviewStrings = {
   resetEditor: 'Reset',
   runTests: 'Run tests',
   runTestsDisabledTitle: 'Not available in this trainer',
+  sendCodeToChat: 'Send code',
+  sendCodeToChatTitle:
+    'Send the current editor as your next chat message (notes above are not cleared). Uses the same format as the main send button for code.',
   outputConsole: 'Output console',
   terminalReady: '> Editor ready. Send a message to get interviewer feedback.',
   voiceToTextUnavailable:
@@ -376,6 +381,9 @@ export const mockInterviewHe: MockInterviewStrings = {
   resetEditor: 'איפוס',
   runTests: 'הרץ בדיקות',
   runTestsDisabledTitle: 'לא זמין במאמן זה',
+  sendCodeToChat: 'שליחת קוד',
+  sendCodeToChatTitle:
+    'שולח את תוכן העורך כהודעה הבאה בצ׳אט (שדה ההערות למעלה לא מתנקה). אותו פורמט כמו שליחה רגילה עם קוד.',
   outputConsole: 'קונסול פלט',
   terminalReady: '> העורך מוכן. שלחו הודעה לקבלת משוב מראיין.',
   voiceToTextUnavailable:

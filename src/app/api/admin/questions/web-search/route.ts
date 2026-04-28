@@ -8,6 +8,7 @@ import {
   resolveServerOpenAiKey,
   suggestInterviewQuestionsFromWebContext,
 } from '@/lib/questions/questionSuggestions'
+import { ensureCompanyRecorded } from '@/lib/repositories/companies'
 import { formatTavilyResultsForPrompt, resolveTavilyApiKey, tavilySearch } from '@/lib/search/tavilySearch'
 
 const MAX_TAVILY_RESULTS = 8
@@ -76,6 +77,14 @@ export async function POST(req: Request) {
       count,
       webContext,
     })
+
+    if (questions.length > 0 && company) {
+      try {
+        await ensureCompanyRecorded(company)
+      } catch (error) {
+        console.warn('ensure company from web-search skipped', error)
+      }
+    }
 
     return NextResponse.json({ questions })
   } catch (error) {

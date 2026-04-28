@@ -1,6 +1,6 @@
 import * as Babel from '@babel/standalone'
 
-function stripModuleSyntax(code: string): string {
+export function stripModuleSyntax(code: string): string {
   const lines = code.split('\n').filter((line) => !/^\s*import\s+/.test(line))
   let s = lines.join('\n')
   s = s.replace(/export\s+default\s+function/g, 'function')

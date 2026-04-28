@@ -9,13 +9,9 @@ import {
   type CSSProperties,
 } from 'react'
 import type { MessageParam } from '@anthropic-ai/sdk/resources/messages'
-import {
-  COMPANIES,
-  CATEGORIES,
-  type Question,
-  type Difficulty,
-  type Category,
-} from './data'
+import { CATEGORIES, type Question, type Difficulty, type Category } from './data'
+import { deterministicCompanyBadgeStyle } from '@/lib/companies/deterministicStyle'
+import { useCompaniesCatalog } from './useCompaniesCatalog'
 import { useQuestionCatalog } from './useQuestionCatalog'
 import { useLocale } from '../i18n/LocaleContext'
 import { getUiStrings, type UiStrings } from '../i18n/uiStrings'
@@ -77,6 +73,7 @@ import FilterChip from '../components/filters/FilterChip'
 import FilterSearchBar from '../components/filters/FilterSearchBar'
 
 const VsCodeStyleEditor = lazy(() => import('./VsCodeStyleEditor'))
+const MockInterviewSandpackEditor = lazy(() => import('./MockInterviewSandpackEditor'))
 
 /** Renders plain text with https URLs turned into links (voice / TTS status lines). */
 function TextWithAutoLinks({ text }: { text: string }) {
@@ -238,6 +235,7 @@ interface MockInterviewSessionProps {
   googleCloudTtsApiKey: string
   geminiApiKey: string
   ui: UiStrings
+  mockInterviewUseSandpack: boolean
 }
 
 function MockInterviewSession({
@@ -251,6 +249,7 @@ function MockInterviewSession({
   googleCloudTtsApiKey,
   geminiApiKey,
   ui,
+  mockInterviewUseSandpack,
 }: MockInterviewSessionProps) {
   const { locale } = useLocale()
   const mock = ui.mockInterview
@@ -596,6 +595,42 @@ function MockInterviewSession({
       setLoading(false)
     }
   }
+
+  const sendEditorCodeToChat = useCallback(async () => {
+    if (!apiKey.trim() || loading || !mockStyleUsesCodeEditor(style)) return
+    const code = codeDraft.trim()
+    if (!code) return
+    const intro =
+      style === 'code_review' ? mock.codePreambleCodeReview : mock.codePreambleInterviewer
+    const text = `${intro}\n\n\`\`\`ts\n${code}\n\`\`\``
+    setError(null)
+    const userTurn: ChatMessage = { role: 'user', content: text }
+    const nextThread = [...messages, userTurn]
+    setMessages(nextThread)
+    setLoading(true)
+    setStreaming('')
+    try {
+      await runStreamTurn(nextThread)
+    } catch (e) {
+      setError(formatApiError(e))
+      setStreaming('')
+    } finally {
+      setLoading(false)
+      requestAnimationFrame(() => {
+        const el = chatLogRef.current
+        if (el) el.scrollTop = el.scrollHeight
+      })
+    }
+  }, [
+    apiKey,
+    loading,
+    style,
+    codeDraft,
+    messages,
+    mock.codePreambleCodeReview,
+    mock.codePreambleInterviewer,
+    runStreamTurn,
+  ])
 
   const hint = useMemo(() => {
     if (style === 'verbal_practice') return mock.hintVerbal
@@ -1141,17 +1176,32 @@ function MockInterviewSession({
                     </div>
                   }
                 >
-                  <VsCodeStyleEditor
-                    question={question}
-                    value={codeDraft}
-                    onChange={(v) => { setCodeDraft(v); onCodingAnswerChange(v) }}
-                    height="min(42vh, 360px)"
-                    windowTitle={
-                      style === 'code_review'
-                        ? mock.editorWindowCodeReview
-                        : mock.editorWindowInterviewer
-                    }
-                  />
+                  {mockInterviewUseSandpack ? (
+                    <MockInterviewSandpackEditor
+                      question={question}
+                      codeDraft={codeDraft}
+                      onCodeChange={(v) => {
+                        setCodeDraft(v)
+                        onCodingAnswerChange(v)
+                      }}
+                      height="min(42vh, 360px)"
+                    />
+                  ) : (
+                    <VsCodeStyleEditor
+                      question={question}
+                      value={codeDraft}
+                      onChange={(v) => {
+                        setCodeDraft(v)
+                        onCodingAnswerChange(v)
+                      }}
+                      height="min(42vh, 360px)"
+                      windowTitle={
+                        style === 'code_review'
+                          ? mock.editorWindowCodeReview
+                          : mock.editorWindowInterviewer
+                      }
+                    />
+                  )}
                 </Suspense>
                 <div className="mis-editor-actions">
                   {saveStatus === 'saving' && <span className="mis-save-status">Saving…</span>}
@@ -1162,6 +1212,16 @@ function MockInterviewSession({
                     onClick={() => setCodeDraft(buildMockCodeReviewStarter(question))}
                   >
                     {mock.resetEditor}
+                  </button>
+                  <button
+                    type="button"
+                    className="mis-editor-send-chat"
+                    onClick={() => void sendEditorCodeToChat()}
+                    disabled={!apiKey.trim() || loading || !codeDraft.trim()}
+                    title={mock.sendCodeToChatTitle}
+                  >
+                    <Send size={16} strokeWidth={2} aria-hidden />
+                    {mock.sendCodeToChat}
                   </button>
                   <button
                     type="button"
@@ -1202,6 +1262,7 @@ export default function MockInterviewPage() {
   const [category, setCategory] = useState<Category | null>(null)
   const [catalogSort, setCatalogSort] = useState<CatalogSortMode>('curated')
   const { questions: catalogQuestions, loading: catalogLoading, error: catalogError, reload: reloadCatalog } = useQuestionCatalog()
+  const { companies: catalogCompanies } = useCompaniesCatalog()
 
   const [customQuestions] = useState<Question[]>(() => loadCustomQuestionsFromStorage())
 
@@ -1221,6 +1282,23 @@ export default function MockInterviewPage() {
   const [elevenLabsApiKey, setElevenLabsApiKey] = useState('')
   const [googleCloudTtsApiKey, setGoogleCloudTtsApiKey] = useState(() => readDefaultGoogleCloudTtsKeyFromEnv())
 
+  const [mockInterviewUseSandpack, setMockInterviewUseSandpack] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+    fetch('/api/feature-flags', { cache: 'no-store' })
+      .then(r => (r.ok ? r.json() : null))
+      .then((data: { mockInterviewUseSandpack?: boolean } | null) => {
+        if (!cancelled) setMockInterviewUseSandpack(Boolean(data?.mockInterviewUseSandpack))
+      })
+      .catch(() => {
+        if (!cancelled) setMockInterviewUseSandpack(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
   const onAiSettingsChange = useCallback((s: AiSettingsSnapshot) => {
     setAiSettings(s)
   }, [])
@@ -1239,6 +1317,21 @@ export default function MockInterviewPage() {
         : aiSettings.anthropicModel
 
   const allQuestions = useMemo(() => [...catalogQuestions, ...customQuestions], [catalogQuestions, customQuestions])
+
+  const mockInterviewCompanies = useMemo(() => {
+    const m = new Map<string, { id: string; emoji: string; color: string }>()
+    for (const c of catalogCompanies) {
+      m.set(c.id.toLowerCase(), c)
+    }
+    for (const q of allQuestions) {
+      for (const id of q.companies) {
+        if (!m.has(id.toLowerCase())) {
+          m.set(id.toLowerCase(), { id, ...deterministicCompanyBadgeStyle(id) })
+        }
+      }
+    }
+    return [...m.values()].sort((a, b) => a.id.localeCompare(b.id))
+  }, [catalogCompanies, allQuestions])
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim()
@@ -1385,7 +1478,7 @@ export default function MockInterviewPage() {
             />
 
             <FilterRow label={ui.questions.company} className="mock-interview-filters">
-              {COMPANIES.map((c) => (
+              {mockInterviewCompanies.map((c) => (
                 <FilterChip
                   key={c.id}
                   active={company === c.id}
@@ -1554,6 +1647,7 @@ export default function MockInterviewPage() {
                 googleCloudTtsApiKey={googleCloudTtsApiKey}
                 geminiApiKey={aiSettings.geminiApiKey}
                 ui={ui}
+                mockInterviewUseSandpack={mockInterviewUseSandpack}
               />
             )}
           </section>

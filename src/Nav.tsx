@@ -54,8 +54,13 @@ function NavLinks({ className, linkClassName, onNavigate, isAdmin }: NavLinksPro
       {PUBLIC_TAB_IDS.map(id => {
         const to = PATH_FOR_PAGE[id]
         // Match exact path or a child segment (`/quest` must not match `/questions`).
+        // `/cv/themes` must not activate the `/cv` tab — only the cvThemes tab.
         const isActive =
-          to === '/' ? pathname === '/' : pathname === to || pathname.startsWith(`${to}/`)
+          to === '/'
+            ? pathname === '/'
+            : id === 'cv'
+              ? pathname === '/cv'
+              : pathname === to || pathname.startsWith(`${to}/`)
         return (
           <Link
             key={id}
@@ -73,7 +78,7 @@ function NavLinks({ className, linkClassName, onNavigate, isAdmin }: NavLinksPro
           className={linkClassName({ isActive: pathname === '/saved' })}
           onClick={onNavigate}
         >
-          Saved
+          {strings.navSaved}
         </Link>
       )}
       {isAdmin && (

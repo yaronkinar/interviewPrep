@@ -1,4 +1,14 @@
-import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import {
+  Fragment,
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react'
 import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import { useSearchParams, useRouter } from 'next/navigation'
@@ -14,14 +24,10 @@ import {
   Share2,
   Terminal,
 } from 'lucide-react'
-import {
-  COMPANIES,
-  CATEGORIES,
-  type Question,
-  type Difficulty,
-  type Category,
-} from './data'
+import type { Company } from '@/lib/models/Company'
+import { deterministicCompanyBadgeStyle } from '@/lib/companies/deterministicStyle'
 import { useQuestionCatalog } from './useQuestionCatalog'
+import { useCompaniesCatalog } from './useCompaniesCatalog'
 import { CodeBlock } from '../components/CodeBlock'
 import { QuestionExample, hasQuestionExample } from './QuestionExample'
 import ApiKeySettings, { type AiSettingsSnapshot } from './ApiKeySettings'
@@ -38,9 +44,13 @@ import { DEFAULT_ANTHROPIC_MODEL } from './anthropicConstants'
 import { DEFAULT_GEMINI_MODEL, readDefaultGeminiKeyFromEnv } from './geminiConstants'
 import { DEFAULT_OPENAI_MODEL } from './openaiConstants'
 import { useSavedQuestions } from '../hooks/useSavedQuestions'
+import { useProgress } from '../hooks/useProgress'
 import FilterSearchBar from '../components/filters/FilterSearchBar'
 import { PATH_FOR_PAGE } from '../routes'
 import { type CatalogSortMode, sortCatalogQuestions } from '@/lib/questions/sortCatalogQuestions'
+import { CATEGORIES, type Question, type Difficulty, type Category } from './data'
+
+const CompaniesUiContext = createContext<(id: string) => string | undefined>(() => undefined)
 
 const DIFFICULTY_COLOR: Record<Difficulty, string> = {
   easy: '#34d399',
@@ -160,12 +170,13 @@ function buildThinkingSteps(q: Question, baseSteps: string[]): string[] {
 }
 
 function CompanyBadge({ name }: { name: string }) {
-  const company = COMPANIES.find((c) => c.id === name)
+  const colorFor = useContext(CompaniesUiContext)
+  const accent = colorFor(name) ?? deterministicCompanyBadgeStyle(name).color
   return (
     <span
       className="company-badge"
       title={name}
-      style={{ '--company-color': company?.color } as React.CSSProperties}
+      style={{ '--company-color': accent } as React.CSSProperties}
     >
       {name}
     </span>
@@ -595,12 +606,15 @@ export default function QuestionsPage() {
   const search = searchParams.get('q') ?? ''
   const questionId = searchParams.get('question') ?? ''
   const { isSaved, toggleSaved } = useSavedQuestions()
+  const { markCompleted } = useProgress('questions')
   const {
     questions: catalogQuestions,
     loading: catalogLoading,
     error: catalogError,
     reload: reloadCatalog,
   } = useQuestionCatalog()
+
+  const { companies: catalogCompanies } = useCompaniesCatalog()
 
   const updateSearchQuery = useCallback(
     (value: string) => {
@@ -678,6 +692,17 @@ export default function QuestionsPage() {
     [filtered, catalogSort],
   )
 
+  const onToggleQuestionSaved = useCallback(
+    (questionId: string, section: string) => {
+      const willSave = !isSaved(questionId)
+      toggleSaved(questionId, section)
+      if (willSave) {
+        void markCompleted(questionId)
+      }
+    },
+    [isSaved, toggleSaved, markCompleted],
+  )
+
   const clearFilters = useCallback(() => {
     router.replace('?', { scroll: false })
     setCompany(null)
@@ -744,16 +769,37 @@ export default function QuestionsPage() {
     ? allQuestions.filter((q) => q.companies.includes(company)).length
     : 0
 
+  const companyLookup = useMemo(() => {
+    const m = new Map<string, Company>()
+    for (const c of catalogCompanies) {
+      m.set(c.id.toLowerCase(), c)
+    }
+    for (const q of allQuestions) {
+      for (const id of q.companies) {
+        if (!m.has(id.toLowerCase())) {
+          m.set(id.toLowerCase(), { id, ...deterministicCompanyBadgeStyle(id) })
+        }
+      }
+    }
+    return m
+  }, [catalogCompanies, allQuestions])
+
+  const companyColorFor = useCallback(
+    (id: string) => companyLookup.get(id.toLowerCase())?.color,
+    [companyLookup],
+  )
+
   const companiesSorted = useMemo(
-    () => [...COMPANIES].sort((a, b) => a.id.localeCompare(b.id)),
-    [],
+    () => [...companyLookup.values()].sort((a, b) => a.id.localeCompare(b.id)),
+    [companyLookup],
   )
 
   const railTopic =
     category ?? CATEGORIES[0] ?? ''
 
   return (
-    <div className="editorial-page editorial-page--questions editorial-page--questions-stitch">
+    <CompaniesUiContext.Provider value={companyColorFor}>
+      <div className="editorial-page editorial-page--questions editorial-page--questions-stitch">
       <header className="questions-stitch-hero">
         <div className="questions-stitch-hero-primary">
           <div className="questions-stitch-kicker">
@@ -901,7 +947,7 @@ export default function QuestionsPage() {
                       customIds.has(q.id) ? () => removeCustomQuestion(q.id) : undefined
                     }
                     serverBookmarked={isSaved(q.id)}
-                    onServerToggleBookmark={() => toggleSaved(q.id, q.category)}
+                    onServerToggleBookmark={() => onToggleQuestionSaved(q.id, q.category)}
                   />
                 ))}
               </div>
@@ -986,5 +1032,6 @@ export default function QuestionsPage() {
         </ol>
       </section>
     </div>
+    </CompaniesUiContext.Provider>
   )
 }

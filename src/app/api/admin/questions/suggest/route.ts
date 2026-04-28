@@ -1,6 +1,7 @@
 import { auth } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
 import { hasAdminAccess } from '@/lib/auth/admin'
+import { ensureCompanyRecorded } from '@/lib/repositories/companies'
 import {
   clampSuggestionCount,
   getQuestionSuggestionErrorMessage,
@@ -52,6 +53,13 @@ export async function POST(req: Request) {
       company,
       count,
     })
+    if (questions.length > 0 && company) {
+      try {
+        await ensureCompanyRecorded(company)
+      } catch (error) {
+        console.warn('ensure company from suggest skipped', error)
+      }
+    }
     return NextResponse.json({ questions })
   } catch (error) {
     console.error('Failed to suggest questions', error)

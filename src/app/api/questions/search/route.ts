@@ -1,6 +1,18 @@
 import { NextResponse } from 'next/server'
-import { searchQuestions, type QuestionSearchFilters } from '@/lib/repositories/questions'
-import { CATEGORIES, COMPANIES, type Category, type Difficulty } from '@/questions/data'
+import {
+  companyIdsSortedForQueryInference,
+  ensureCompanyRecorded,
+  listCompaniesMergedWithSeed,
+} from '@/lib/repositories/companies'
+import {
+  searchQuestions,
+  type QuestionSearchFilters,
+  distinctCompanyTagsFromQuestions,
+  catalogSearchTokensForAutoCompany,
+  questionSupportsAutoCompanyFromToken,
+  proposeCompanyDisplayIdFromSearchToken,
+} from '@/lib/repositories/questions'
+import { CATEGORIES, type Category, type Difficulty } from '@/questions/data'
 
 const DIFFICULTIES = ['easy', 'medium', 'hard'] as const
 
@@ -12,11 +24,6 @@ function parseCategory(value: string | null): Category | undefined {
   return CATEGORIES.find(item => item === value)
 }
 
-function parseCompany(value: string | null): string | undefined {
-  if (!value) return undefined
-  return COMPANIES.find(item => item.id.toLowerCase() === value.toLowerCase())?.id
-}
-
 function parseLimit(value: string | null) {
   if (!value) return undefined
   const limit = Number(value)
@@ -25,6 +32,17 @@ function parseLimit(value: string | null) {
 
 export async function GET(req: Request) {
   try {
+    const mergedCompanies = await listCompaniesMergedWithSeed()
+    const tagsFromQuestions = await distinctCompanyTagsFromQuestions()
+
+    const idByLower = new Map<string, string>()
+    for (const c of mergedCompanies) idByLower.set(c.id.toLowerCase(), c.id)
+    for (const t of tagsFromQuestions) {
+      if (!idByLower.has(t.toLowerCase())) idByLower.set(t.toLowerCase(), t)
+    }
+
+    const searchableCompanyIds = companyIdsSortedForQueryInference([...idByLower.values()])
+
     const { searchParams } = new URL(req.url)
     const query = searchParams.get('q')?.trim() ?? ''
 
@@ -34,17 +52,44 @@ export async function GET(req: Request) {
 
     const difficulty = parseDifficulty(searchParams.get('difficulty'))
     const category = parseCategory(searchParams.get('category'))
-    const company = parseCompany(searchParams.get('company'))
+
+    const requestedCompanyRaw = searchParams.get('company')?.trim().toLowerCase()
+    const companyFromParam = requestedCompanyRaw ? idByLower.get(requestedCompanyRaw) : undefined
+
     const filters: QuestionSearchFilters = {
       ...(difficulty ? { difficulty } : {}),
       ...(category ? { category } : {}),
-      ...(company ? { company } : {}),
+      ...(companyFromParam ? { company: companyFromParam } : {}),
     }
+
     const result = await searchQuestions({
       query,
       limit: parseLimit(searchParams.get('limit')),
       filters,
+      searchableCompanyIds,
     })
+
+    if (result.matches.length > 0) {
+      const toEnsure = new Set<string>()
+      if (result.filters.company) {
+        toEnsure.add(result.filters.company)
+      }
+      for (const match of result.matches) {
+        for (const c of match.question.companies) {
+          toEnsure.add(c)
+        }
+      }
+      for (const t of catalogSearchTokensForAutoCompany(query, result.filters)) {
+        if (idByLower.has(t)) continue
+        if (
+          result.matches.every(m => !questionSupportsAutoCompanyFromToken(m.question, t))
+        ) {
+          continue
+        }
+        toEnsure.add(proposeCompanyDisplayIdFromSearchToken(t))
+      }
+      await Promise.all([...toEnsure].map(label => ensureCompanyRecorded(label).catch(err => console.warn(err))))
+    }
 
     return NextResponse.json(result)
   } catch (error) {

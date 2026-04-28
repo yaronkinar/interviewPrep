@@ -1,3 +1,4 @@
+import { deterministicCompanyBadgeStyle } from '@/lib/companies/deterministicStyle'
 import { getDb } from '@/lib/mongodb'
 import type { Company, CompanyDocument, CompanyInput } from '@/lib/models/Company'
 import { COMPANIES } from '@/questions/data'
@@ -87,6 +88,77 @@ export async function getCompanyById(id: string, options: { includeArchived?: bo
 export async function countCompanies() {
   const companies = await getCompaniesCollection()
   return companies.countDocuments({ archivedAt: null })
+}
+
+function escapeRegex(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+function normKeyForSort(value: string) {
+  return value
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim()
+}
+
+/** Public catalog: MongoDB rows plus any seed entry not yet inserted. DB wins on id collision. */
+export async function listCompaniesMergedWithSeed(): Promise<Company[]> {
+  const db = await listCompanies()
+  const byLower = new Map<string, Company>()
+  for (const row of COMPANIES) {
+    byLower.set(row.id.toLowerCase(), { id: row.id, emoji: row.emoji, color: row.color })
+  }
+  for (const row of db) {
+    byLower.set(row.id.toLowerCase(), { id: row.id, emoji: row.emoji, color: row.color })
+  }
+  return [...byLower.values()].sort((a, b) => a.id.localeCompare(b.id))
+}
+
+/** Longest token first so multi-word / longer company names match before shorter ones. */
+export function companyIdsSortedForQueryInference(companyIds: readonly string[]): string[] {
+  const uniq = [...new Set(companyIds.map(id => id.trim()).filter(Boolean))]
+  uniq.sort((a, b) => normKeyForSort(b).length - normKeyForSort(a).length)
+  return uniq
+}
+
+/**
+ * Inserts a non-archived company document when missing (case-insensitive dedupe).
+ * Uses static seed emoji/color when the id matches seed; otherwise generated defaults.
+ */
+export async function ensureCompanyRecorded(rawOrId: string) {
+  const trimmed = rawOrId.trim()
+  if (!trimmed) return
+
+  const companies = await getCompaniesCollection()
+  const existing = await companies.findOne({
+    archivedAt: null,
+    id: { $regex: `^${escapeRegex(trimmed)}$`, $options: 'i' },
+  })
+  if (existing) return
+
+  const seed = COMPANIES.find(c => c.id.toLowerCase() === trimmed.toLowerCase())
+  const id = seed ? seed.id : trimmed
+  const { emoji, color } = seed ? { emoji: seed.emoji, color: seed.color } : deterministicCompanyBadgeStyle(id)
+
+  const now = new Date()
+  const order = await countCompanies()
+
+  try {
+    await companies.insertOne({
+      id,
+      emoji,
+      color,
+      order,
+      createdAt: now,
+      updatedAt: now,
+      archivedAt: null,
+    })
+  } catch (error) {
+    if (error && typeof error === 'object' && 'code' in error && error.code === 11000) return
+    throw error
+  }
 }
 
 export async function seedCompaniesFromStatic() {

@@ -98,6 +98,17 @@ function wrapParagraph(ctx: CanvasRenderingContext2D, para: string, maxW: number
   return lines.length ? lines : ['']
 }
 
+function isLikelySectionHeader(trimmed: string): boolean {
+  const t = trimmed.trim()
+  if (!t || t.length > 88) return false
+  if (/^[-–—•*·▪▸►]/.test(t)) return false
+  if (/^https?:\/\//i.test(t)) return false
+  if (/^\d{4}\s*[-–]\s*\d{4}\b/.test(t)) return false
+  const letters = t.replace(/[^A-Za-z\u00c0-\u024f]/g, '')
+  if (letters.length >= 3 && letters === letters.toUpperCase()) return true
+  return /^[A-Za-z\u00c0-\u024f][A-Za-z\u00c0-\u024f ,/&]{0,40}:$/.test(t)
+}
+
 /**
  * Returns a PNG data URL, or null if empty or not in a browser.
  * @param style Optional canvas colors and typography (defaults match the original editorial preview).
@@ -164,12 +175,23 @@ export function renderCvPlainTextToDataUrl(
   ctx.lineWidth = 1
   ctx.strokeRect(0.5, 0.5, cssWidth - 1, cssH - 1)
 
-  ctx.fillStyle = text
-  ctx.font = fontCss
   ctx.textBaseline = 'top'
 
+  const firstContentIdx = allLines.findIndex((l) => l.trim().length > 0)
   let y = topPad
-  for (const line of allLines) {
+  for (let i = 0; i < allLines.length; i++) {
+    const line = allLines[i]
+    const trimmed = line.trim()
+    const isName = i === firstContentIdx && trimmed.length > 0
+    const isSection = !isName && trimmed.length > 0 && isLikelySectionHeader(trimmed)
+
+    if (isName || isSection) {
+      ctx.font = `600 ${fontSizePx}px ${fontStack}`
+      ctx.fillStyle = accent
+    } else {
+      ctx.font = fontCss
+      ctx.fillStyle = text
+    }
     ctx.fillText(line, pad, y)
     y += lineHeight
   }

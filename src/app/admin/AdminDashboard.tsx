@@ -6,9 +6,10 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '@clerk/nextjs'
 import { CompaniesAdminPanel } from './panels/CompaniesAdminPanel'
 import { QuestionsAdminPanel } from './panels/QuestionsAdminPanel'
+import { SettingsAdminPanel } from './panels/SettingsAdminPanel'
 import { UsersAdminPanel } from './panels/UsersAdminPanel'
 
-const VALID_TABS = ['questions', 'companies', 'users'] as const
+const VALID_TABS = ['questions', 'companies', 'users', 'settings'] as const
 type AdminTab = (typeof VALID_TABS)[number]
 
 function parseTab(value: string | null): AdminTab {
@@ -78,6 +79,7 @@ export default function AdminDashboard() {
             { id: 'questions' as const, label: 'Questions' },
             { id: 'companies' as const, label: 'Companies' },
             { id: 'users' as const, label: 'Users' },
+            { id: 'settings' as const, label: 'Settings' },
           ]).map(({ id, label }) => {
             const active = tab === id
             return (
@@ -106,6 +108,7 @@ export default function AdminDashboard() {
           {tab === 'questions' && <QuestionsAdminPanel />}
           {tab === 'companies' && <CompaniesAdminPanel />}
           {tab === 'users' && <UsersAdminPanel />}
+          {tab === 'settings' && <SettingsAdminPanel />}
         </div>
       </div>
     </div>
