@@ -1,6 +1,6 @@
 /**
  * Single Google API key for local dev when you do not split Gemini vs Cloud TTS.
- * Specific vars take precedence: NEXT_PUBLIC_GEMINI_API_KEY, NEXT_PUBLIC_GOOGLE_CLOUD_TTS_API_KEY.
+ * `readDefaultGeminiKeyFromEnv` and `readDefaultGoogleCloudTtsKeyFromEnv` both use this after their dedicated env vars.
  */
 export function readViteGoogleDevApiKeyFromEnv(): string {
   try {

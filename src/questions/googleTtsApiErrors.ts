@@ -6,7 +6,7 @@ export function friendlyGoogleTtsErrorMessage(status: number, responseBody: stri
   const trimmed = responseBody.trim()
   if (!trimmed) {
     return status === 403
-      ? 'Google Cloud TTS returned 403. Enable the Cloud Text-to-Speech API for the Google Cloud project attached to this API key, and ensure billing is enabled if required.'
+      ? 'Google Cloud TTS returned 403. Confirm the Cloud Text-to-Speech API and billing for this key’s project. If those are OK, Google often blocks browser calls due to key restrictions: Google Cloud → APIs & Services → Credentials → edit the key — allow Cloud Text-to-Speech under API restrictions (or “Don’t restrict key” for local testing only). If Application restrictions uses HTTP referrers, add each origin (e.g. http://localhost:5173/*, http://127.0.0.1:5173/*, http://localhost:3000/*, http://127.0.0.1:3000/*). https://cloud.google.com/api-keys/docs/add-restrictions-api-keys'
       : `Google Cloud TTS failed (HTTP ${status}).`
   }
 
@@ -30,7 +30,7 @@ export function friendlyGoogleTtsErrorMessage(status: number, responseBody: stri
         return (
           'Google blocked Text-to-Speech for this API key (restrictions). In Google Cloud → APIs & Services → Credentials → edit the key: ' +
           'allow Cloud Text-to-Speech under API restrictions (or “Don’t restrict key” for local testing only). ' +
-          'If Application restrictions uses HTTP referrers, add each origin you use (e.g. http://localhost:5173/* and http://127.0.0.1:5173/*). ' +
+          'If Application restrictions uses HTTP referrers, add each origin you use (e.g. http://localhost:5173/*, http://127.0.0.1:5173/*, http://localhost:3000/*, http://127.0.0.1:3000/*). ' +
           'https://cloud.google.com/api-keys/docs/add-restrictions-api-keys'
         )
       }

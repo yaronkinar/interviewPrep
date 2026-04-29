@@ -266,9 +266,9 @@ export const mockInterviewEn: MockInterviewStrings = {
   womanVoice: 'Woman voice',
   womanVoiceTitleOk: 'Pick a woman voice if your system exposes one (name-based guess)',
   womanVoiceTitleNo: 'No woman-labelled voice detected — choose from the list or install OS voices',
-  googleVoiceLabel: 'Google Neural2 voice',
+  googleVoiceLabel: 'Google Cloud voice',
   googleTtsKeyHint:
-    'Add a Google Cloud TTS key in AI settings, or a Gemini key if your Google Cloud project has Cloud Text-to-Speech enabled on that key. Keys sync to the session as you type.',
+    'Add a Google Cloud TTS key in AI settings, or a Gemini key if your Google Cloud project has Cloud Text-to-Speech enabled on that key. Keys sync to the session as you type. If Google blocks the key, edit it under APIs & Services → Credentials: allow Cloud Text-to-Speech (or don’t restrict for local-only testing), and add your HTTP referrers (e.g. http://localhost:5173/*). See https://cloud.google.com/api-keys/docs/add-restrictions-api-keys',
   premiumVoices: 'Premium voices',
   scanningVoices: 'Scanning voices available on your plan…',
   addElevenLabsHint: 'Add ElevenLabs key in API settings to enable premium audio.',
@@ -414,9 +414,9 @@ export const mockInterviewHe: MockInterviewStrings = {
   womanVoice: 'קול אישה',
   womanVoiceTitleOk: 'בחרו קול מסומן כאישה אם המערכת מציעה (הערכה לפי שם)',
   womanVoiceTitleNo: 'לא זוהה קול מסומן כאישה — בחרו מהרשימה או התקינו קולות במערכת',
-  googleVoiceLabel: 'קול Google Neural2',
+  googleVoiceLabel: 'קול Google Cloud',
   googleTtsKeyHint:
-    'הוסיפו מפתח Google Cloud TTS בהגדרות AI, או מפתח Gemini אם בפרויקט Google Cloud שלכם מופעל Text-to-Speech על אותו מפתח. המפתחות מסתנכרנים למפגש תוך כדי הקלדה.',
+    'הוסיפו מפתח Google Cloud TTS בהגדרות AI, או מפתח Gemini אם בפרויקט Google Cloud שלכם מופעל Text-to-Speech על אותו מפתח. המפתחות מסתנכרנים למפגש תוך כדי הקלדה. אם Google חוסמת את המפתח, ערכו אותו ב־APIs & Services → Credentials: אפשרו Cloud Text-to-Speech (או אל תגבילו את המפתח לבדיקות מקומיות בלבד), והוסיפו HTTP referrers (למשל http://localhost:5173/*). https://cloud.google.com/api-keys/docs/add-restrictions-api-keys',
   premiumVoices: 'קולות פרימיום',
   scanningVoices: 'סורקים קולות זמינים בתוכנית שלכם…',
   addElevenLabsHint: 'הוסיפו מפתח ElevenLabs בהגדרות API כדי להפעיל אודיו פרימיום.',

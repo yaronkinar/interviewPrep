@@ -420,11 +420,12 @@ export default function ApiKeySettings({
           <p className="q-ai-settings-note">
             Keys are used only from this browser to call the provider you select. They are not sent to our servers.
             Storing keys in the browser carries XSS risk if this tab runs untrusted scripts—prefer <strong>Session</strong>{' '}
-            when possible. Never commit keys to git. For local dev you can set{' '}
-            <code className="q-ai-code">VITE_ANTHROPIC_API_KEY</code>, <code className="q-ai-code">VITE_GEMINI_API_KEY</code>, or{' '}
-            <code className="q-ai-code">VITE_OPENAI_API_KEY</code>, or{' '}
-            <code className="q-ai-code">VITE_GOOGLE_CLOUD_TTS_API_KEY</code>, or{' '}
-            <code className="q-ai-code">VITE_GOOGLE_API_KEY</code> for one key that prefills both Gemini and TTS in dev (still exposed in the client bundle if you build with them).
+            when possible.             Never commit keys to git. For local dev you can set{' '}
+            <code className="q-ai-code">NEXT_PUBLIC_ANTHROPIC_API_KEY</code>, <code className="q-ai-code">NEXT_PUBLIC_GEMINI_API_KEY</code>,{' '}
+            <code className="q-ai-code">NEXT_PUBLIC_OPENAI_API_KEY</code>,{' '}
+            <code className="q-ai-code">NEXT_PUBLIC_GOOGLE_CLOUD_TTS_API_KEY</code>, or{' '}
+            <code className="q-ai-code">NEXT_PUBLIC_GOOGLE_API_KEY</code> to prefill both Gemini and Cloud TTS when those fields are empty (still exposed in the client bundle if you build with them).{' '}
+            The Gemini env value also prefills the Cloud TTS field when no dedicated TTS key is set.
           </p>
 
           <div className="q-ai-persist-row q-ai-provider-row">
@@ -541,12 +542,25 @@ export default function ApiKeySettings({
           <p className="q-ai-settings-note">
             <strong>Google Cloud TTS</strong> uses a Google Cloud API key with the{' '}
             <strong>Cloud Text-to-Speech API</strong> enabled (this is separate from the Gemini / AI Studio key unless you enable both on the same key).
-            Browser calls require the key’s <strong>API restrictions</strong> to allow Cloud Text-to-Speech, and{' '}
-            <strong>HTTP referrer</strong> restrictions (if any) to include your dev URL (e.g.{' '}
-            <code className="q-ai-code">http://localhost:5173/*</code>).
+            Calls from the browser run in your page’s origin—if Google responds with a restrictions error, open{' '}
+            <strong>Google Cloud → APIs &amp; Services → Credentials</strong>, edit the key, and under{' '}
+            <strong>API restrictions</strong> allow <strong>Cloud Text-to-Speech</strong> (or use{' '}
+            <strong>Don’t restrict key</strong> for local testing only). If <strong>Application restrictions</strong> uses{' '}
+            <strong>HTTP referrers</strong>, add each origin you use, e.g.{' '}
+            <code className="q-ai-code">http://localhost:5173/*</code>,{' '}
+            <code className="q-ai-code">http://127.0.0.1:5173/*</code>,{' '}
+            <code className="q-ai-code">http://localhost:3000/*</code>, and{' '}
+            <code className="q-ai-code">http://127.0.0.1:3000/*</code> (Next.js dev).{' '}
+            <a
+              href="https://cloud.google.com/api-keys/docs/add-restrictions-api-keys"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Google: API key restrictions
+            </a>
           </p>
           <label className="q-ai-label">
-            Google Cloud TTS API key (Neural2 voices in mock interview)
+            Google Cloud TTS API key (mock interview; Neural2 / WaveNet by language)
             <input
               type="password"
               className="q-ai-input"

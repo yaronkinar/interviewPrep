@@ -10,6 +10,11 @@ export function isBrowserSpeechSynthesisSupported(): boolean {
   return typeof window !== 'undefined' && 'speechSynthesis' in window
 }
 
+/** Google / ElevenLabs TTS plays MP3 via fetch + Audio; does not require the Web Speech API. */
+export function isCloudTtsPlaybackSupported(): boolean {
+  return typeof window !== 'undefined' && typeof fetch !== 'undefined' && typeof Audio !== 'undefined'
+}
+
 interface ChatLike {
   role: string
   content: string
@@ -381,7 +386,11 @@ export function useInterviewerSpeech(options: {
   ])
 
   return {
+    /** True when browser OS voices can be used for TTS. */
     supported: isBrowserSpeechSynthesisSupported(),
+    /** True when the mock interview can show TTS controls (browser voices and/or cloud MP3 playback). */
+    interviewerVoiceBarSupported:
+      isBrowserSpeechSynthesisSupported() || isCloudTtsPlaybackSupported(),
     elevenlabsEnabled: Boolean(elevenlabsApiKey?.trim()),
     googleCloudTtsEnabled: resolvedGoogleTtsApiKey.length > 0,
     speaking,

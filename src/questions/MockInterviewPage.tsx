@@ -67,7 +67,8 @@ import { DEFAULT_ELEVENLABS_VOICE_ID, ELEVENLABS_VOICES } from './elevenlabsVoic
 import { readDefaultGoogleCloudTtsKeyFromEnv } from './googleCloudTtsConstants'
 import {
   DEFAULT_GOOGLE_CLOUD_TTS_VOICE_NAME,
-  GOOGLE_CLOUD_TTS_VOICES,
+  defaultGoogleCloudTtsVoiceForLocale,
+  googleCloudTtsVoicesForSiteLocale,
 } from './googleCloudTtsVoices'
 import ScreenHeader from '../components/layout/ScreenHeader'
 import FilterRow from '../components/filters/FilterRow'
@@ -318,16 +319,19 @@ function MockInterviewSession({
   const [speakInterviewer, setSpeakInterviewer] = useState(() => style === 'interviewer')
   const [ttsVoices, setTtsVoices] = useState<SpeechSynthesisVoice[]>([])
   const [selectedVoiceURI, setSelectedVoiceURI] = useState<string>('')
-  const [voiceEngine, setVoiceEngine] = useState<'browser' | 'elevenlabs' | 'google'>('browser')
+  const [voiceEngine, setVoiceEngine] = useState<'browser' | 'elevenlabs' | 'google'>(() =>
+    googleCloudTtsApiKey.trim() || geminiApiKey.trim() ? 'google' : 'browser',
+  )
   const [elevenLabsVoiceId, setElevenLabsVoiceId] = useState<string>(DEFAULT_ELEVENLABS_VOICE_ID)
-  const [googleTtsVoiceName, setGoogleTtsVoiceName] = useState<string>(DEFAULT_GOOGLE_CLOUD_TTS_VOICE_NAME)
+  const googleTtsVoiceOptions = useMemo(() => googleCloudTtsVoicesForSiteLocale(locale), [locale])
+  const [googleTtsVoiceName, setGoogleTtsVoiceName] = useState(() => defaultGoogleCloudTtsVoiceForLocale(locale))
   const [speechRate, setSpeechRate] = useState(0.95)
   const [disableBrowserFallback, setDisableBrowserFallback] = useState(false)
   const [voiceAvailability, setVoiceAvailability] = useState<Record<string, VoiceAvailability>>({})
   const [scanningVoices, setScanningVoices] = useState(false)
   const {
     stop: stopInterviewerSpeech,
-    supported: interviewerTtsSupported,
+    interviewerVoiceBarSupported,
     elevenlabsEnabled,
     googleCloudTtsEnabled,
     speaking: interviewerSpeaking,
@@ -348,6 +352,13 @@ function MockInterviewSession({
     speechRate,
     disableBrowserFallback,
   })
+
+  useEffect(() => {
+    const allowed = new Set(googleTtsVoiceOptions.map((v) => v.name))
+    setGoogleTtsVoiceName((prev) =>
+      allowed.has(prev) ? prev : (googleTtsVoiceOptions[0]?.name ?? DEFAULT_GOOGLE_CLOUD_TTS_VOICE_NAME),
+    )
+  }, [googleTtsVoiceOptions])
 
   useEffect(() => {
     if (typeof window === 'undefined' || !('speechSynthesis' in window)) return
@@ -690,7 +701,7 @@ function MockInterviewSession({
       {!speech.supported && (
         <p className="mock-voice-unavailable">{mock.voiceToTextUnavailable}</p>
       )}
-      {(speech.supported || interviewerTtsSupported) && (
+      {(speech.supported || interviewerVoiceBarSupported) && (
         <div className="mock-voice-toolbar mis-voice-toolbar-inner">
           {speech.supported && (
             <>
@@ -718,7 +729,7 @@ function MockInterviewSession({
               )}
             </>
           )}
-          {interviewerTtsSupported && (
+          {interviewerVoiceBarSupported && (
             <>
               <div className="mock-voice-engine-row" role="radiogroup" aria-label={mock.voiceEngineLabel}>
                 <span className="mock-voice-select-label">{mock.voiceEngineLabel}</span>
@@ -835,7 +846,7 @@ function MockInterviewSession({
                     value={googleTtsVoiceName}
                     onChange={(e) => setGoogleTtsVoiceName(e.target.value)}
                   >
-                    {GOOGLE_CLOUD_TTS_VOICES.map((v) => (
+                    {googleTtsVoiceOptions.map((v) => (
                       <option key={v.name} value={v.name}>
                         {v.label}
                       </option>
