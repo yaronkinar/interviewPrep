@@ -3,32 +3,15 @@ import type { MessageParam } from '@anthropic-ai/sdk/resources/messages'
 import { useLocale } from '../i18n/LocaleContext'
 import type { Question } from './data'
 import type { LlmProvider } from './llmConstants'
+import { buildQuestionContext, buildReferenceAnswerBlock } from './questionPromptContext'
 import { formatApiError, streamLlmChat } from './llmStream'
 import ChatMarkdown from './ChatMarkdown'
 
 export type ChatMode = 'explain' | 'practice'
 
-function buildQuestionContext(q: Question): string {
-  const lines = [
-    `Question title: ${q.title}`,
-    `Category: ${q.category}`,
-    `Difficulty: ${q.difficulty}`,
-  ]
-  if (q.tags.length) lines.push(`Tags: ${q.tags.join(', ')}`)
-  if (q.companies.length) lines.push(`Companies (where this often comes up): ${q.companies.join(', ')}`)
-  lines.push('', 'Description:', q.description)
-  return lines.join('\n')
-}
-
 function buildSystemPrompt(q: Question, mode: ChatMode, includeRefAnswer: boolean): string {
   const base = buildQuestionContext(q)
-  const ref =
-    includeRefAnswer && q.answer.trim()
-      ? `
-
-Reference answer (context only—do not paste verbatim unless it helps the learner):
-${q.answer}`
-      : ''
+  const ref = includeRefAnswer ? buildReferenceAnswerBlock(q) : ''
 
   if (mode === 'explain') {
     return `You are a friendly technical interview coach for frontend and JavaScript interviews.

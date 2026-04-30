@@ -26,6 +26,10 @@ import {
 } from 'lucide-react'
 import type { Company } from '@/lib/models/Company'
 import { deterministicCompanyBadgeStyle } from '@/lib/companies/deterministicStyle'
+import {
+  normalizeCatalogSearchText,
+  tokenizeCatalogSearchQuery,
+} from '@/lib/questions/catalogSearchTokens'
 import { useQuestionCatalog } from './useQuestionCatalog'
 import { useCompaniesCatalog } from './useCompaniesCatalog'
 import { CodeBlock } from '../components/CodeBlock'
@@ -73,20 +77,20 @@ function writeBookmarkIds(ids: string[]) {
   localStorage.setItem(BOOKMARKS_KEY, JSON.stringify(ids))
 }
 
-/** Search query matches title, description, category, tags, and company names (all tokens must appear). */
+/** Same token rules as `/api/questions/search` (stop words + normalization) so finder → Open results page stays consistent. */
 function questionMatchesSearchQuery(question: Question, raw: string): boolean {
-  const q = raw.toLowerCase().trim()
-  if (!q) return true
-  const tokens = q.split(/\s+/).filter(Boolean)
-  const hay = [
-    question.title,
-    question.description,
-    question.category,
-    ...question.tags,
-    ...question.companies,
-  ]
-    .join(' ')
-    .toLowerCase()
+  const tokens = tokenizeCatalogSearchQuery(raw)
+  if (tokens.length === 0) return true
+  const hay = normalizeCatalogSearchText(
+    [
+      question.title,
+      question.description,
+      question.category,
+      question.difficulty,
+      ...question.tags,
+      ...question.companies,
+    ].join(' '),
+  )
   return tokens.every((t) => hay.includes(t))
 }
 
@@ -711,6 +715,16 @@ export default function QuestionsPage() {
     setCatalogSort('curated')
   }, [router])
 
+  const openCatalogQuestionFromChat = useCallback(
+    (id: string) => {
+      const next = new URLSearchParams(searchParams.toString())
+      next.set('question', id)
+      const qs = next.toString()
+      router.replace(qs ? `?${qs}` : '?', { scroll: false })
+    },
+    [router, searchParams],
+  )
+
   function mergeUploaded(questions: Question[]) {
     setCustomQuestions((prev) => {
       const next = [...prev, ...questions]
@@ -991,6 +1005,7 @@ export default function QuestionsPage() {
           apiKey={chatApiKey}
           model={chatModel}
           llmProvider={aiSettings.provider}
+          onOpenCatalogQuestion={openCatalogQuestionFromChat}
         />
       </section>
 

@@ -1,3 +1,7 @@
+import {
+  normalizeCatalogSearchText as normalizeForSearch,
+  tokenizeCatalogSearchQuery as tokenizeForSearch,
+} from '@/lib/questions/catalogSearchTokens'
 import { getDb } from '@/lib/mongodb'
 import type { QuestionDocument, QuestionInput } from '@/lib/models/Question'
 import { CATEGORIES, type Category, type Difficulty, type Question } from '@/questions/data'
@@ -7,28 +11,6 @@ const DIFFICULTIES = ['easy', 'medium', 'hard'] as const
 const ANSWER_TYPES = ['code', 'text', 'mixed'] as const
 const DEFAULT_SEARCH_LIMIT = 8
 const MAX_SEARCH_LIMIT = 20
-
-const SEARCH_STOP_WORDS = new Set([
-  'a',
-  'an',
-  'and',
-  'are',
-  'for',
-  'find',
-  'give',
-  'i',
-  'interview',
-  'me',
-  'of',
-  'on',
-  'please',
-  'question',
-  'questions',
-  'show',
-  'the',
-  'to',
-  'with',
-])
 
 const SEARCH_FIELD_WEIGHTS = {
   title: 12,
@@ -99,21 +81,6 @@ function slugify(value: string): string {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
-}
-
-function normalizeForSearch(value: string) {
-  return value
-    .toLowerCase()
-    .normalize('NFKD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9]+/g, ' ')
-    .trim()
-}
-
-function tokenizeForSearch(value: string) {
-  return normalizeForSearch(value)
-    .split(/\s+/)
-    .filter(token => token.length > 1 && !SEARCH_STOP_WORDS.has(token))
 }
 
 function clampSearchLimit(value: number | undefined) {
