@@ -48,7 +48,6 @@ type NavLinksProps = {
 function NavLinks({ className, linkClassName, onNavigate, isAdmin }: NavLinksProps) {
   const { strings } = useLocale()
   const pathname = usePathname()
-  const { isSignedIn } = useUser()
   return (
     <div className={className}>
       {PUBLIC_TAB_IDS.map(id => {
@@ -72,15 +71,13 @@ function NavLinks({ className, linkClassName, onNavigate, isAdmin }: NavLinksPro
           </Link>
         )
       })}
-      {isSignedIn && (
-        <Link
-          href="/saved"
-          className={linkClassName({ isActive: pathname === '/saved' })}
-          onClick={onNavigate}
-        >
-          {strings.navSaved}
-        </Link>
-      )}
+      <Link
+        href="/saved"
+        className={linkClassName({ isActive: pathname === '/saved' })}
+        onClick={onNavigate}
+      >
+        {strings.navSaved}
+      </Link>
       {isAdmin && (
         <Link
           href="/admin"

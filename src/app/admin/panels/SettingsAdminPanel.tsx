@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-import { useAuth } from '@clerk/nextjs'
+import { SignInButton, useAuth } from '@clerk/nextjs'
 
 type AppSettingsResponse = {
   jsSandboxUseSandpack?: boolean
@@ -109,7 +109,16 @@ export function SettingsAdminPanel() {
   if (!isLoaded) return null
 
   if (!isSignedIn) {
-    return <p style={{ color: 'var(--text-muted)' }}>Sign in to manage settings.</p>
+    return (
+      <p style={{ color: 'var(--text-muted)' }}>
+        Sign in to manage settings.{' '}
+        <SignInButton mode="modal">
+          <button type="button" className="home-card-link" style={{ marginLeft: '0.35rem' }}>
+            Sign in →
+          </button>
+        </SignInButton>
+      </p>
+    )
   }
 
   return (

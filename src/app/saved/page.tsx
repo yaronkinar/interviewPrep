@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo } from 'react'
-import { useAuth } from '@clerk/nextjs'
+import { SignInButton, useAuth } from '@clerk/nextjs'
 import { Bookmark } from 'lucide-react'
 import Link from 'next/link'
 import { useSavedQuestions } from '@/hooks/useSavedQuestions'
@@ -25,9 +25,11 @@ export default function SavedPage() {
           <p style={{ color: 'var(--text-muted)', marginBottom: '1.5rem' }}>
             Your bookmarked questions will appear here after you sign in.
           </p>
-          <Link href="/sign-in" className="home-card-link">
-            Sign in →
-          </Link>
+          <SignInButton mode="modal">
+            <button type="button" className="home-card-link">
+              Sign in →
+            </button>
+          </SignInButton>
         </div>
       </div>
     )

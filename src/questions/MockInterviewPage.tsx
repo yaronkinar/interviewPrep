@@ -22,6 +22,7 @@ import { DEFAULT_ANTHROPIC_MODEL } from './anthropicConstants'
 import { DEFAULT_GEMINI_MODEL, readDefaultGeminiKeyFromEnv } from './geminiConstants'
 import { DEFAULT_OPENAI_MODEL } from './openaiConstants'
 import { useCodingAnswer } from '../hooks/useCodingAnswer'
+import { useRequireSignIn } from '../hooks/useRequireSignIn'
 import type { LlmProvider } from './llmConstants'
 import { formatApiError, streamLlmChat } from './llmStream'
 import {
@@ -273,6 +274,8 @@ function MockInterviewSession({
     question.id,
     question.category,
   )
+  const { requireSignIn, isSignedIn } = useRequireSignIn()
+  const codeSignInPromptedRef = useRef(false)
   const [codeDraft, setCodeDraft] = useState(() =>
     mockStyleUsesCodeEditor(style) ? buildMockCodeEditorStarter(question) : '',
   )
@@ -292,6 +295,25 @@ function MockInterviewSession({
   }, [])
 
   const codeEditorSurfaceHeight = codeEditorExpanded ? 'min(74vh, 960px)' : 'min(48vh, 500px)'
+
+  useEffect(() => {
+    if (isSignedIn) codeSignInPromptedRef.current = false
+  }, [isSignedIn])
+
+  const handleCodeEditorChange = useCallback(
+    (v: string) => {
+      setCodeDraft(v)
+      if (!isSignedIn) {
+        if (!codeSignInPromptedRef.current) {
+          codeSignInPromptedRef.current = true
+          requireSignIn()
+        }
+        return
+      }
+      onCodingAnswerChange(v)
+    },
+    [isSignedIn, requireSignIn, onCodingAnswerChange],
+  )
 
   useEffect(() => {
     if (initialCode !== null && mockStyleUsesCodeEditor(style)) {
@@ -1236,20 +1258,14 @@ function MockInterviewSession({
                     <MockInterviewSandpackEditor
                       question={question}
                       codeDraft={codeDraft}
-                      onCodeChange={(v) => {
-                        setCodeDraft(v)
-                        onCodingAnswerChange(v)
-                      }}
+                      onCodeChange={handleCodeEditorChange}
                       height={codeEditorSurfaceHeight}
                     />
                   ) : (
                     <VsCodeStyleEditor
                       question={question}
                       value={codeDraft}
-                      onChange={(v) => {
-                        setCodeDraft(v)
-                        onCodingAnswerChange(v)
-                      }}
+                      onChange={handleCodeEditorChange}
                       height={codeEditorSurfaceHeight}
                       windowTitle={
                         style === 'code_review'

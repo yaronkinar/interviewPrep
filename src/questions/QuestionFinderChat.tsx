@@ -1,6 +1,7 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
+import { useClerk } from '@clerk/nextjs'
 import { MessageCircle, Search, X } from 'lucide-react'
 import { useLocale } from '@/i18n/LocaleContext'
 import { isRtlLocale, type Locale } from '@/i18n/locale'
@@ -575,6 +576,13 @@ export default function QuestionFinderChat({
   const [webSearching, setWebSearching] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  const { openSignIn } = useClerk()
+  const promptSignInModal = useCallback(() => {
+    openSignIn({
+      fallbackRedirectUrl: typeof window !== 'undefined' ? window.location.href : '/',
+    })
+  }, [openSignIn])
+
   const busy = loading || suggesting || webSearching
   const canSearch = input.trim().length > 0 && !busy
   const nextMessageId = useMemo(
@@ -653,6 +661,9 @@ export default function QuestionFinderChat({
       const data = (await response.json().catch(() => null)) as { questions?: Question[]; error?: string } | null
 
       if (!response.ok) {
+        if (response.status === 401 || response.status === 403) {
+          promptSignInModal()
+        }
         const fallback = response.status === 401 || response.status === 403
           ? addCopy.unauthorized
           : addCopy.suggestFallbackError
@@ -710,6 +721,9 @@ export default function QuestionFinderChat({
       } | null
 
       if (!response.ok) {
+        if (response.status === 401 || response.status === 403) {
+          promptSignInModal()
+        }
         const fallback = response.status === 401 || response.status === 403
           ? addCopy.unauthorized
           : addCopy.suggestFallbackError
@@ -762,6 +776,9 @@ export default function QuestionFinderChat({
       const data = (await response.json().catch(() => null)) as { question?: Question; error?: string } | null
 
       if (!response.ok) {
+        if (response.status === 401 || response.status === 403) {
+          promptSignInModal()
+        }
         const fallback = response.status === 401 || response.status === 403
           ? addCopy.unauthorized
           : addCopy.addFallbackError

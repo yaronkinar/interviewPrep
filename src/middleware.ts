@@ -1,18 +1,10 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
 
-const isProtectedRoute = createRouteMatcher([
-  '/questions(.*)',
-  '/mock(.*)',
-  '/quest(.*)',
-  '/cv(.*)',
-  '/sandbox(.*)',
-  '/saved(.*)',
-  '/admin(.*)',
-  '/api/admin(.*)',
-])
+/** Admin UI only — APIs enforce auth in route handlers; browsing is otherwise anonymous. */
+const isAdminUiRoute = createRouteMatcher(['/admin(.*)'])
 
 export default clerkMiddleware(async (auth, req) => {
-  if (isProtectedRoute(req)) {
+  if (isAdminUiRoute(req)) {
     await auth.protect()
   }
 })

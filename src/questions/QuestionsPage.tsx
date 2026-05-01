@@ -47,6 +47,7 @@ import {
 import { DEFAULT_ANTHROPIC_MODEL } from './anthropicConstants'
 import { DEFAULT_GEMINI_MODEL, readDefaultGeminiKeyFromEnv } from './geminiConstants'
 import { DEFAULT_OPENAI_MODEL } from './openaiConstants'
+import { useRequireSignIn } from '../hooks/useRequireSignIn'
 import { useSavedQuestions } from '../hooks/useSavedQuestions'
 import { useProgress } from '../hooks/useProgress'
 import FilterSearchBar from '../components/filters/FilterSearchBar'
@@ -609,6 +610,7 @@ export default function QuestionsPage() {
   const router = useRouter()
   const search = searchParams.get('q') ?? ''
   const questionId = searchParams.get('question') ?? ''
+  const { requireSignIn } = useRequireSignIn()
   const { isSaved, toggleSaved } = useSavedQuestions()
   const { markCompleted } = useProgress('questions')
   const {
@@ -698,13 +700,14 @@ export default function QuestionsPage() {
 
   const onToggleQuestionSaved = useCallback(
     (questionId: string, section: string) => {
+      if (!requireSignIn()) return
       const willSave = !isSaved(questionId)
       toggleSaved(questionId, section)
       if (willSave) {
         void markCompleted(questionId)
       }
     },
-    [isSaved, toggleSaved, markCompleted],
+    [requireSignIn, isSaved, toggleSaved, markCompleted],
   )
 
   const clearFilters = useCallback(() => {
