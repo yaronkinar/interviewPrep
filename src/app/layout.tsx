@@ -21,12 +21,21 @@ export const metadata: Metadata = {
     description:
       'Practice JavaScript patterns, React interview questions, company Q&A, and mock interviews with Claude — interview prep in the browser.',
     url: siteUrl,
+    images: [
+      {
+        url: '/og-interview-prep-home.webp',
+        width: 1200,
+        height: 630,
+        alt: 'Interview Prep — browser-based interview practice',
+      },
+    ],
   },
   twitter: {
-    card: 'summary',
+    card: 'summary_large_image',
     title: 'Interview Prep',
     description:
       'Practice JavaScript patterns, React interview questions, company Q&A, and mock interviews with Claude — interview prep in the browser.',
+    images: ['/og-interview-prep-home.webp'],
   },
   icons: { icon: '/favicon.svg' },
 }

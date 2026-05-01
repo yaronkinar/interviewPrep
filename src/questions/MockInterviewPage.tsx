@@ -59,6 +59,8 @@ import { buildMockCodeEditorStarter } from './mockCodeStarter'
 import { useSpeechDictation } from './useSpeechDictation'
 import { useInterviewerSpeech } from './useInterviewerSpeech'
 import {
+  avatarUrlForVoiceSeed,
+  inferBrowserVoiceGender,
   isLikelyFemaleVoice,
   labelVoiceOption,
   pickBestInterviewVoice,
@@ -239,6 +241,12 @@ interface ChatMessage {
 
 type VoiceAvailability = 'unknown' | 'checking' | 'ok' | 'blocked'
 
+type MockInterviewerPreview = {
+  displayName: string
+  avatarUrl: string
+  subtitle: string
+}
+
 interface MockInterviewSessionProps {
   question: Question
   style: MockTrainingStyle
@@ -251,6 +259,7 @@ interface MockInterviewSessionProps {
   geminiApiKey: string
   ui: UiStrings
   mockInterviewUseSandpack: boolean
+  onInterviewerPreviewChange?: (preview: MockInterviewerPreview) => void
 }
 
 function MockInterviewSession({
@@ -265,6 +274,7 @@ function MockInterviewSession({
   geminiApiKey,
   ui,
   mockInterviewUseSandpack,
+  onInterviewerPreviewChange,
 }: MockInterviewSessionProps) {
   const { locale } = useLocale()
   const mock = ui.mockInterview
@@ -415,6 +425,73 @@ function MockInterviewSession({
     () => ELEVENLABS_VOICES.find((v) => v.id === elevenLabsVoiceId) ?? ELEVENLABS_VOICES[0],
     [elevenLabsVoiceId],
   )
+
+  const sessionInterviewerProfile = useMemo((): MockInterviewerPreview => {
+    if (voiceEngine === 'elevenlabs') {
+      const v = selectedElevenLabsVoice
+      return {
+        displayName: v.name,
+        subtitle: `${v.accent} · ${v.vibe}`,
+        avatarUrl: avatarUrlForVoiceSeed(`el:${v.id}`, v.avatarGender),
+      }
+    }
+    if (voiceEngine === 'google') {
+      const prof = googleTtsVoiceOptions.find((x) => x.name === googleTtsVoiceName)
+      if (prof) {
+        return {
+          displayName: prof.persona,
+          subtitle: prof.label,
+          avatarUrl: avatarUrlForVoiceSeed(prof.persona, prof.avatarGender),
+        }
+      }
+    }
+    if (voiceEngine === 'browser') {
+      const v = ttsVoices.find((x) => x.voiceURI === selectedVoiceURI)
+      if (v) {
+        const shortName = v.name.split(/[,(]/)[0].trim()
+        return {
+          displayName: shortName,
+          subtitle: `${v.lang} · ${mock.engineBrowser}`,
+          avatarUrl: avatarUrlForVoiceSeed(v.voiceURI, inferBrowserVoiceGender(v)),
+        }
+      }
+    }
+    return {
+      displayName: mock.interviewerName,
+      subtitle: mock.interviewerRole,
+      avatarUrl: avatarUrlForVoiceSeed(mock.interviewerName, 'unknown'),
+    }
+  }, [
+    voiceEngine,
+    selectedElevenLabsVoice,
+    googleTtsVoiceName,
+    googleTtsVoiceOptions,
+    selectedVoiceURI,
+    ttsVoices,
+    mock.interviewerName,
+    mock.interviewerRole,
+    mock.engineBrowser,
+  ])
+
+  useEffect(() => {
+    onInterviewerPreviewChange?.(sessionInterviewerProfile)
+  }, [sessionInterviewerProfile, onInterviewerPreviewChange])
+
+  const browserVoicesForGrid = useMemo(() => {
+    if (ttsVoices.length === 0) return []
+    if (typeof navigator === 'undefined') return ttsVoices.slice(0, 24)
+    const lang = navigator.language.toLowerCase()
+    const short = lang.split('-')[0] ?? 'en'
+    const preferred = ttsVoices.filter(
+      (v) =>
+        v.lang.toLowerCase().startsWith(lang) ||
+        v.lang.toLowerCase().startsWith(short) ||
+        v.lang.toLowerCase().startsWith(`${short}-`),
+    )
+    const list = preferred.length > 0 ? preferred : ttsVoices
+    return list.slice(0, 24)
+  }, [ttsVoices])
+
   const availableVoices = useMemo(
     () => ELEVENLABS_VOICES.filter((v) => voiceAvailability[v.id] === 'ok'),
     [voiceAvailability],
@@ -833,51 +910,90 @@ function MockInterviewSession({
                 {mock.speakClaudeReplies}
               </label>
               {speakInterviewer && voiceEngine === 'browser' && ttsVoices.length > 0 && (
-                <label className="mock-voice-select-wrap">
-                  <span className="mock-voice-select-label">{mock.voicePickerLabel}</span>
-                  <select
-                    className="mock-voice-select"
-                    value={selectedVoiceURI}
-                    onChange={(e) => setSelectedVoiceURI(e.target.value)}
-                  >
-                    {ttsVoices.map((v) => (
-                      <option key={v.voiceURI} value={v.voiceURI}>
-                        {labelVoiceOption(v, isLikelyFemaleVoice(v))}
-                      </option>
+                <div className="mock-voice-elevenlabs-picker">
+                  <div className="mock-voice-elevenlabs-head mock-voice-elevenlabs-head--browser">
+                    <span className="mock-voice-select-label">{mock.voicePickerLabel}</span>
+                    <button
+                      type="button"
+                      className="secondary mock-voice-woman-btn"
+                      disabled={!womanVoiceAvailable}
+                      title={womanVoiceAvailable ? mock.womanVoiceTitleOk : mock.womanVoiceTitleNo}
+                      onClick={() => {
+                        const v = pickFemaleVoice(ttsVoices, navigator.language)
+                        if (v) setSelectedVoiceURI(v.voiceURI)
+                      }}
+                    >
+                      {mock.womanVoice}
+                    </button>
+                  </div>
+                  <div className="mock-voice-avatar-grid">
+                    {browserVoicesForGrid.map((v) => (
+                      <button
+                        key={v.voiceURI}
+                        type="button"
+                        className={`mock-voice-avatar-card${
+                          selectedVoiceURI === v.voiceURI ? ' mock-voice-avatar-card--active' : ''
+                        }`}
+                        onClick={() => setSelectedVoiceURI(v.voiceURI)}
+                        title={labelVoiceOption(v, isLikelyFemaleVoice(v))}
+                      >
+                        <img
+                          src={avatarUrlForVoiceSeed(v.voiceURI, inferBrowserVoiceGender(v))}
+                          alt={fillMockTemplate(mock.voiceAvatarAlt, {
+                            name: v.name.split(/[,(]/)[0].trim(),
+                          })}
+                        />
+                        <span className="mock-voice-avatar-name">{v.name.split(/[,(]/)[0].trim()}</span>
+                        <span className="mock-voice-avatar-meta">{v.lang}</span>
+                      </button>
                     ))}
-                  </select>
-                  <button
-                    type="button"
-                    className="secondary mock-voice-woman-btn"
-                    disabled={!womanVoiceAvailable}
-                    title={womanVoiceAvailable ? mock.womanVoiceTitleOk : mock.womanVoiceTitleNo}
-                    onClick={() => {
-                      const v = pickFemaleVoice(ttsVoices, navigator.language)
-                      if (v) setSelectedVoiceURI(v.voiceURI)
-                    }}
-                  >
-                    {mock.womanVoice}
-                  </button>
-                </label>
+                  </div>
+                  {ttsVoices.some((v) => !browserVoicesForGrid.some((g) => g.voiceURI === v.voiceURI)) && (
+                    <label className="mock-voice-select-wrap">
+                      <span className="mock-voice-select-label">{mock.voicePickerLabel}</span>
+                      <select
+                        className="mock-voice-select"
+                        value={selectedVoiceURI}
+                        onChange={(e) => setSelectedVoiceURI(e.target.value)}
+                      >
+                        {ttsVoices.map((v) => (
+                          <option key={v.voiceURI} value={v.voiceURI}>
+                            {labelVoiceOption(v, isLikelyFemaleVoice(v))}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  )}
+                </div>
               )}
               {speakInterviewer && voiceEngine === 'google' && (
-                <label className="mock-voice-select-wrap">
-                  <span className="mock-voice-select-label">{mock.googleVoiceLabel}</span>
-                  <select
-                    className="mock-voice-select"
-                    value={googleTtsVoiceName}
-                    onChange={(e) => setGoogleTtsVoiceName(e.target.value)}
-                  >
+                <div className="mock-voice-elevenlabs-picker">
+                  <div className="mock-voice-elevenlabs-head">
+                    <span className="mock-voice-select-label">{mock.googleVoiceLabel}</span>
+                    {!googleCloudTtsEnabled && (
+                      <span className="mock-voice-elevenlabs-fallback">{mock.googleTtsKeyHint}</span>
+                    )}
+                  </div>
+                  <div className="mock-voice-avatar-grid">
                     {googleTtsVoiceOptions.map((v) => (
-                      <option key={v.name} value={v.name}>
-                        {v.label}
-                      </option>
+                      <button
+                        key={v.name}
+                        type="button"
+                        className={`mock-voice-avatar-card${
+                          googleTtsVoiceName === v.name ? ' mock-voice-avatar-card--active' : ''
+                        }`}
+                        onClick={() => setGoogleTtsVoiceName(v.name)}
+                      >
+                        <img
+                          src={avatarUrlForVoiceSeed(v.persona, v.avatarGender)}
+                          alt={fillMockTemplate(mock.voiceAvatarAlt, { name: v.persona })}
+                        />
+                        <span className="mock-voice-avatar-name">{v.persona}</span>
+                        <span className="mock-voice-avatar-meta">{v.label}</span>
+                      </button>
                     ))}
-                  </select>
-                  {!googleCloudTtsEnabled && (
-                    <span className="mock-voice-elevenlabs-fallback">{mock.googleTtsKeyHint}</span>
-                  )}
-                </label>
+                  </div>
+                </div>
               )}
               {speakInterviewer && voiceEngine === 'elevenlabs' && (
                 <div className="mock-voice-elevenlabs-picker">
@@ -906,7 +1022,7 @@ function MockInterviewSession({
                         title={voice.requiresPaidPlan ? mock.paidPlanVoiceTitle : undefined}
                       >
                         <img
-                          src={voice.avatarPath}
+                          src={avatarUrlForVoiceSeed(`el:${voice.id}`, voice.avatarGender)}
                           alt={fillMockTemplate(mock.voiceAvatarAlt, { name: voice.name })}
                         />
                         <span className="mock-voice-avatar-name">{voice.name}</span>
@@ -1064,8 +1180,23 @@ function MockInterviewSession({
             </div>
           </section>
 
-          <section className="mis-card">
+          <section className="mis-card mis-interviewer-card">
             <h2 className="mis-card-title">{mock.voiceAiTitle}</h2>
+            <div className="mis-interviewer-hero">
+              <img
+                className="mis-interviewer-photo"
+                src={sessionInterviewerProfile.avatarUrl}
+                alt={fillMockTemplate(mock.voiceAvatarAlt, {
+                  name: sessionInterviewerProfile.displayName,
+                })}
+                width={72}
+                height={72}
+              />
+              <div className="mis-interviewer-hero-text">
+                <div className="mis-interviewer-hero-name">{sessionInterviewerProfile.displayName}</div>
+                <div className="mis-interviewer-hero-sub">{sessionInterviewerProfile.subtitle}</div>
+              </div>
+            </div>
             <div className="mis-status-rows">
               <div className="mis-status-row">
                 <div className="mis-status-left">
@@ -1096,12 +1227,8 @@ function MockInterviewSession({
             >
               <span className="mis-audio-orb-inner" />
             </div>
-          </section>
-
-          <details className="mis-voice-details">
-            <summary>{mock.voiceDetailsSummary}</summary>
             {voiceAdvanced}
-          </details>
+          </section>
         </div>
 
         <div className="mis-col mis-col--right">
@@ -1328,6 +1455,8 @@ export default function MockInterviewPage() {
   const ui = useMemo(() => getUiStrings(locale), [locale])
   const mi = ui.mockInterview
 
+  const [liveInterviewerPreview, setLiveInterviewerPreview] = useState<MockInterviewerPreview | null>(null)
+
   const [search, setSearch] = useState('')
   const [company, setCompany] = useState<string | null>(null)
   const [difficulty, setDifficulty] = useState<Difficulty | null>(null)
@@ -1434,6 +1563,19 @@ export default function MockInterviewPage() {
     return sortedFiltered[0]
   }, [sortedFiltered, selectedId])
 
+  useEffect(() => {
+    setLiveInterviewerPreview(null)
+  }, [selectedQuestion?.id, style])
+
+  const overviewInterviewer = useMemo(
+    () => ({
+      name: liveInterviewerPreview?.displayName ?? mi.interviewerName,
+      subtitle: liveInterviewerPreview?.subtitle ?? mi.interviewerRole,
+      avatarUrl: liveInterviewerPreview?.avatarUrl ?? avatarUrlForVoiceSeed(mi.interviewerName, 'unknown'),
+    }),
+    [liveInterviewerPreview, mi.interviewerName, mi.interviewerRole],
+  )
+
   const selectedGuide = useMemo(
     () => (selectedQuestion ? buildSolveGuide(selectedQuestion) : null),
     [selectedQuestion],
@@ -1505,12 +1647,16 @@ export default function MockInterviewPage() {
             <article className="mockv2-overview-card">
               <div className="mockv2-overview-label">{mi.overviewInterviewerLabel}</div>
               <div className="mockv2-interviewer-row">
-                <div className="mockv2-avatar" aria-hidden>
-                  SJ
-                </div>
+                <img
+                  className="mockv2-avatar mockv2-avatar--img"
+                  src={overviewInterviewer.avatarUrl}
+                  alt=""
+                  width={46}
+                  height={46}
+                />
                 <div>
-                  <div className="mockv2-interviewer-name">{mi.interviewerName}</div>
-                  <div className="mockv2-interviewer-role">{mi.interviewerRole}</div>
+                  <div className="mockv2-interviewer-name">{overviewInterviewer.name}</div>
+                  <div className="mockv2-interviewer-role">{overviewInterviewer.subtitle}</div>
                 </div>
               </div>
               <div className="mockv2-listening-strip">
@@ -1720,6 +1866,7 @@ export default function MockInterviewPage() {
                 geminiApiKey={aiSettings.geminiApiKey}
                 ui={ui}
                 mockInterviewUseSandpack={mockInterviewUseSandpack}
+                onInterviewerPreviewChange={setLiveInterviewerPreview}
               />
             )}
           </section>

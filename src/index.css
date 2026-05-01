@@ -558,9 +558,33 @@ button.nav-mobile-drawer-close:hover {
 .home-hero {
   margin-bottom: 2.75rem;
 }
-.home-hero-stack {
+.home-hero-layout {
+  display: grid;
+  gap: 1.75rem;
+  align-items: start;
   margin: 0 auto;
   max-width: 1200px;
+}
+@media (min-width: 900px) {
+  .home-hero-layout {
+    align-items: center;
+    grid-template-columns: 1fr minmax(0, min(44vw, 480px));
+  }
+}
+.home-hero-art {
+  margin: 0;
+  min-width: 0;
+}
+.home-hero-og-image {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  box-shadow: 0 12px 40px color-mix(in srgb, var(--text) 10%, transparent);
+}
+.home-hero-stack {
+  min-width: 0;
 }
 .home-progress-panel {
   margin-top: 1.35rem;
@@ -633,6 +657,17 @@ button.nav-mobile-drawer-close:hover {
   margin: 0;
   padding: 0;
 }
+.home-card-media {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  margin: -1.5rem -1.5rem 0.85rem;
+  width: calc(100% + 3rem);
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in srgb, var(--border) 12%, var(--surface-deep) 88%);
+}
+.home-card-media-img {
+  object-fit: cover;
+}
 .home-card {
   height: 100%;
 }
@@ -640,6 +675,7 @@ button.nav-mobile-drawer-close:hover {
   border-radius: 0.75rem;
   box-shadow: 0 1px 3px rgba(23, 28, 31, 0.06);
   transition: box-shadow 0.2s ease, transform 0.2s ease;
+  overflow: hidden;
 }
 .home-page .home-card.card:hover {
   box-shadow: 0 14px 32px rgba(23, 28, 31, 0.09);
@@ -5415,6 +5451,9 @@ input:focus { border-color: var(--accent); }
   justify-content: space-between;
   margin-bottom: 0.45rem;
 }
+.mock-voice-elevenlabs-head--browser .mock-voice-woman-btn {
+  flex-shrink: 0;
+}
 .mock-voice-elevenlabs-fallback {
   color: var(--text-faint);
   font-size: 0.7rem;
@@ -5775,6 +5814,12 @@ button.mockv2-start-btn:hover {
   justify-content: center;
   width: 46px;
 }
+.mockv2-avatar--img {
+  flex-shrink: 0;
+  object-fit: cover;
+  overflow: hidden;
+  padding: 0;
+}
 .mockv2-interviewer-name {
   color: #eaf0ff;
   font-size: 0.94rem;
@@ -6027,6 +6072,9 @@ button.mockv2-start-btn:hover {
   border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
   color: var(--accent);
 }
+[data-theme='light'] .mockv2-avatar--img {
+  background: transparent;
+}
 [data-theme='light'] .mockv2-live-pill {
   background: var(--surface-deep);
   border-color: var(--border);
@@ -6247,6 +6295,34 @@ button.mockv2-start-btn:hover {
   font-weight: 800;
   letter-spacing: -0.02em;
   margin-bottom: 1.25rem;
+}
+.mis-interviewer-card .mock-voice-toolbar {
+  margin-top: 0.5rem;
+}
+.mis-interviewer-hero {
+  align-items: center;
+  display: flex;
+  gap: 0.85rem;
+  margin-bottom: 1rem;
+  margin-top: -0.35rem;
+}
+.mis-interviewer-photo {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  flex-shrink: 0;
+  object-fit: cover;
+}
+.mis-interviewer-hero-name {
+  color: var(--text);
+  font-size: 1rem;
+  font-weight: 650;
+  line-height: 1.25;
+}
+.mis-interviewer-hero-sub {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  line-height: 1.35;
+  margin-top: 0.2rem;
 }
 .mis-setup-rows {
   display: flex;

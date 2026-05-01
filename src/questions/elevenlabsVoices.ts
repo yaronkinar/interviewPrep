@@ -3,53 +3,54 @@ export interface ElevenLabsVoiceProfile {
   name: string
   accent: string
   vibe: string
-  avatarPath: string
+  /** Persona presentation for portrait art (matches name). */
+  avatarGender: 'male' | 'female'
   requiresPaidPlan?: boolean
 }
 
 export const ELEVENLABS_VOICES: ElevenLabsVoiceProfile[] = [
   {
     id: 'gJx1vCzNCD1EQHT212Ls',
-    name: 'Ava',
+    name: 'Elena Voss',
     accent: 'Custom',
     vibe: 'Imported from ElevenLabs library',
-    avatarPath: 'https://api.dicebear.com/9.x/notionists/svg?seed=Ava',
+    avatarGender: 'female',
     requiresPaidPlan: true,
   },
   {
     id: '21m00Tcm4TlvDq8ikWAM',
-    name: 'Rachel',
+    name: 'Rachel Park',
     accent: 'US',
     vibe: 'Warm and clear',
-    avatarPath: 'https://api.dicebear.com/9.x/notionists/svg?seed=Rachel',
+    avatarGender: 'female',
   },
   {
     id: 'AZnzlk1XvdvUeBnXmlld',
-    name: 'Domi',
+    name: 'Jordan Hayes',
     accent: 'US',
     vibe: 'Confident and energetic',
-    avatarPath: 'https://api.dicebear.com/9.x/notionists/svg?seed=Domi',
+    avatarGender: 'male',
   },
   {
     id: 'EXAVITQu4vr4xnSDxMaL',
-    name: 'Bella',
+    name: 'Priya Nair',
     accent: 'US',
     vibe: 'Friendly and calm',
-    avatarPath: 'https://api.dicebear.com/9.x/notionists/svg?seed=Bella',
+    avatarGender: 'female',
   },
   {
     id: 'ErXwobaYiN019PkySvjV',
-    name: 'Antoni',
+    name: 'Marcus Webb',
     accent: 'US',
     vibe: 'Balanced and professional',
-    avatarPath: 'https://api.dicebear.com/9.x/notionists/svg?seed=Antoni',
+    avatarGender: 'male',
   },
   {
     id: 'VR6AewLTigWG4xSOukaG',
-    name: 'Arnold',
+    name: 'Victor Kane',
     accent: 'US',
     vibe: 'Deep and steady',
-    avatarPath: 'https://api.dicebear.com/9.x/notionists/svg?seed=Arnold',
+    avatarGender: 'male',
   },
 ]
 

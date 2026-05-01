@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import Image from 'next/image'
 import { useAuth } from '@clerk/nextjs'
 import { useLocale } from './i18n/LocaleContext'
 import { isRtlLocale } from './i18n/locale'
@@ -6,10 +7,20 @@ import { PATH_FOR_PAGE } from './routes'
 import ScreenHeader from './components/layout/ScreenHeader'
 import HomeModuleCard from './components/home/HomeModuleCard'
 import { useProgress } from './hooks/useProgress'
-import { HOME_PROGRESS_TRACKS } from './lib/progress/pathToProgressSection'
+import { HOME_PROGRESS_TRACKS, type HomeProgressTrack } from './lib/progress/pathToProgressSection'
 import { buildHomeModuleProgressLine } from './lib/progress/buildHomeModuleProgressLine'
 import type { UserProgress } from './lib/models/UserProgress'
 import { countActiveHomeSections, qaBookmarkProgressCount } from './lib/progress/homeProgressSummary'
+
+/** Card header art in `public/` — locales share visuals. */
+const HOME_MODULE_ART: Record<HomeProgressTrack, string> = {
+  js: '/home-section-js.webp',
+  react: '/home-section-react.webp',
+  sandbox: '/home-section-sandbox.webp',
+  mock: '/home-section-mock.webp',
+  questions: '/home-section-questions.webp',
+  cv: '/home-section-cv.webp',
+}
 
 export default function HomePage() {
   const { locale, strings } = useLocale()
@@ -38,7 +49,14 @@ export default function HomePage() {
       .replace('{bookmarks}', String(bookmarks))
   }, [bySection, h.progressSummaryCounts])
 
-  const modules = [
+  const modules: {
+    key: HomeProgressTrack
+    section: HomeProgressTrack
+    to: string
+    title: string
+    body: string
+    cta: string
+  }[] = [
     {
       key: 'js',
       section: 'js',
@@ -94,24 +112,38 @@ export default function HomePage() {
   return (
     <div className="home-page editorial-page" dir={contentDir}>
       <div className="home-hero">
-        <div className="home-hero-stack">
-          <ScreenHeader title={h.heroTitle} lead={h.heroLead} kicker={h.heroKicker} align="start" />
+        <div className="home-hero-layout">
+          <div className="home-hero-stack">
+            <ScreenHeader title={h.heroTitle} lead={h.heroLead} kicker={h.heroKicker} align="start" />
 
-          {authLoaded && isSignedIn ? (
-            <div className="home-progress-panel">
-              {progressLoading ? (
-                <p className="home-progress-loading">{h.progressLoading}</p>
-              ) : (
-                <>
-                  <h2 className="home-progress-summary-heading">{h.progressSummaryHeading}</h2>
-                  <p className="home-progress-summary-counts" aria-live="polite">
-                    {progressSummaryLine}
-                  </p>
-                  <p className="home-progress-invite">{h.progressInvite}</p>
-                </>
-              )}
-            </div>
-          ) : null}
+            {authLoaded && isSignedIn ? (
+              <div className="home-progress-panel">
+                {progressLoading ? (
+                  <p className="home-progress-loading">{h.progressLoading}</p>
+                ) : (
+                  <>
+                    <h2 className="home-progress-summary-heading">{h.progressSummaryHeading}</h2>
+                    <p className="home-progress-summary-counts" aria-live="polite">
+                      {progressSummaryLine}
+                    </p>
+                    <p className="home-progress-invite">{h.progressInvite}</p>
+                  </>
+                )}
+              </div>
+            ) : null}
+          </div>
+
+          <figure className="home-hero-art" aria-hidden="true">
+            <Image
+              src="/og-interview-prep-home.webp"
+              alt=""
+              width={1200}
+              height={630}
+              className="home-hero-og-image"
+              sizes="(max-width: 899px) min(100vw, 40rem) min(44vw, 480px)"
+              priority
+            />
+          </figure>
         </div>
       </div>
 
@@ -134,6 +166,7 @@ export default function HomePage() {
                 body={m.body}
                 cta={m.cta}
                 to={m.to}
+                illustrationSrc={HOME_MODULE_ART[m.section]}
                 progressLine={
                   authLoaded && isSignedIn && !progressLoading
                     ? buildHomeModuleProgressLine(h, locale, bySection.get(m.section))
