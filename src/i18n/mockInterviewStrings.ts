@@ -1,3 +1,13 @@
+/** “What to say” outline for the question preview card (debounce/throttle/generic, etc.). */
+export type MockInterviewSolveGuide = {
+  focus: string
+  steps: [string, string, string, string]
+}
+
+/** Long technical note reused across locales (same URL / procedure). */
+export const MOCK_INTERVIEW_SHARED_GOOGLE_TTS_HINT =
+  'Add a Google Cloud TTS key in AI settings, or a Gemini key if your Google Cloud project has Cloud Text-to-Speech enabled on that key. Keys sync to the session as you type. If Google blocks the key, edit it under APIs & Services → Credentials: allow Cloud Text-to-Speech (or “Don’t restrict key” for local-only testing), and add your HTTP referrers (e.g. http://localhost:5173/*, http://127.0.0.1:5173/*, http://localhost:3000/*, http://127.0.0.1:3000/*). See https://docs.cloud.google.com/api-keys/docs/add-restrictions-api-keys'
+
 /** UI copy for Mock interview page + session (Company Q&A mock trainer). */
 export type MockInterviewStrings = {
   pageTitle: string
@@ -133,6 +143,17 @@ export type MockInterviewStrings = {
   paidPlanVoiceTitle: string
   voiceTestPhrase: string
   voiceAvatarAlt: string
+  sidebarSectionsAriaLabel: string
+  catalogLoading: string
+  catalogTryAgain: string
+  editorSaving: string
+  editorSaved: string
+  solveGuideDebounce: MockInterviewSolveGuide
+  solveGuideThrottle: MockInterviewSolveGuide
+  solveGuideAsync: MockInterviewSolveGuide
+  solveGuideAlgorithms: MockInterviewSolveGuide
+  solveGuideSystemDesign: MockInterviewSolveGuide
+  solveGuideDefault: MockInterviewSolveGuide
 }
 
 export const mockInterviewEn: MockInterviewStrings = {
@@ -267,8 +288,7 @@ export const mockInterviewEn: MockInterviewStrings = {
   womanVoiceTitleOk: 'Pick a woman voice if your system exposes one (name-based guess)',
   womanVoiceTitleNo: 'No woman-labelled voice detected — choose from the list or install OS voices',
   googleVoiceLabel: 'Google Cloud voice',
-  googleTtsKeyHint:
-    'Add a Google Cloud TTS key in AI settings, or a Gemini key if your Google Cloud project has Cloud Text-to-Speech enabled on that key. Keys sync to the session as you type. If Google blocks the key, edit it under APIs & Services → Credentials: allow Cloud Text-to-Speech (or don’t restrict for local-only testing), and add your HTTP referrers (e.g. http://localhost:5173/*). See https://cloud.google.com/api-keys/docs/add-restrictions-api-keys',
+  googleTtsKeyHint: MOCK_INTERVIEW_SHARED_GOOGLE_TTS_HINT,
   premiumVoices: 'Premium voices',
   scanningVoices: 'Scanning voices available on your plan…',
   addElevenLabsHint: 'Add ElevenLabs key in API settings to enable premium audio.',
@@ -282,6 +302,65 @@ export const mockInterviewEn: MockInterviewStrings = {
   voiceTestPhrase:
     'This is a voice test. I will guide you through your interview answer with concise feedback.',
   voiceAvatarAlt: '{name} voice avatar',
+  sidebarSectionsAriaLabel: 'Mock interview sections',
+  catalogLoading: 'Loading questions…',
+  catalogTryAgain: 'Try again',
+  editorSaving: 'Saving…',
+  editorSaved: 'Saved ✓',
+  solveGuideDebounce: {
+    focus: 'This checks closures, timers, and handling repeated user events efficiently.',
+    steps: [
+      'Keep a timer variable in a closure around the returned function.',
+      'On each call, clear the previous timer and schedule a new one.',
+      'When the timer fires, call the original function with the latest arguments and `this`.',
+      'Briefly mention common use cases (search input, resize handlers) and complexity.',
+    ],
+  },
+  solveGuideThrottle: {
+    focus: 'This checks rate-limiting logic, closure state, and event-performance trade-offs.',
+    steps: [
+      'Track the last execution time and (optionally) a trailing timer.',
+      'If enough time passed, execute immediately (leading call).',
+      'Otherwise schedule one trailing call with the latest arguments.',
+      'Explain leading vs trailing behavior and why this helps scroll/resize performance.',
+    ],
+  },
+  solveGuideAsync: {
+    focus: 'This checks async control flow, Promise behavior, and error propagation.',
+    steps: [
+      'Define the exact settle behavior first (resolve/reject conditions).',
+      'Initialize tracking state (results, counters, or queue pointers).',
+      'Wire each async branch to update shared state safely and in order.',
+      'Cover edge cases: empty input, rejection path, and stale/cancelled work.',
+    ],
+  },
+  solveGuideAlgorithms: {
+    focus: 'This checks data-structure choice, complexity reasoning, and edge-case handling.',
+    steps: [
+      'State a brute-force baseline and why it is insufficient.',
+      'Pick the target data structure (Map, Set, stack, recursion, etc.).',
+      'Implement the core pass clearly, then validate edge cases.',
+      'Close with time/space complexity and trade-offs.',
+    ],
+  },
+  solveGuideSystemDesign: {
+    focus: 'This checks product-level thinking, architecture trade-offs, and robustness.',
+    steps: [
+      'Clarify requirements and non-functional goals (latency, scale, UX).',
+      'Propose a simple baseline architecture end-to-end.',
+      'Address failure modes: retries, race conditions, observability, and fallbacks.',
+      'Discuss scaling path and what you would measure in production.',
+    ],
+  },
+  solveGuideDefault: {
+    focus: 'This checks problem understanding, implementation clarity, and interview communication.',
+    steps: [
+      'Restate the problem and confirm assumptions out loud.',
+      'Outline your approach before coding, including key edge cases.',
+      'Implement incrementally and narrate trade-offs as you go.',
+      'Finish with complexity and quick test cases.',
+    ],
+  },
 }
 
 export const mockInterviewHe: MockInterviewStrings = {
@@ -416,7 +495,7 @@ export const mockInterviewHe: MockInterviewStrings = {
   womanVoiceTitleNo: 'לא זוהה קול מסומן כאישה — בחרו מהרשימה או התקינו קולות במערכת',
   googleVoiceLabel: 'קול Google Cloud',
   googleTtsKeyHint:
-    'הוסיפו מפתח Google Cloud TTS בהגדרות AI, או מפתח Gemini אם בפרויקט Google Cloud שלכם מופעל Text-to-Speech על אותו מפתח. המפתחות מסתנכרנים למפגש תוך כדי הקלדה. אם Google חוסמת את המפתח, ערכו אותו ב־APIs & Services → Credentials: אפשרו Cloud Text-to-Speech (או אל תגבילו את המפתח לבדיקות מקומיות בלבד), והוסיפו HTTP referrers (למשל http://localhost:5173/*). https://cloud.google.com/api-keys/docs/add-restrictions-api-keys',
+    'הוסיפו מפתח Google Cloud TTS בהגדרות AI, או מפתח Gemini אם בפרויקט Google Cloud שלכם מופעל Text-to-Speech על אותו מפתח. המפתחות מסתנכרנים למפגש תוך כדי הקלדה. אם Google חוסמת את המפתח, ערכו אותו ב־APIs & Services → Credentials: אפשרו Cloud Text-to-Speech (או אל תגבילו את המפתח לבדיקות מקומיות בלבד), והוסיפו HTTP referrers (למשל http://localhost:5173/*, http://127.0.0.1:5173/*, http://localhost:3000/*, http://127.0.0.1:3000/*). https://docs.cloud.google.com/api-keys/docs/add-restrictions-api-keys',
   premiumVoices: 'קולות פרימיום',
   scanningVoices: 'סורקים קולות זמינים בתוכנית שלכם…',
   addElevenLabsHint: 'הוסיפו מפתח ElevenLabs בהגדרות API כדי להפעיל אודיו פרימיום.',
@@ -429,4 +508,63 @@ export const mockInterviewHe: MockInterviewStrings = {
   paidPlanVoiceTitle: 'נדרשת תוכנית ElevenLabs בתשלום לשימוש ב-API',
   voiceTestPhrase: 'זו בדיקת קול. כך יישמע המשוב בתשובת הראיון.',
   voiceAvatarAlt: 'אווטר קול {name}',
+  sidebarSectionsAriaLabel: 'אזורי דף ראיון הדמה',
+  catalogLoading: 'טוען שאלות…',
+  catalogTryAgain: 'נסו שוב',
+  editorSaving: 'שומר…',
+  editorSaved: 'נשמר ✓',
+  solveGuideDebounce: {
+    focus: 'בודקים סגירות (closures), טיימרים וטיפול יעיל באירועי משתמש חוזרים.',
+    steps: [
+      'שמרו משתנה טיימר ב-closure סביב הפונקציה המוחזרת.',
+      'בכל קריאה: בטלו את הטיימר הקודם וקבעו טיימר חדש.',
+      'כשהטיימר נורה: קראו לפונקציה המקורית עם הארגומנטים העדכניים ו-`this`.',
+      'הזכירו לקצר שימושים נפוצים (חיפוש, resize) וסיבוכיות.',
+    ],
+  },
+  solveGuideThrottle: {
+    focus: 'בודקים הגבלת קצב, מצב closure ופשרות ביצועים לאירועים.',
+    steps: [
+      'עקבו אחר זמן הריצה האחרון ו(אופציונלי) טיימר "זנב".',
+      'אם עבר מספיק זמן — הריצו מיד (leading).',
+      'אחרת תזמנו קריאת זנב אחת עם הארגומנטים העדכניים.',
+      'הסבירו leading מול trailing ולמה זה עוזר לגלילה/resize.',
+    ],
+  },
+  solveGuideAsync: {
+    focus: 'בודקים זרימת async, התנהגות Promise והתפשטות שגיאות.',
+    steps: [
+      'הגדירו קודם מתי resolve/reject.',
+      'אתחלו מעקב (תוצאות, מונים או תורים).',
+      'חברו כל ענף async לעדכון בטוח ומסודר של מצב משותף.',
+      'כסו קצוות: קלט ריק, נתיב דחייה ועבודה מבוטלת/ישנה.',
+    ],
+  },
+  solveGuideAlgorithms: {
+    focus: 'בודקים בחירת מבנה נתונים, נימוק סיבוכיות וטיפול במקרי קצה.',
+    steps: [
+      'תנו קו בסיס ברוט פורס והסבירו למה לא מספיק.',
+      'בחרו מבנה יעד (Map, Set, מחסנית, רקורסיה וכו׳).',
+      'ממשו את הליבה בבהירות, ואז וודאו קצוות.',
+      'סיימו בזמן/מקום ופשרות.',
+    ],
+  },
+  solveGuideSystemDesign: {
+    focus: 'בודקים חשיבה מוצרית, פשרות ארכיטקטורה וחוסן.',
+    steps: [
+      'הבהירו דרישות ומטרות לא-פונקציונליות (זמן תגובה, קנה מידה, UX).',
+      'הציעו בסיס פשוט מקצה לקצה.',
+      'טפלו בכשלים: ניסיונות חוזרים, מרוצים, מדידה וגיבויים.',
+      'דנו בהתרחבות ומה הייתם מודדים בפרודקשן.',
+    ],
+  },
+  solveGuideDefault: {
+    focus: 'בודקים הבנת בעיה, בהירות מימוש ותקשורת בראיון.',
+    steps: [
+      'חזרו על הבעיה ואמתו הנחות בקול.',
+      'תארו גישה לפני קוד, כולל קצוות מרכזיים.',
+      'ממשו בשלבים וספרו פשרות תוך כדי.',
+      'סיימו בסיבוכיות ובדיקות מהירות.',
+    ],
+  },
 }

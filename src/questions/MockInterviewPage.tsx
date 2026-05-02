@@ -160,78 +160,36 @@ const DIFFICULTY_COLOR: Record<Difficulty, string> = {
   hard: '#f87171',
 }
 
-function buildSolveGuide(question: Question): { focus: string; steps: string[] } {
+function buildSolveGuide(question: Question, str: MockInterviewStrings): { focus: string; steps: string[] } {
   const title = question.title.toLowerCase()
 
   if (title.includes('debounce')) {
-    return {
-      focus: 'This checks closures, timers, and handling repeated user events efficiently.',
-      steps: [
-        'Keep a timer variable in a closure around the returned function.',
-        'On each call, clear the previous timer and schedule a new one.',
-        'When the timer fires, call the original function with the latest arguments and `this`.',
-        'Briefly mention common use cases (search input, resize handlers) and complexity.',
-      ],
-    }
+    const g = str.solveGuideDebounce
+    return { focus: g.focus, steps: [...g.steps] }
   }
 
   if (title.includes('throttle')) {
-    return {
-      focus: 'This checks rate-limiting logic, closure state, and event-performance trade-offs.',
-      steps: [
-        'Track the last execution time and (optionally) a trailing timer.',
-        'If enough time passed, execute immediately (leading call).',
-        'Otherwise schedule one trailing call with the latest arguments.',
-        'Explain leading vs trailing behavior and why this helps scroll/resize performance.',
-      ],
-    }
+    const g = str.solveGuideThrottle
+    return { focus: g.focus, steps: [...g.steps] }
   }
 
   if (question.category === 'Async & Promises') {
-    return {
-      focus: 'This checks async control flow, Promise behavior, and error propagation.',
-      steps: [
-        'Define the exact settle behavior first (resolve/reject conditions).',
-        'Initialize tracking state (results, counters, or queue pointers).',
-        'Wire each async branch to update shared state safely and in order.',
-        'Cover edge cases: empty input, rejection path, and stale/cancelled work.',
-      ],
-    }
+    const g = str.solveGuideAsync
+    return { focus: g.focus, steps: [...g.steps] }
   }
 
   if (question.category === 'Algorithms') {
-    return {
-      focus: 'This checks data-structure choice, complexity reasoning, and edge-case handling.',
-      steps: [
-        'State a brute-force baseline and why it is insufficient.',
-        'Pick the target data structure (Map, Set, stack, recursion, etc.).',
-        'Implement the core pass clearly, then validate edge cases.',
-        'Close with time/space complexity and trade-offs.',
-      ],
-    }
+    const g = str.solveGuideAlgorithms
+    return { focus: g.focus, steps: [...g.steps] }
   }
 
   if (question.category === 'System Design') {
-    return {
-      focus: 'This checks product-level thinking, architecture trade-offs, and robustness.',
-      steps: [
-        'Clarify requirements and non-functional goals (latency, scale, UX).',
-        'Propose a simple baseline architecture end-to-end.',
-        'Address failure modes: retries, race conditions, observability, and fallbacks.',
-        'Discuss scaling path and what you would measure in production.',
-      ],
-    }
+    const g = str.solveGuideSystemDesign
+    return { focus: g.focus, steps: [...g.steps] }
   }
 
-  return {
-    focus: 'This checks problem understanding, implementation clarity, and interview communication.',
-    steps: [
-      'Restate the problem and confirm assumptions out loud.',
-      'Outline your approach before coding, including key edge cases.',
-      'Implement incrementally and narrate trade-offs as you go.',
-      'Finish with complexity and quick test cases.',
-    ],
-  }
+  const g = str.solveGuideDefault
+  return { focus: g.focus, steps: [...g.steps] }
 }
 
 interface ChatMessage {
@@ -1403,8 +1361,10 @@ function MockInterviewSession({
                   )}
                 </Suspense>
                 <div className="mis-editor-actions">
-                  {saveStatus === 'saving' && <span className="mis-save-status">Saving…</span>}
-                  {saveStatus === 'saved' && <span className="mis-save-status mis-save-status--ok">Saved ✓</span>}
+                  {saveStatus === 'saving' && <span className="mis-save-status">{mock.editorSaving}</span>}
+                  {saveStatus === 'saved' && (
+                    <span className="mis-save-status mis-save-status--ok">{mock.editorSaved}</span>
+                  )}
                   <button
                     type="button"
                     className="mis-editor-fab"
@@ -1577,8 +1537,8 @@ export default function MockInterviewPage() {
   )
 
   const selectedGuide = useMemo(
-    () => (selectedQuestion ? buildSolveGuide(selectedQuestion) : null),
-    [selectedQuestion],
+    () => (selectedQuestion ? buildSolveGuide(selectedQuestion, mi) : null),
+    [selectedQuestion, mi],
   )
 
   useEffect(() => {
@@ -1608,7 +1568,7 @@ export default function MockInterviewPage() {
             <div className="mockv2-brand-title">{mi.sidebarBrandTitle}</div>
             <div className="mockv2-brand-status">{mi.sidebarBrandStatus}</div>
           </div>
-          <nav className="mockv2-side-nav" aria-label="Mock interview sections">
+          <nav className="mockv2-side-nav" aria-label={mi.sidebarSectionsAriaLabel}>
             <button type="button" className="mockv2-side-link">
               <span className="mockv2-side-link-icon" aria-hidden>⚙</span>
               <span className="mockv2-side-link-label">{mi.navSetup}</span>
@@ -1751,12 +1711,12 @@ export default function MockInterviewPage() {
             </label>
 
             {catalogLoading ? (
-              <p className="q-empty">Loading questions...</p>
+              <p className="q-empty">{mi.catalogLoading}</p>
             ) : catalogError ? (
               <div className="q-empty">
                 <p>{catalogError}</p>
                 <button type="button" className="home-card-link" onClick={reloadCatalog}>
-                  Try again
+                  {mi.catalogTryAgain}
                 </button>
               </div>
             ) : filtered.length === 0 ? (

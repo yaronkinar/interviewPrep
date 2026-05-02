@@ -552,7 +552,7 @@ export default function ApiKeySettings({
             <code className="q-ai-code">http://localhost:3000/*</code>, and{' '}
             <code className="q-ai-code">http://127.0.0.1:3000/*</code> (Next.js dev).{' '}
             <a
-              href="https://cloud.google.com/api-keys/docs/add-restrictions-api-keys"
+              href="https://docs.cloud.google.com/api-keys/docs/add-restrictions-api-keys"
               target="_blank"
               rel="noopener noreferrer"
             >

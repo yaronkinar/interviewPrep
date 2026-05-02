@@ -1,5 +1,6 @@
 import type { Locale } from './locale'
-import { mockInterviewEn, mockInterviewHe, type MockInterviewStrings } from './mockInterviewStrings'
+import { mockInterviewEn, type MockInterviewStrings } from './mockInterviewStrings'
+import { MOCK_INTERVIEW_BY_LOCALE } from './mockInterviewLocales'
 
 export type UiStrings = {
   nav: {
@@ -376,7 +377,7 @@ const en: UiStrings = {
   mockInterview: mockInterviewEn,
 }
 
-const he: UiStrings = {
+const he: Partial<UiStrings> = {
   nav: {
     openMenu: 'פתח תפריט',
     closeMenu: 'סגור תפריט',
@@ -489,7 +490,6 @@ const he: UiStrings = {
     learningLaunchEditor: 'פתחו עורך',
   },
   js: en.js,
-  mockInterview: mockInterviewHe,
 }
 
 const OVERRIDES: Partial<Record<Locale, Partial<UiStrings>>> = {
@@ -1128,7 +1128,7 @@ export function getUiStrings(locale: Locale): UiStrings {
       lazy: { ...en.js.lazy, ...(jsOverride?.lazy ?? {}) } as UiStrings['js']['lazy'],
       sandbox: { ...en.js.sandbox, ...(jsOverride?.sandbox ?? {}) },
     },
-    mockInterview: { ...en.mockInterview, ...(override?.mockInterview ?? {}) },
+    mockInterview: MOCK_INTERVIEW_BY_LOCALE[locale] ?? mockInterviewEn,
   }
 }
 
