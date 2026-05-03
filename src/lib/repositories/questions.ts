@@ -4,6 +4,7 @@ import {
 } from '@/lib/questions/catalogSearchTokens'
 import { getDb } from '@/lib/mongodb'
 import type { QuestionDocument, QuestionInput } from '@/lib/models/Question'
+import { companyIdsSortedForQueryInference, listCompaniesMergedWithSeed } from '@/lib/repositories/companies'
 import { CATEGORIES, type Category, type Difficulty, type Question } from '@/questions/data'
 
 const COLLECTION_NAME = 'questions'
@@ -208,6 +209,29 @@ function inferQuestionSearchFilters(
     ...(company ? { company } : {}),
     ...(category ? { category } : {}),
   }
+}
+
+/** Same company-tag inference as catalog search (`/api/questions/search`), for chat suggest / web-search. */
+export async function inferCompanyTagFromInterviewQuery(query: string): Promise<string | undefined> {
+  const trimmed = query.trim()
+  if (!trimmed) return undefined
+
+  const mergedCompanies = await listCompaniesMergedWithSeed()
+  const tagsFromQuestions = await distinctCompanyTagsFromQuestions()
+
+  const idByLower = new Map<string, string>()
+  for (const c of mergedCompanies) {
+    idByLower.set(c.id.toLowerCase(), c.id)
+  }
+  for (const t of tagsFromQuestions) {
+    if (!idByLower.has(t.toLowerCase())) {
+      idByLower.set(t.toLowerCase(), t)
+    }
+  }
+
+  const searchableCompanyIds = companyIdsSortedForQueryInference([...idByLower.values()])
+  const inferred = inferQuestionSearchFilters(trimmed, {}, searchableCompanyIds)
+  return inferred.company
 }
 
 function scoreQuestionSearchMatch(question: Question, tokens: string[]) {

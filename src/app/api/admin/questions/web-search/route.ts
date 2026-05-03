@@ -9,6 +9,7 @@ import {
   suggestInterviewQuestionsFromWebContext,
 } from '@/lib/questions/questionSuggestions'
 import { ensureCompanyRecorded } from '@/lib/repositories/companies'
+import { inferCompanyTagFromInterviewQuery } from '@/lib/repositories/questions'
 import { formatTavilyResultsForPrompt, resolveTavilyApiKey, tavilySearch } from '@/lib/search/tavilySearch'
 
 const MAX_TAVILY_RESULTS = 8
@@ -30,7 +31,7 @@ export async function POST(req: Request) {
 
   const body = (await req.json().catch(() => null)) as WebSearchRequest | null
   const query = typeof body?.query === 'string' ? body.query.trim() : ''
-  const company = typeof body?.company === 'string' ? body.company.trim() : ''
+  let company = typeof body?.company === 'string' ? body.company.trim() : ''
   const count = clampSuggestionCount(body?.count, 3)
   const model = resolveQuestionSuggestionModel(body?.model)
 
@@ -55,6 +56,10 @@ export async function POST(req: Request) {
   }
 
   try {
+    if (!company) {
+      company = (await inferCompanyTagFromInterviewQuery(query)) ?? ''
+    }
+
     const { results, answer } = await tavilySearch({
       query,
       apiKey: tavilyKey,
@@ -65,6 +70,7 @@ export async function POST(req: Request) {
       return NextResponse.json({
         questions: [],
         note: 'Web search returned no results for this query.',
+        company: company || undefined,
       })
     }
 
@@ -86,7 +92,7 @@ export async function POST(req: Request) {
       }
     }
 
-    return NextResponse.json({ questions })
+    return NextResponse.json({ questions, company: company || undefined })
   } catch (error) {
     console.error('Failed web search question generation', error)
     return NextResponse.json({ error: getQuestionSuggestionErrorMessage(error) }, { status: 502 })

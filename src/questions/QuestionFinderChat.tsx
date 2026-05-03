@@ -569,6 +569,8 @@ export default function QuestionFinderChat({
   const [suggestions, setSuggestions] = useState<Question[]>([])
   /** When set, overrides `companies` on save and is sent to suggest/web APIs as a hint. */
   const [addCompany, setAddCompany] = useState('')
+  /** Server-resolved company tag for the latest suggest/web-search batch (query inference + explicit body). */
+  const [resolvedCompanyForBatch, setResolvedCompanyForBatch] = useState('')
   const [addingQuestionIds, setAddingQuestionIds] = useState<Set<string>>(new Set())
   const [lastQuery, setLastQuery] = useState('')
   const [loading, setLoading] = useState(false)
@@ -658,7 +660,11 @@ export default function QuestionFinderChat({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ query, count: 3, company: addCompany || undefined }),
       })
-      const data = (await response.json().catch(() => null)) as { questions?: Question[]; error?: string } | null
+      const data = (await response.json().catch(() => null)) as {
+        questions?: Question[]
+        company?: string
+        error?: string
+      } | null
 
       if (!response.ok) {
         if (response.status === 401 || response.status === 403) {
@@ -671,6 +677,7 @@ export default function QuestionFinderChat({
       }
 
       const nextSuggestions = Array.isArray(data?.questions) ? data.questions : []
+      setResolvedCompanyForBatch(typeof data?.company === 'string' ? data.company : '')
       setSuggestions(nextSuggestions)
       setMessages(prev => [
         ...prev,
@@ -686,6 +693,7 @@ export default function QuestionFinderChat({
       const message = err instanceof Error ? err.message : addCopy.suggestFallbackError
       setError(message)
       setSuggestions([])
+      setResolvedCompanyForBatch('')
       setMessages(prev => [
         ...prev,
         { id: nextMessageId + 1, role: 'assistant', content: message },
@@ -717,6 +725,7 @@ export default function QuestionFinderChat({
       const data = (await response.json().catch(() => null)) as {
         questions?: Question[]
         note?: string
+        company?: string
         error?: string
       } | null
 
@@ -731,9 +740,9 @@ export default function QuestionFinderChat({
       }
 
       const nextSuggestions = Array.isArray(data?.questions) ? data.questions : []
-      setSuggestions(nextSuggestions)
-
       const note = typeof data?.note === 'string' && data.note.trim() ? data.note.trim() : ''
+      setResolvedCompanyForBatch(typeof data?.company === 'string' ? data.company : '')
+      setSuggestions(nextSuggestions)
       setMessages(prev => [
         ...prev,
         {
@@ -748,6 +757,7 @@ export default function QuestionFinderChat({
       const message = err instanceof Error ? err.message : addCopy.suggestFallbackError
       setError(message)
       setSuggestions([])
+      setResolvedCompanyForBatch('')
       setMessages(prev => [
         ...prev,
         { id: nextMessageId + 1, role: 'assistant', content: message },
@@ -764,9 +774,11 @@ export default function QuestionFinderChat({
     setAddingQuestionIds(prev => new Set(prev).add(question.id))
 
     try {
-      const payload: Question = addCompany
-        ? { ...question, companies: [addCompany] }
-        : question
+      const tag = addCompany.trim() || resolvedCompanyForBatch.trim()
+      const companies = tag
+        ? [...new Set([...question.companies, tag])]
+        : [...question.companies]
+      const payload: Question = { ...question, companies }
 
       const response = await fetch('/api/admin/questions', {
         method: 'POST',

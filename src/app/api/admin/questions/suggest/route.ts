@@ -9,6 +9,7 @@ import {
   resolveServerOpenAiKey,
   suggestInterviewQuestions,
 } from '@/lib/questions/questionSuggestions'
+import { inferCompanyTagFromInterviewQuery } from '@/lib/repositories/questions'
 
 type SuggestRequest = {
   query?: unknown
@@ -27,7 +28,7 @@ export async function POST(req: Request) {
 
   const body = (await req.json().catch(() => null)) as SuggestRequest | null
   const query = typeof body?.query === 'string' ? body.query.trim() : ''
-  const company = typeof body?.company === 'string' ? body.company.trim() : ''
+  let company = typeof body?.company === 'string' ? body.company.trim() : ''
   const count = clampSuggestionCount(body?.count)
   const model = resolveQuestionSuggestionModel(body?.model)
 
@@ -46,6 +47,10 @@ export async function POST(req: Request) {
   }
 
   try {
+    if (!company) {
+      company = (await inferCompanyTagFromInterviewQuery(query)) ?? ''
+    }
+
     const questions = await suggestInterviewQuestions({
       apiKey,
       model,
@@ -60,7 +65,7 @@ export async function POST(req: Request) {
         console.warn('ensure company from suggest skipped', error)
       }
     }
-    return NextResponse.json({ questions })
+    return NextResponse.json({ questions, company: company || undefined })
   } catch (error) {
     console.error('Failed to suggest questions', error)
     return NextResponse.json({ error: getQuestionSuggestionErrorMessage(error) }, { status: 502 })
