@@ -1,3 +1,5 @@
+'use client'
+
 import { useEffect, useState } from 'react'
 import {
   ANTHROPIC_API_KEY_LOCAL_KEY,
@@ -31,8 +33,10 @@ import {
   GOOGLE_CLOUD_TTS_API_KEY_SESSION_KEY,
   readDefaultGoogleCloudTtsKeyFromEnv,
 } from './googleCloudTtsConstants'
+import type { UserApiCredentialsClientSnapshot } from '@/lib/models/UserApiCredentials'
+import { useRequireSignIn } from '@/hooks/useRequireSignIn'
 
-export type KeyPersistMode = 'session' | 'local'
+export type KeyPersistMode = 'session' | 'local' | 'account'
 
 export interface AiSettingsSnapshot {
   provider: LlmProvider
@@ -44,13 +48,32 @@ export interface AiSettingsSnapshot {
   openaiModel: string
 }
 
-function loadPersistMode(): KeyPersistMode {
+const ELEVENLABS_API_KEY_SESSION_KEY = 'interviews:elevenlabsApiKeySession'
+const ELEVENLABS_API_KEY_LOCAL_KEY = 'interviews:elevenlabsApiKeyLocal'
+
+function readRawPersistBucket(): KeyPersistMode {
   try {
+    if (typeof window === 'undefined') return 'session'
     const v = localStorage.getItem(ANTHROPIC_KEY_PERSIST_MODE_KEY)
-    return v === 'local' ? 'local' : 'session'
+    if (v === 'local') return 'local'
+    if (v === 'account') return 'account'
+    return 'session'
   } catch {
     return 'session'
   }
+}
+
+function persistBrowserKeyMode(mode: KeyPersistMode): void {
+  try {
+    if (typeof window === 'undefined') return
+    localStorage.setItem(ANTHROPIC_KEY_PERSIST_MODE_KEY, mode)
+  } catch {
+    // ignore
+  }
+}
+
+function loadPersistMode(): KeyPersistMode {
+  return readRawPersistBucket()
 }
 
 function loadProvider(): LlmProvider {
@@ -63,6 +86,7 @@ function loadProvider(): LlmProvider {
 
 function loadStoredAnthropicKey(mode: KeyPersistMode): string {
   try {
+    if (mode === 'account') return ''
     if (mode === 'local') {
       return localStorage.getItem(ANTHROPIC_API_KEY_LOCAL_KEY) ?? ''
     }
@@ -74,6 +98,7 @@ function loadStoredAnthropicKey(mode: KeyPersistMode): string {
 
 function loadStoredGeminiKey(mode: KeyPersistMode): string {
   try {
+    if (mode === 'account') return ''
     if (mode === 'local') {
       return localStorage.getItem(GEMINI_API_KEY_LOCAL_KEY) ?? ''
     }
@@ -85,6 +110,7 @@ function loadStoredGeminiKey(mode: KeyPersistMode): string {
 
 function loadStoredOpenaiKey(mode: KeyPersistMode): string {
   try {
+    if (mode === 'account') return ''
     if (mode === 'local') {
       return localStorage.getItem(OPENAI_API_KEY_LOCAL_KEY) ?? ''
     }
@@ -133,12 +159,60 @@ function loadOpenaiModel(): string {
   }
 }
 
+function peekAnthropicKeyFromBrowser(): string {
+  try {
+    return sessionStorage.getItem(ANTHROPIC_API_KEY_SESSION_KEY) ?? localStorage.getItem(ANTHROPIC_API_KEY_LOCAL_KEY) ?? ''
+  } catch {
+    return ''
+  }
+}
+
+function peekGeminiKeyFromBrowser(): string {
+  try {
+    return sessionStorage.getItem(GEMINI_API_KEY_SESSION_KEY) ?? localStorage.getItem(GEMINI_API_KEY_LOCAL_KEY) ?? ''
+  } catch {
+    return ''
+  }
+}
+
+function peekOpenaiKeyFromBrowser(): string {
+  try {
+    return sessionStorage.getItem(OPENAI_API_KEY_SESSION_KEY) ?? localStorage.getItem(OPENAI_API_KEY_LOCAL_KEY) ?? ''
+  } catch {
+    return ''
+  }
+}
+
+function peekElevenLabsKeyFromBrowser(): string {
+  try {
+    return sessionStorage.getItem(ELEVENLABS_API_KEY_SESSION_KEY) ?? localStorage.getItem(ELEVENLABS_API_KEY_LOCAL_KEY) ?? ''
+  } catch {
+    return ''
+  }
+}
+
+function peekGoogleCloudTtsKeyFromBrowser(): string {
+  try {
+    return (
+      sessionStorage.getItem(GOOGLE_CLOUD_TTS_API_KEY_SESSION_KEY) ??
+      localStorage.getItem(GOOGLE_CLOUD_TTS_API_KEY_LOCAL_KEY) ??
+      ''
+    )
+  } catch {
+    return ''
+  }
+}
+
+/** Never stores secrets when mode is {@link KeyPersistMode} `account`; always persists the persist bucket in localStorage. */
 function persistAnthropicKey(mode: KeyPersistMode, key: string): void {
   try {
     sessionStorage.removeItem(ANTHROPIC_API_KEY_SESSION_KEY)
     localStorage.removeItem(ANTHROPIC_API_KEY_LOCAL_KEY)
+    localStorage.setItem(ANTHROPIC_KEY_PERSIST_MODE_KEY, mode)
+    if (mode === 'account') {
+      return
+    }
     if (!key) {
-      localStorage.setItem(ANTHROPIC_KEY_PERSIST_MODE_KEY, mode)
       return
     }
     if (mode === 'local') {
@@ -146,7 +220,6 @@ function persistAnthropicKey(mode: KeyPersistMode, key: string): void {
     } else {
       sessionStorage.setItem(ANTHROPIC_API_KEY_SESSION_KEY, key)
     }
-    localStorage.setItem(ANTHROPIC_KEY_PERSIST_MODE_KEY, mode)
   } catch {
     // ignore
   }
@@ -156,6 +229,9 @@ function persistGeminiKey(mode: KeyPersistMode, key: string): void {
   try {
     sessionStorage.removeItem(GEMINI_API_KEY_SESSION_KEY)
     localStorage.removeItem(GEMINI_API_KEY_LOCAL_KEY)
+    if (mode === 'account') {
+      return
+    }
     if (!key) {
       return
     }
@@ -173,6 +249,9 @@ function persistOpenaiKey(mode: KeyPersistMode, key: string): void {
   try {
     sessionStorage.removeItem(OPENAI_API_KEY_SESSION_KEY)
     localStorage.removeItem(OPENAI_API_KEY_LOCAL_KEY)
+    if (mode === 'account') {
+      return
+    }
     if (!key) {
       return
     }
@@ -200,11 +279,9 @@ export interface ApiKeySettingsProps {
   onGoogleCloudTtsChange?: (apiKey: string) => void
 }
 
-const ELEVENLABS_API_KEY_SESSION_KEY = 'interviews:elevenlabsApiKeySession'
-const ELEVENLABS_API_KEY_LOCAL_KEY = 'interviews:elevenlabsApiKeyLocal'
-
 function loadStoredElevenLabsKey(mode: KeyPersistMode): string {
   try {
+    if (mode === 'account') return ''
     if (mode === 'local') {
       return localStorage.getItem(ELEVENLABS_API_KEY_LOCAL_KEY) ?? ''
     }
@@ -218,6 +295,9 @@ function persistElevenLabsKey(mode: KeyPersistMode, key: string): void {
   try {
     sessionStorage.removeItem(ELEVENLABS_API_KEY_SESSION_KEY)
     localStorage.removeItem(ELEVENLABS_API_KEY_LOCAL_KEY)
+    if (mode === 'account') {
+      return
+    }
     if (!key) return
     if (mode === 'local') {
       localStorage.setItem(ELEVENLABS_API_KEY_LOCAL_KEY, key)
@@ -231,6 +311,7 @@ function persistElevenLabsKey(mode: KeyPersistMode, key: string): void {
 
 function loadStoredGoogleCloudTtsKey(mode: KeyPersistMode): string {
   try {
+    if (mode === 'account') return ''
     if (mode === 'local') {
       return localStorage.getItem(GOOGLE_CLOUD_TTS_API_KEY_LOCAL_KEY) ?? ''
     }
@@ -244,6 +325,9 @@ function persistGoogleCloudTtsKey(mode: KeyPersistMode, key: string): void {
   try {
     sessionStorage.removeItem(GOOGLE_CLOUD_TTS_API_KEY_SESSION_KEY)
     localStorage.removeItem(GOOGLE_CLOUD_TTS_API_KEY_LOCAL_KEY)
+    if (mode === 'account') {
+      return
+    }
     if (!key) return
     if (mode === 'local') {
       localStorage.setItem(GOOGLE_CLOUD_TTS_API_KEY_LOCAL_KEY, key)
@@ -260,8 +344,14 @@ export default function ApiKeySettings({
   onElevenLabsChange,
   onGoogleCloudTtsChange,
 }: ApiKeySettingsProps) {
+  const { requireSignIn, isSignedIn, isLoaded: clerkLoaded } = useRequireSignIn()
   const [open, setOpen] = useState(false)
-  const [persistMode, setPersistMode] = useState<KeyPersistMode>(loadPersistMode)
+  const [credSyncMessage, setCredSyncMessage] = useState<'error' | 'ok' | null>(null)
+
+  const [persistMode, setPersistMode] = useState<KeyPersistMode>(() =>
+    typeof window !== 'undefined' ? loadPersistMode() : 'session',
+  )
+
   const [provider, setProvider] = useState<LlmProvider>(loadProvider)
   const [anthropicKeyInput, setAnthropicKeyInput] = useState('')
   const [anthropicModel, setAnthropicModel] = useState(loadAnthropicModel)
@@ -285,39 +375,111 @@ export default function ApiKeySettings({
     onAiSettingsChange({ ...base, ...patch })
   }
 
-  useEffect(() => {
-    const mode = loadPersistMode()
-    setPersistMode(mode)
-    let ak = loadStoredAnthropicKey(mode)
-    if (!ak) {
-      ak = readDefaultAnthropicKeyFromEnv()
-    }
-    let gk = loadStoredGeminiKey(mode)
-    if (!gk) {
-      gk = readDefaultGeminiKeyFromEnv()
-    }
-    let ok = loadStoredOpenaiKey(mode)
-    if (!ok) {
-      ok = readDefaultOpenaiKeyFromEnv()
-    }
+  function fillSecretsFromBrowserStores(storeMode: 'session' | 'local') {
+    const p = loadProvider()
+    let ak = loadStoredAnthropicKey(storeMode)
+    if (!ak) ak = readDefaultAnthropicKeyFromEnv()
+    let gk = loadStoredGeminiKey(storeMode)
+    if (!gk) gk = readDefaultGeminiKeyFromEnv()
+    let ok = loadStoredOpenaiKey(storeMode)
+    if (!ok) ok = readDefaultOpenaiKeyFromEnv()
+    const el = loadStoredElevenLabsKey(storeMode)
+    let gct = loadStoredGoogleCloudTtsKey(storeMode)
+    if (!gct) gct = readDefaultGoogleCloudTtsKeyFromEnv()
+    const am = loadAnthropicModel()
+    const gm = loadGeminiModel()
+    const om = loadOpenaiModel()
+    setProvider(p)
     setAnthropicKeyInput(ak)
     setGeminiKeyInput(gk)
     setOpenaiKeyInput(ok)
-    const elevenLabsKey = loadStoredElevenLabsKey(mode)
-    setElevenLabsKeyInput(elevenLabsKey)
-    let gct = loadStoredGoogleCloudTtsKey(mode)
-    if (!gct) {
-      gct = readDefaultGoogleCloudTtsKeyFromEnv()
-    }
+    setElevenLabsKeyInput(el)
     setGoogleCloudTtsKeyInput(gct)
+    setAnthropicModel(am)
+    setGeminiModel(gm)
+    setOpenaiModel(om)
+    onAiSettingsChange({
+      provider: p,
+      anthropicApiKey: ak.trim(),
+      anthropicModel: am,
+      geminiApiKey: gk.trim(),
+      geminiModel: gm,
+      openaiApiKey: ok.trim(),
+      openaiModel: om,
+    })
+    onElevenLabsChange?.(el.trim())
+    onGoogleCloudTtsChange?.(gct.trim())
+  }
+
+  function applyCredentialSnapshot(s: UserApiCredentialsClientSnapshot) {
+    const p = normalizeLlmProvider(s.provider)
+    const am = normalizeAnthropicModel(s.anthropicModel)
+    const gm = normalizeGeminiModel(s.geminiModel)
+    const om = normalizeOpenaiModel(s.openaiModel)
+    setProvider(p)
+    setAnthropicKeyInput(s.anthropicApiKey)
+    setGeminiKeyInput(s.geminiApiKey)
+    setOpenaiKeyInput(s.openaiApiKey)
+    setElevenLabsKeyInput(s.elevenLabsApiKey)
+    setGoogleCloudTtsKeyInput(s.googleCloudTtsApiKey)
+    setAnthropicModel(am)
+    setGeminiModel(gm)
+    setOpenaiModel(om)
+    try {
+      localStorage.setItem(ANTHROPIC_MODEL_STORAGE_KEY, am)
+      localStorage.setItem(GEMINI_MODEL_STORAGE_KEY, gm)
+      localStorage.setItem(OPENAI_MODEL_STORAGE_KEY, om)
+      localStorage.setItem(LLM_PROVIDER_STORAGE_KEY, p)
+    } catch {
+      // ignore
+    }
+    onAiSettingsChange({
+      provider: p,
+      anthropicApiKey: s.anthropicApiKey.trim(),
+      anthropicModel: am,
+      geminiApiKey: s.geminiApiKey.trim(),
+      geminiModel: gm,
+      openaiApiKey: s.openaiApiKey.trim(),
+      openaiModel: om,
+    })
+    onElevenLabsChange?.(s.elevenLabsApiKey.trim())
+    onGoogleCloudTtsChange?.(s.googleCloudTtsApiKey.trim())
+  }
+
+  useEffect(() => {
+    const bucket = loadPersistMode()
+    setPersistMode(bucket)
+    const mode = bucket
+    const p = loadProvider()
+    setProvider(p)
+
+    let ak =
+      bucket === 'account'
+        ? peekAnthropicKeyFromBrowser()
+        : loadStoredAnthropicKey(mode)
+    if (!ak) ak = readDefaultAnthropicKeyFromEnv()
+    let gk = bucket === 'account' ? peekGeminiKeyFromBrowser() : loadStoredGeminiKey(mode)
+    if (!gk) gk = readDefaultGeminiKeyFromEnv()
+    let ok = bucket === 'account' ? peekOpenaiKeyFromBrowser() : loadStoredOpenaiKey(mode)
+    if (!ok) ok = readDefaultOpenaiKeyFromEnv()
+    const el =
+      bucket === 'account' ? peekElevenLabsKeyFromBrowser() : loadStoredElevenLabsKey(mode)
+    let gct = bucket === 'account' ? peekGoogleCloudTtsKeyFromBrowser() : loadStoredGoogleCloudTtsKey(mode)
+    if (!gct) gct = readDefaultGoogleCloudTtsKeyFromEnv()
+
     const am = loadAnthropicModel()
     const gm = loadGeminiModel()
     const om = loadOpenaiModel()
     setAnthropicModel(am)
     setGeminiModel(gm)
     setOpenaiModel(om)
-    const p = loadProvider()
-    setProvider(p)
+
+    setAnthropicKeyInput(ak)
+    setGeminiKeyInput(gk)
+    setOpenaiKeyInput(ok)
+    setElevenLabsKeyInput(el)
+    setGoogleCloudTtsKeyInput(gct)
+
     onAiSettingsChange({
       provider: p,
       anthropicApiKey: ak,
@@ -327,15 +489,55 @@ export default function ApiKeySettings({
       openaiApiKey: ok,
       openaiModel: om,
     })
-    onElevenLabsChange?.(elevenLabsKey)
+    onElevenLabsChange?.(el)
     onGoogleCloudTtsChange?.(gct)
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- sync parent once on mount from storage
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- hydrate parent once from storage on mount
   }, [])
 
-  function applySave() {
-    persistAnthropicKey(persistMode, anthropicKeyInput.trim())
-    persistGeminiKey(persistMode, geminiKeyInput.trim())
-    persistOpenaiKey(persistMode, openaiKeyInput.trim())
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    if (!clerkLoaded) return
+    if (isSignedIn) return
+    const rawBucket = readRawPersistBucket()
+    if (rawBucket !== 'account') return
+    persistBrowserKeyMode('session')
+    setPersistMode('session')
+    fillSecretsFromBrowserStores('session')
+    setCredSyncMessage(null)
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- hydrate from browser stores only when leaving unsigned account-sync mode
+  }, [clerkLoaded, isSignedIn])
+
+  useEffect(() => {
+    let cancelled = false
+    if (typeof window === 'undefined') return
+    if (!clerkLoaded) return
+    if (persistMode !== 'account') return
+    if (!isSignedIn) return
+
+    setCredSyncMessage(null)
+    fetch('/api/user-api-credentials', { cache: 'no-store', credentials: 'same-origin' })
+      .then(r => {
+        if (!r.ok) {
+          throw new Error(`HTTP ${r.status}`)
+        }
+        return r.json() as Promise<UserApiCredentialsClientSnapshot>
+      })
+      .then(snap => {
+        if (cancelled) return
+        applyCredentialSnapshot(snap)
+      })
+      .catch(() => {
+        if (cancelled) return
+        setCredSyncMessage('error')
+      })
+    return () => {
+      cancelled = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Clerk + mode gate; avoids parent callback churn reruns
+  }, [persistMode, isSignedIn, clerkLoaded])
+
+  async function applySave() {
+    setCredSyncMessage(null)
     try {
       localStorage.setItem(ANTHROPIC_MODEL_STORAGE_KEY, anthropicModel.trim() || DEFAULT_ANTHROPIC_MODEL)
       localStorage.setItem(GEMINI_MODEL_STORAGE_KEY, geminiModel.trim() || DEFAULT_GEMINI_MODEL)
@@ -344,6 +546,63 @@ export default function ApiKeySettings({
     } catch {
       // ignore
     }
+
+    if (persistMode === 'account') {
+      persistAnthropicKey('account', anthropicKeyInput.trim())
+      persistGeminiKey('account', geminiKeyInput.trim())
+      persistOpenaiKey('account', openaiKeyInput.trim())
+      persistElevenLabsKey('account', elevenLabsKeyInput.trim())
+      persistGoogleCloudTtsKey('account', googleCloudTtsKeyInput.trim())
+
+      const am = anthropicModel.trim() || DEFAULT_ANTHROPIC_MODEL
+      const gm = geminiModel.trim() || DEFAULT_GEMINI_MODEL
+      const om = openaiModel.trim() || DEFAULT_OPENAI_MODEL
+
+      try {
+        const res = await fetch('/api/user-api-credentials', {
+          method: 'PUT',
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            provider,
+            anthropicApiKey: anthropicKeyInput.trim(),
+            anthropicModel: am,
+            geminiApiKey: geminiKeyInput.trim(),
+            geminiModel: gm,
+            openaiApiKey: openaiKeyInput.trim(),
+            openaiModel: om,
+            elevenLabsApiKey: elevenLabsKeyInput.trim(),
+            googleCloudTtsApiKey: googleCloudTtsKeyInput.trim(),
+          }),
+        })
+
+        const errJson = (await res.json().catch(() => ({}))) as { error?: string }
+        if (!res.ok) {
+          setCredSyncMessage('error')
+          // eslint-disable-next-line no-console
+          console.warn('user-api-credentials PUT failed:', errJson?.error ?? res.status)
+          return
+        }
+        setCredSyncMessage('ok')
+        setAnthropicModel(am)
+        setGeminiModel(gm)
+        setOpenaiModel(om)
+        emit({
+          anthropicModel: am,
+          geminiModel: gm,
+          openaiModel: om,
+        })
+        onElevenLabsChange?.(elevenLabsKeyInput.trim())
+        onGoogleCloudTtsChange?.(googleCloudTtsKeyInput.trim())
+      } catch {
+        setCredSyncMessage('error')
+      }
+      return
+    }
+
+    persistAnthropicKey(persistMode, anthropicKeyInput.trim())
+    persistGeminiKey(persistMode, geminiKeyInput.trim())
+    persistOpenaiKey(persistMode, openaiKeyInput.trim())
     persistElevenLabsKey(persistMode, elevenLabsKeyInput.trim())
     persistGoogleCloudTtsKey(persistMode, googleCloudTtsKeyInput.trim())
     const am = anthropicModel.trim() || DEFAULT_ANTHROPIC_MODEL
@@ -359,6 +618,7 @@ export default function ApiKeySettings({
     })
     onElevenLabsChange?.(elevenLabsKeyInput.trim())
     onGoogleCloudTtsChange?.(googleCloudTtsKeyInput.trim())
+    setCredSyncMessage('ok')
   }
 
   function clearAnthropicKey() {
@@ -401,10 +661,30 @@ export default function ApiKeySettings({
     emit({ provider: next })
   }
 
+  function onPickPersistMode(next: KeyPersistMode) {
+    if (next === 'account') {
+      if (!requireSignIn()) {
+        return
+      }
+      persistBrowserKeyMode('account')
+      setPersistMode('account')
+      return
+    }
+
+    persistBrowserKeyMode(next)
+    setPersistMode(next)
+    fillSecretsFromBrowserStores(next)
+    setCredSyncMessage(null)
+  }
+
   const hasAnthropicKey = Boolean(anthropicKeyInput.trim())
   const hasGeminiKey = Boolean(geminiKeyInput.trim())
   const hasOpenaiKey = Boolean(openaiKeyInput.trim())
   const hasGoogleCloudTtsKey = Boolean(googleCloudTtsKeyInput.trim())
+
+  /** Keeps persisted `account` bucket from disabling both Session and Local radios when the account sync option isn't shown. */
+  const persistModeForRadios =
+    persistMode === 'account' && (!clerkLoaded || !isSignedIn) ? 'session' : persistMode
 
   return (
     <section className="q-ai-settings">
@@ -417,15 +697,53 @@ export default function ApiKeySettings({
       </button>
       {open && (
         <div className="q-ai-settings-panel">
+          {credSyncMessage === 'error' && (
+            <p className="q-ai-settings-note" style={{ color: 'var(--destructive)' }}>
+              Could not sync stored credentials with your account. Check that MongoDB is configured and that{' '}
+              <code className="q-ai-code">USER_CREDENTIALS_ENCRYPTION_KEY</code> is set in production (or use dev plaintext
+              fallback without it).
+            </p>
+          )}
+          {credSyncMessage === 'ok' && persistModeForRadios !== 'account' && (
+            <p className="q-ai-settings-note">Credentials saved locally.</p>
+          )}
+          {credSyncMessage === 'ok' && persistMode === 'account' && (
+            <p className="q-ai-settings-note">Credentials saved to your account.</p>
+          )}
+
           <p className="q-ai-settings-note">
-            Keys are used only from this browser to call the provider you select. They are not sent to our servers.
-            Storing keys in the browser carries XSS risk if this tab runs untrusted scripts—prefer <strong>Session</strong>{' '}
-            when possible.             Never commit keys to git. For local dev you can set{' '}
-            <code className="q-ai-code">NEXT_PUBLIC_ANTHROPIC_API_KEY</code>, <code className="q-ai-code">NEXT_PUBLIC_GEMINI_API_KEY</code>,{' '}
+            {persistMode === 'session' ? (
+              <>
+                Keys are used only from this browser to call the provider you select. They stay in{' '}
+                <strong>sessionStorage</strong> and are cleared when this tab closes. They are{' '}
+                <strong>not sent to our servers</strong>.
+                Session storage lowers exposure if you close the interview tab.
+              </>
+            ) : persistMode === 'local' ? (
+              <>
+                Keys stay in your browser (<strong>localStorage</strong>) until you remove them here. Calls still go straight
+                to the vendor from this browser; they are not sent through our backend. Prefer <strong>Session</strong> on
+                shared devices.
+              </>
+            ) : (
+              <>
+                <strong>Signed-in account sync</strong>: saving sends your credentials over HTTPS to store them in MongoDB
+                encrypted at rest (recommended: set{' '}
+                <code className="q-ai-code">USER_CREDENTIALS_ENCRYPTION_KEY</code>). They reload on each device while you stay
+                signed in. Secrets are{' '}
+                <strong>not written to browser storage</strong> in this mode. Chat calls still originate from{' '}
+                <em>your</em> browser to the vendor using the fetched keys — we do not proxy LLM requests.
+              </>
+            )}
+            <br />
+            Never commit keys to git. For local dev you can set{' '}
+            <code className="q-ai-code">NEXT_PUBLIC_ANTHROPIC_API_KEY</code>,{' '}
+            <code className="q-ai-code">NEXT_PUBLIC_GEMINI_API_KEY</code>,{' '}
             <code className="q-ai-code">NEXT_PUBLIC_OPENAI_API_KEY</code>,{' '}
             <code className="q-ai-code">NEXT_PUBLIC_GOOGLE_CLOUD_TTS_API_KEY</code>, or{' '}
-            <code className="q-ai-code">NEXT_PUBLIC_GOOGLE_API_KEY</code> to prefill both Gemini and Cloud TTS when those fields are empty (still exposed in the client bundle if you build with them).{' '}
-            The Gemini env value also prefills the Cloud TTS field when no dedicated TTS key is set.
+            <code className="q-ai-code">NEXT_PUBLIC_GOOGLE_API_KEY</code> to prefill both Gemini and Cloud TTS when those
+            fields are empty (still exposed in the client bundle if you build with them). The Gemini env value also pre-fills the
+            Cloud TTS field when no dedicated TTS key is set.
           </p>
 
           <div className="q-ai-persist-row q-ai-provider-row">
@@ -440,21 +758,11 @@ export default function ApiKeySettings({
               Anthropic (Claude)
             </label>
             <label className="q-ai-radio">
-              <input
-                type="radio"
-                name="llmProvider"
-                checked={provider === 'gemini'}
-                onChange={() => onProviderPick('gemini')}
-              />
+              <input type="radio" name="llmProvider" checked={provider === 'gemini'} onChange={() => onProviderPick('gemini')} />
               Google Gemini
             </label>
             <label className="q-ai-radio">
-              <input
-                type="radio"
-                name="llmProvider"
-                checked={provider === 'openai'}
-                onChange={() => onProviderPick('openai')}
-              />
+              <input type="radio" name="llmProvider" checked={provider === 'openai'} onChange={() => onProviderPick('openai')} />
               OpenAI (ChatGPT API)
             </label>
           </div>
@@ -540,17 +848,15 @@ export default function ApiKeySettings({
 
           <h3 className="q-ai-subheading">Voice (optional)</h3>
           <p className="q-ai-settings-note">
-            <strong>Google Cloud TTS</strong> uses a Google Cloud API key with the{' '}
-            <strong>Cloud Text-to-Speech API</strong> enabled (this is separate from the Gemini / AI Studio key unless you enable both on the same key).
-            Calls from the browser run in your page’s origin—if Google responds with a restrictions error, open{' '}
-            <strong>Google Cloud → APIs &amp; Services → Credentials</strong>, edit the key, and under{' '}
-            <strong>API restrictions</strong> allow <strong>Cloud Text-to-Speech</strong> (or use{' '}
-            <strong>Don’t restrict key</strong> for local testing only). If <strong>Application restrictions</strong> uses{' '}
-            <strong>HTTP referrers</strong>, add each origin you use, e.g.{' '}
-            <code className="q-ai-code">http://localhost:5173/*</code>,{' '}
-            <code className="q-ai-code">http://127.0.0.1:5173/*</code>,{' '}
-            <code className="q-ai-code">http://localhost:3000/*</code>, and{' '}
-            <code className="q-ai-code">http://127.0.0.1:3000/*</code> (Next.js dev).{' '}
+            <strong>Google Cloud TTS</strong> uses a Google Cloud API key with the <strong>Cloud Text-to-Speech API</strong>{' '}
+            enabled (this is separate from the Gemini / AI Studio key unless you enable both on the same key). Calls from the
+            browser run in your page’s origin—if Google responds with a restrictions error, open{' '}
+            <strong>Google Cloud → APIs &amp; Services → Credentials</strong>, edit the key, and under <strong>API restrictions</strong>{' '}
+            allow <strong>Cloud Text-to-Speech</strong> (or use <strong>Don’t restrict key</strong> for local testing only).
+            If <strong>Application restrictions</strong> uses <strong>HTTP referrers</strong>, add each origin you use, e.g.{' '}
+            <code className="q-ai-code">http://localhost:5173/*</code>, <code className="q-ai-code">http://127.0.0.1:5173/*</code>,{' '}
+            <code className="q-ai-code">http://localhost:3000/*</code>, and <code className="q-ai-code">http://127.0.0.1:3000/*</code>{' '}
+            (Next.js dev).{' '}
             <a
               href="https://docs.cloud.google.com/api-keys/docs/add-restrictions-api-keys"
               target="_blank"
@@ -596,8 +902,8 @@ export default function ApiKeySettings({
               <input
                 type="radio"
                 name="keyPersist"
-                checked={persistMode === 'session'}
-                onChange={() => setPersistMode('session')}
+                checked={persistModeForRadios === 'session'}
+                onChange={() => onPickPersistMode('session')}
               />
               Session (cleared when tab closes)
             </label>
@@ -605,14 +911,34 @@ export default function ApiKeySettings({
               <input
                 type="radio"
                 name="keyPersist"
-                checked={persistMode === 'local'}
-                onChange={() => setPersistMode('local')}
+                checked={persistModeForRadios === 'local'}
+                onChange={() => onPickPersistMode('local')}
               />
               This device (localStorage)
             </label>
+            {isSignedIn && clerkLoaded ? (
+              <label className="q-ai-radio">
+                <input
+                  type="radio"
+                  name="keyPersist"
+                  checked={persistMode === 'account'}
+                  onChange={() => onPickPersistMode('account')}
+                />
+                Sync with account (MongoDB)
+              </label>
+            ) : (
+              clerkLoaded &&
+              !isSignedIn &&
+              persistMode !== 'account' && (
+                <span className="q-ai-settings-note">
+                  Sign in for <strong>account sync</strong> (encrypted storage on the server).
+                </span>
+              )
+            )}
           </div>
+
           <div className="q-ai-actions">
-            <button type="button" className="secondary" onClick={applySave}>
+            <button type="button" className="secondary" onClick={() => void applySave()}>
               Save credentials
             </button>
             <button type="button" className="secondary" onClick={clearAnthropicKey} disabled={!hasAnthropicKey}>

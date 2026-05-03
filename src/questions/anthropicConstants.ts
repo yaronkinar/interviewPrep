@@ -15,7 +15,7 @@ export function normalizeAnthropicModel(stored: string | null | undefined): stri
 
 export const ANTHROPIC_API_KEY_SESSION_KEY = 'interviews:anthropicApiKeySession'
 export const ANTHROPIC_API_KEY_LOCAL_KEY = 'interviews:anthropicApiKeyLocal'
-export const ANTHROPIC_KEY_PERSIST_MODE_KEY = 'interviews:anthropicKeyPersist' // 'session' | 'local'
+export const ANTHROPIC_KEY_PERSIST_MODE_KEY = 'interviews:anthropicKeyPersist' // 'session' | 'local' | 'account'
 
 export const ANTHROPIC_MODEL_STORAGE_KEY = 'interviews:anthropicModel'
 
