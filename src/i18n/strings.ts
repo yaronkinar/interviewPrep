@@ -14,6 +14,9 @@ export type HomeStrings = {
   cards: {
     js: { title: string; body: string }
     react: { title: string; body: string }
+    typescript: { title: string; body: string }
+    vue: { title: string; body: string }
+    angular: { title: string; body: string }
     sandbox: { title: string; body: string }
     mock: { title: string; body: string }
     questions: { title: string; body: string }
@@ -451,6 +454,9 @@ const en: AppStrings = {
     home: 'Home',
     js: 'JS Patterns',
     react: 'React Questions',
+    typescript: 'TypeScript',
+    vue: 'Vue.js',
+    angular: 'Angular',
     css: 'CSS',
     sandbox: 'React sandbox',
     mock: 'Mock interview',
@@ -464,7 +470,7 @@ const en: AppStrings = {
     metaTitle: 'Interview Prep — practice in the browser',
     heroTitle: 'Interview Prep',
     heroLead:
-      'Practice JavaScript patterns, React concepts, company-style questions, and AI mock interviews — all in your browser.',
+      'Practice JavaScript patterns, React, TypeScript, Vue, and Angular topics, company-style questions, and AI mock interviews — all in your browser.',
     heroKicker: 'Browser-based interview practice',
     sectionAbout: 'What this site is',
     aboutBody:
@@ -479,6 +485,18 @@ const en: AppStrings = {
       react: {
         title: 'React Questions',
         body: 'Walk through hooks and React interview topics with live examples you can inspect and tweak.',
+      },
+      typescript: {
+        title: 'TypeScript',
+        body: 'Types, generics, narrowing, and compilation concepts — pair this hub with Company Q&A filtered by the TypeScript category.',
+      },
+      vue: {
+        title: 'Vue.js',
+        body: 'Composition API, reactivity, and Vue runtime topics — jump into categorized interview questions when you want to drill.',
+      },
+      angular: {
+        title: 'Angular',
+        body: 'Components, dependency injection, change detection, and RxJS — pair this hub with Company Q&A filtered by the Angular category.',
       },
       sandbox: {
         title: 'React sandbox',
@@ -519,6 +537,9 @@ const he: AppStrings = {
     home: 'בית',
     js: 'דפוסי JS',
     react: 'שאלות React',
+    typescript: 'TypeScript',
+    vue: 'Vue.js',
+    angular: 'Angular',
     css: 'CSS',
     sandbox: 'ארגז חול React',
     mock: 'ראיון דמה',
@@ -532,7 +553,7 @@ const he: AppStrings = {
     metaTitle: 'הכנה לראיונות — תרגול בדפדפן',
     heroTitle: 'הכנה לראיונות',
     heroLead:
-      'תרגל דפוסי JavaScript, מושגי React, שאלות בסגנון חברות וראיונות דמה עם בינה מלאכותית — הכול בדפדפן.',
+      'תרגל דפוסי JavaScript, מושגי React, TypeScript, Vue ו-Angular, שאלות בסגנון חברות וראיונות דמה עם בינה מלאכותית — הכול בדפדפן.',
     sectionAbout: 'מה האתר הזה',
     aboutBody:
       'זהו מגרש אימונים ממוקד לראיונות טכניים. אפשר לקרוא ולהריץ דוגמאות אינטראקטיביות, לנסות תרגילים בארגז חול, לעבור שאלות ותשובות בסגנון חברות, ולבצע ראיון דמה קולי עם Claude לאחר הוספת מפתח API.',
@@ -546,6 +567,18 @@ const he: AppStrings = {
       react: {
         title: 'שאלות React',
         body: 'עברו על hooks ונושאי React עם דוגמאות חיות שניתן לבחון ולשנות.',
+      },
+      typescript: {
+        title: 'TypeScript',
+        body: 'טיפוסים, ג׳נריקס והצרת טיפוסים — השתמשו בשאלות ותשובות עם הקטגוריה TypeScript.',
+      },
+      vue: {
+        title: 'Vue.js',
+        body: 'Composition API וריאקטיביות — המשיכו לשאלות מסווגות כשאתם רוצים לתרגל עומק.',
+      },
+      angular: {
+        title: 'Angular',
+        body: 'קומפוננטות, dependency injection, change detection ו-RxJS — השתמשו בשאלות ותשובות עם הקטגוריה Angular.',
       },
       sandbox: {
         title: 'ארגז חול React',
@@ -584,6 +617,9 @@ const es: AppStrings = {
     home: 'Inicio',
     js: 'Patrones JS',
     react: 'Preguntas React',
+    typescript: 'TypeScript',
+    vue: 'Vue.js',
+    angular: 'Angular',
     css: 'CSS',
     sandbox: 'Sandbox React',
     mock: 'Simulacro',
@@ -611,6 +647,18 @@ const es: AppStrings = {
       react: {
         title: 'Preguntas React',
         body: 'Repasa hooks y temas de React con ejemplos en vivo que puedes inspeccionar y modificar.',
+      },
+      typescript: {
+        title: 'TypeScript',
+        body: 'Tipos, genéricos y estrechamiento — enlázalo con P&R usando la categoría TypeScript.',
+      },
+      vue: {
+        title: 'Vue.js',
+        body: 'Composition API y reactividad — abre preguntas categorizadas cuando quieras practicar.',
+      },
+      angular: {
+        title: 'Angular',
+        body: 'Componentes, inyección de dependencias, detección de cambios y RxJS — enlázalo con P&R en la categoría Angular.',
       },
       sandbox: {
         title: 'Sandbox React',
@@ -649,6 +697,9 @@ const fr: AppStrings = {
     home: 'Accueil',
     js: 'Patterns JS',
     react: 'Questions React',
+    typescript: 'TypeScript',
+    vue: 'Vue.js',
+    angular: 'Angular',
     css: 'CSS',
     sandbox: 'Bac à sable React',
     mock: 'Entretien blanc',
@@ -676,6 +727,18 @@ const fr: AppStrings = {
       react: {
         title: 'Questions React',
         body: 'Révisez les hooks et sujets React avec des exemples vivants que vous pouvez inspecter et modifier.',
+      },
+      typescript: {
+        title: 'TypeScript',
+        body: 'Types, génériques et narrowing — reliez à la Q&R avec la catégorie TypeScript.',
+      },
+      vue: {
+        title: 'Vue.js',
+        body: 'Composition API et réactivité — ouvrez des questions classées pour vous entraîner.',
+      },
+      angular: {
+        title: 'Angular',
+        body: 'Composants, injection de dépendances, détection de changements et RxJS — reliez à la Q&R (catégorie Angular).',
       },
       sandbox: {
         title: 'Bac à sable React',
@@ -714,6 +777,9 @@ const de: AppStrings = {
     home: 'Start',
     js: 'JS-Muster',
     react: 'React-Fragen',
+    typescript: 'TypeScript',
+    vue: 'Vue.js',
+    angular: 'Angular',
     css: 'CSS',
     sandbox: 'React-Sandbox',
     mock: 'Probegespräch',
@@ -741,6 +807,18 @@ const de: AppStrings = {
       react: {
         title: 'React-Fragen',
         body: 'Hooks und React-Themen mit live Beispielen, die du ansehen und anpassen kannst.',
+      },
+      typescript: {
+        title: 'TypeScript',
+        body: 'Typen, Generics und Narrowing — mit Firmen-F&A in der Kategorie TypeScript üben.',
+      },
+      vue: {
+        title: 'Vue.js',
+        body: 'Composition API und Reaktivität — zu sortierten Interviewfragen springen.',
+      },
+      angular: {
+        title: 'Angular',
+        body: 'Komponenten, Dependency Injection, Change Detection und RxJS — Q&A mit Kategorie Angular.',
       },
       sandbox: {
         title: 'React-Sandbox',
@@ -779,6 +857,9 @@ const pt: AppStrings = {
     home: 'Início',
     js: 'Padrões JS',
     react: 'Perguntas React',
+    typescript: 'TypeScript',
+    vue: 'Vue.js',
+    angular: 'Angular',
     css: 'CSS',
     sandbox: 'Sandbox React',
     mock: 'Simulado',
@@ -806,6 +887,18 @@ const pt: AppStrings = {
       react: {
         title: 'Perguntas React',
         body: 'Revise hooks e tópicos React com exemplos ao vivo que você pode inspecionar e alterar.',
+      },
+      typescript: {
+        title: 'TypeScript',
+        body: 'Tipos, generics e narrowing — use P&R com a categoria TypeScript.',
+      },
+      vue: {
+        title: 'Vue.js',
+        body: 'Composition API e reatividade — abra perguntas categorizadas para praticar.',
+      },
+      angular: {
+        title: 'Angular',
+        body: 'Componentes, injeção de dependências, detecção de mudanças e RxJS — P&R na categoria Angular.',
       },
       sandbox: {
         title: 'Sandbox React',
@@ -844,6 +937,9 @@ const ja: AppStrings = {
     home: 'ホーム',
     js: 'JS パターン',
     react: 'React 質問',
+    typescript: 'TypeScript',
+    vue: 'Vue.js',
+    angular: 'Angular',
     css: 'CSS',
     sandbox: 'React サンドボックス',
     mock: '模擬面接',
@@ -871,6 +967,18 @@ const ja: AppStrings = {
       react: {
         title: 'React 質問',
         body: 'hooks や React のトピックを、動く例を見ながら確認・変更できます。',
+      },
+      typescript: {
+        title: 'TypeScript',
+        body: '型、ジェネリクス、ナロウイング — TypeScript カテゴリの Q&A で練習。',
+      },
+      vue: {
+        title: 'Vue.js',
+        body: 'Composition API とリアクティビティ — 分類された質問から深掘り。',
+      },
+      angular: {
+        title: 'Angular',
+        body: 'コンポーネント、DI、チェンジディテクション、RxJS — Angular カテゴリの Q&A で練習。',
       },
       sandbox: {
         title: 'React サンドボックス',
@@ -909,6 +1017,9 @@ const zh: AppStrings = {
     home: '首页',
     js: 'JS 模式',
     react: 'React 题库',
+    typescript: 'TypeScript',
+    vue: 'Vue.js',
+    angular: 'Angular',
     css: 'CSS',
     sandbox: 'React 沙箱',
     mock: '模拟面试',
@@ -936,6 +1047,18 @@ const zh: AppStrings = {
       react: {
         title: 'React 题库',
         body: '通过可运行示例复习 hooks 与 React 主题，便于查看与修改。',
+      },
+      typescript: {
+        title: 'TypeScript',
+        body: '类型、泛型与收窄 — 用「TypeScript」分类的公司问答强化练习。',
+      },
+      vue: {
+        title: 'Vue.js',
+        body: 'Composition API 与响应式 — 需要专题练习时打开分类问答。',
+      },
+      angular: {
+        title: 'Angular',
+        body: '组件、依赖注入、变更检测与 RxJS — 用「Angular」分类的公司问答强化练习。',
       },
       sandbox: {
         title: 'React 沙箱',
@@ -974,6 +1097,9 @@ const ar: AppStrings = {
     home: 'الرئيسية',
     js: 'أنماط JS',
     react: 'أسئلة React',
+    typescript: 'TypeScript',
+    vue: 'Vue.js',
+    angular: 'Angular',
     css: 'CSS',
     sandbox: 'بيئة React',
     mock: 'مقابلة تجريبية',
@@ -1001,6 +1127,18 @@ const ar: AppStrings = {
       react: {
         title: 'أسئلة React',
         body: 'راجع الـ hooks ومواضيع React بأمثلة حيّة يمكنك فحصها وتعديلها.',
+      },
+      typescript: {
+        title: 'TypeScript',
+        body: 'الأنواع والأنواع العامة وتضييق النوع — تدرّب عبر أسئلة الشركات ضمن فئة TypeScript.',
+      },
+      vue: {
+        title: 'Vue.js',
+        body: 'Composition API والتفاعلية — انتقل إلى الأسئلة المصنّفة للتمرّن.',
+      },
+      angular: {
+        title: 'Angular',
+        body: 'المكوّنات، حقن التبعيات، كشف التغييرات وRxJS — تدرّب عبر أسئلة الشركات ضمن فئة Angular.',
       },
       sandbox: {
         title: 'بيئة React',
@@ -1039,6 +1177,9 @@ const ru: AppStrings = {
     home: 'Главная',
     js: 'Паттерны JS',
     react: 'Вопросы React',
+    typescript: 'TypeScript',
+    vue: 'Vue.js',
+    angular: 'Angular',
     css: 'CSS',
     sandbox: 'Песочница React',
     mock: 'Пробное интервью',
@@ -1066,6 +1207,18 @@ const ru: AppStrings = {
       react: {
         title: 'Вопросы React',
         body: 'Hooks и темы React на живых примерах, которые можно смотреть и менять.',
+      },
+      typescript: {
+        title: 'TypeScript',
+        body: 'Типы, дженерики и сужение — тренируйтесь через Q&A с категорией TypeScript.',
+      },
+      vue: {
+        title: 'Vue.js',
+        body: 'Composition API и реактивность — переходите к тематическим вопросам.',
+      },
+      angular: {
+        title: 'Angular',
+        body: 'Компоненты, DI, обнаружение изменений и RxJS — Q&A с категорией Angular.',
       },
       sandbox: {
         title: 'Песочница React',
@@ -1104,6 +1257,9 @@ const hi: AppStrings = {
     home: 'होम',
     js: 'JS पैटर्न',
     react: 'React प्रश्न',
+    typescript: 'TypeScript',
+    vue: 'Vue.js',
+    angular: 'Angular',
     css: 'CSS',
     sandbox: 'React सैंडबॉक्स',
     mock: 'मॉक इंटरव्यू',
@@ -1131,6 +1287,18 @@ const hi: AppStrings = {
       react: {
         title: 'React प्रश्न',
         body: 'hooks और React विषयों को लाइव उदाहरणों के साथ देखें और बदलें।',
+      },
+      typescript: {
+        title: 'TypeScript',
+        body: 'प्रकार, जेनेरिक और नैरोइंग — TypeScript श्रेणी वाले कंपनी Q&A से अभ्यास करें।',
+      },
+      vue: {
+        title: 'Vue.js',
+        body: 'Composition API और प्रतिक्रियाशीलता — वर्गीकृत प्रश्नों पर गहराई से जाएँ।',
+      },
+      angular: {
+        title: 'Angular',
+        body: 'कंपोनेंट्स, डिपेंडेंसी इंजेक्शन, चेंज डिटेक्शन और RxJS — Angular श्रेणी वाले कंपनी Q&A से अभ्यास करें।',
       },
       sandbox: {
         title: 'React सैंडबॉक्स',
@@ -1169,6 +1337,9 @@ const pl: AppStrings = {
     home: 'Start',
     js: 'Wzorce JS',
     react: 'Pytania React',
+    typescript: 'TypeScript',
+    vue: 'Vue.js',
+    angular: 'Angular',
     css: 'CSS',
     sandbox: 'Piaskownica React',
     mock: 'Mock interview',
@@ -1196,6 +1367,18 @@ const pl: AppStrings = {
       react: {
         title: 'Pytania React',
         body: 'Hooki i tematy React na żywych przykładach do podglądu i edycji.',
+      },
+      typescript: {
+        title: 'TypeScript',
+        body: 'Typy, typy ogólne i zwężanie — ćwicz przez Q&A z kategorią TypeScript.',
+      },
+      vue: {
+        title: 'Vue.js',
+        body: 'Composition API i reaktywność — przejdź do posegregowanych pytań.',
+      },
+      angular: {
+        title: 'Angular',
+        body: 'Komponenty, dependency injection, wykrywanie zmian i RxJS — Q&A z kategorią Angular.',
       },
       sandbox: {
         title: 'Piaskownica React',
@@ -1234,6 +1417,9 @@ const ko: AppStrings = {
     home: '홈',
     js: 'JS 패턴',
     react: 'React 질문',
+    typescript: 'TypeScript',
+    vue: 'Vue.js',
+    angular: 'Angular',
     css: 'CSS',
     sandbox: 'React 샌드박스',
     mock: '모의 면접',
@@ -1261,6 +1447,18 @@ const ko: AppStrings = {
       react: {
         title: 'React 질문',
         body: 'hooks와 React 주제를 살아 있는 예제로 확인하고 수정합니다.',
+      },
+      typescript: {
+        title: 'TypeScript',
+        body: '타입, 제네릭, 내로잉 — TypeScript 카테고리 Q&A로 연습하세요.',
+      },
+      vue: {
+        title: 'Vue.js',
+        body: 'Composition API와 반응성 — 분류된 질문으로 깊이 있게 연습.',
+      },
+      angular: {
+        title: 'Angular',
+        body: '컴포넌트, 의존성 주입, 변경 감지, RxJS — Angular 카테고리 Q&A로 연습.',
       },
       sandbox: {
         title: 'React 샌드박스',

@@ -1,26 +1,11 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useJsSandboxUseSandpack } from '@/hooks/useJsSandboxUseSandpack'
 import SandboxMonaco from './SandboxMonaco'
 import SandboxSandpack from './SandboxSandpack'
 
 export default function Sandbox() {
-  const [useSandpack, setUseSandpack] = useState<boolean | null>(null)
-
-  useEffect(() => {
-    let cancelled = false
-    fetch('/api/feature-flags', { cache: 'no-store' })
-      .then(r => (r.ok ? r.json() : null))
-      .then((data: { jsSandboxUseSandpack?: boolean } | null) => {
-        if (!cancelled) setUseSandpack(Boolean(data?.jsSandboxUseSandpack))
-      })
-      .catch(() => {
-        if (!cancelled) setUseSandpack(false)
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [])
+  const useSandpack = useJsSandboxUseSandpack()
 
   if (useSandpack === null) {
     return (

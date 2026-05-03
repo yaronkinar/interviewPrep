@@ -5,6 +5,9 @@
 export const HOME_PROGRESS_TRACKS = [
   'js',
   'react',
+  'typescript',
+  'vue',
+  'angular',
   'sandbox',
   'mock',
   'questions',
@@ -18,6 +21,9 @@ export function pathToProgressSection(pathname: string): HomeProgressTrack | nul
   const normalized = pathname.replace(/\/$/, '') || '/'
   if (normalized === '/js') return 'js'
   if (normalized === '/react') return 'react'
+  if (normalized === '/typescript') return 'typescript'
+  if (normalized === '/vue') return 'vue'
+  if (normalized === '/angular') return 'angular'
   if (normalized === '/sandbox') return 'sandbox'
   if (normalized === '/mock') return 'mock'
   if (normalized === '/questions') return 'questions'

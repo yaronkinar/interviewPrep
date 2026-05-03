@@ -5,6 +5,9 @@ export type Category =
   | 'Prototypes & OOP'
   | 'DOM & Browser'
   | 'ES6+'
+  | 'TypeScript'
+  | 'Vue.js'
+  | 'Angular'
   | 'Algorithms'
   | 'System Design'
   | 'Performance'
@@ -15,6 +18,9 @@ export const CATEGORIES: Category[] = [
   'Prototypes & OOP',
   'DOM & Browser',
   'ES6+',
+  'TypeScript',
+  'Vue.js',
+  'Angular',
   'Algorithms',
   'System Design',
   'Performance',

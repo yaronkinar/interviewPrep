@@ -157,7 +157,9 @@ export function SettingsAdminPanel() {
           <span>
             <strong>JS lab + React sandbox</strong>
             <span style={{ display: 'block', color: 'var(--text-muted)', fontSize: '0.9rem', marginTop: '0.25rem' }}>
-              <code>/js</code> and <code>/sandbox</code> use Sandpack instead of Monaco + blob iframe.
+              <code>/js</code>, <code>/sandbox</code>, and framework playgrounds (<code>/typescript</code>,{' '}
+              <code>/vue</code>, <code>/angular</code>) use Sandpack for live preview; when off, those lessons show a
+              Monaco snippet editor plus the classic JS sandbox.
             </span>
           </span>
         </label>

@@ -16,6 +16,12 @@ export type UiStrings = {
   pages: {
     jsTitle: string
     reactTitle: string
+    typescriptTitle: string
+    vueTitle: string
+    angularTitle: string
+    typescriptHubLead: string
+    vueHubLead: string
+    angularHubLead: string
     cssTitle: string
     sandboxTitle: string
     questionsTitle: string
@@ -192,6 +198,15 @@ const en: UiStrings = {
   pages: {
     jsTitle: 'JS Patterns',
     reactTitle: 'React Questions',
+    typescriptTitle: 'TypeScript',
+    vueTitle: 'Vue.js',
+    angularTitle: 'Angular',
+    typescriptHubLead:
+      'Static typing, generics, narrowing, and how TypeScript relates to JavaScript in frontend interviews.',
+    vueHubLead:
+      'Composition API, reactivity, and runtime behavior — common themes in Vue-focused interview loops.',
+    angularHubLead:
+      'Components, dependency injection, change detection, and RxJS — typical Angular interview angles.',
     cssTitle: 'CSS Patterns',
     sandboxTitle: 'React sandbox',
     questionsTitle: 'Company Interview Questions',
@@ -391,6 +406,12 @@ const he: Partial<UiStrings> = {
   pages: {
     jsTitle: 'דפוסי JS',
     reactTitle: 'שאלות React',
+    typescriptTitle: 'TypeScript',
+    vueTitle: 'Vue.js',
+    angularTitle: 'Angular',
+    typescriptHubLead: 'טיפוסים סטטיים, ג׳נריקס, הצרת טיפוסים והקשר ל-JavaScript בראיונות פרונטאנד.',
+    vueHubLead: 'Composition API, ריאקטיביות והתנהגות זמן ריצה — נושאים שכיחים בראיונות על Vue.',
+    angularHubLead: 'קומפוננטות, הזרקת תלויות, זיהוי שינויים ו-RxJS — זוויות טיפוסיות לראיונות Angular.',
     cssTitle: 'דפוסי CSS',
     sandboxTitle: 'ארגז חול React',
     questionsTitle: 'שאלות ראיונות חברות',
