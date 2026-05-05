@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next'
+import Script from 'next/script'
 import { ClerkProvider } from '@clerk/nextjs'
 import ClientProviders from './ClientProviders'
 import '@/index.css'
@@ -6,7 +7,7 @@ import '@/index.css'
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://interview-prep.vercel.app'
 
 export const viewport: Viewport = {
-  themeColor: '#0c1222',
+  themeColor: '#f7f9fc',
 }
 
 export const metadata: Metadata = {
@@ -46,8 +47,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <html lang="en" suppressHydrationWarning>
         <head />
         <body suppressHydrationWarning>
-          {/* Inline theme init to avoid flash of wrong theme */}
-          <script
+          <Script
+            id="interview-prep-theme-init"
+            strategy="beforeInteractive"
             dangerouslySetInnerHTML={{
               __html: `(function(){try{var t=localStorage.getItem('interview-prep-theme');if(t==='light'||t==='dark'){document.documentElement.dataset.theme=t;return}}catch(e){}if(window.matchMedia&&window.matchMedia('(prefers-color-scheme: light)').matches){document.documentElement.dataset.theme='light'}else{document.documentElement.dataset.theme='dark'}})()`,
             }}

@@ -26,6 +26,35 @@ export type UiStrings = {
     sandboxTitle: string
     questionsTitle: string
     sandboxLead: string
+    reactHubLead: string
+    jsHubLead: string
+    cssHubLead: string
+  }
+  /** Stitch Learning Path — shared chrome for topic hub studios */
+  learningPathStudio: {
+    breadcrumbLibrary: string
+    breadcrumbSepAria: string
+    coreConcepts: string
+    masteryTitle: string
+    /** Use {mastered} and {total} */
+    masterySubTemplate: string
+    resourcesTitle: string
+    sandboxLinkTitle: string
+    sandboxLinkSub: string
+    difficultyEasy: string
+    difficultyMedium: string
+    difficultyHard: string
+    statusMastered: string
+    statusInProgress: string
+    statusNotStarted: string
+  }
+  topicStudios: {
+    react: { proTipTitle: string; proTipBody: string; viewExamples: string }
+    js: { proTipTitle: string; proTipBody: string; viewExamples: string }
+    typescript: { proTipTitle: string; proTipBody: string; viewExamples: string }
+    vue: { proTipTitle: string; proTipBody: string; viewExamples: string }
+    angular: { proTipTitle: string; proTipBody: string; viewExamples: string }
+    css: { proTipTitle: string; proTipBody: string; viewExamples: string }
   }
   common: {
     show: string
@@ -197,7 +226,7 @@ const en: UiStrings = {
   },
   pages: {
     jsTitle: 'JS Patterns',
-    reactTitle: 'React Questions',
+    reactTitle: 'React Patterns',
     typescriptTitle: 'TypeScript',
     vueTitle: 'Vue.js',
     angularTitle: 'Angular',
@@ -212,6 +241,66 @@ const en: UiStrings = {
     questionsTitle: 'Company Interview Questions',
     sandboxLead:
       'Edit in a VS Code-style editor (Monaco, dark theme), compile TSX in the browser, and preview in an isolated iframe. Paste a full Claude reply from Company Q&A to extract code, or type directly in Preview.tsx.',
+    reactHubLead:
+      'Master the architectural blueprints of scalable React applications — hooks, composition ideas, and interview-ready demos below.',
+    jsHubLead:
+      'Learn by tweaking values and watching runtime behavior. A curated sandbox for the modern engineer.',
+    cssHubLead:
+      'Classic CSS interview questions with live previews next to the rule that produces them. Toggle techniques to compare behaviour side by side.',
+  },
+  learningPathStudio: {
+    breadcrumbLibrary: 'Library',
+    breadcrumbSepAria: 'Breadcrumb',
+    coreConcepts: 'Core concepts',
+    masteryTitle: 'Category mastery',
+    masterySubTemplate: '{mastered} of {total} patterns mastered',
+    resourcesTitle: 'Category resources',
+    sandboxLinkTitle: 'Interactive sandbox',
+    sandboxLinkSub: 'Run code in the browser',
+    difficultyEasy: 'Easy',
+    difficultyMedium: 'Medium',
+    difficultyHard: 'Hard',
+    statusMastered: 'Mastered',
+    statusInProgress: 'In progress',
+    statusNotStarted: 'Not started',
+  },
+  topicStudios: {
+    react: {
+      proTipTitle: 'Pro tip',
+      proTipBody:
+        'Reach for compound-style composition when several pieces must work together (menus, tabs, disclosures). Prefer small composable parts over giant prop bags.',
+      viewExamples: 'View cheatsheet',
+    },
+    js: {
+      proTipTitle: 'Pro tip',
+      proTipBody:
+        'Debouncing and throttling are closure-heavy — practice explaining timers, cleanup, and trailing vs leading edges out loud.',
+      viewExamples: 'Jump to first lab',
+    },
+    typescript: {
+      proTipTitle: 'Pro tip',
+      proTipBody:
+        'Carry a literal discriminant on unions (`kind` / `type`) so `switch` narrows without unsafe casts.',
+      viewExamples: 'Open cheatsheet',
+    },
+    vue: {
+      proTipTitle: 'Pro tip',
+      proTipBody:
+        'Lean on `ref`/`computed` for local UI state; be ready to contrast Options API vs Composition API trade-offs.',
+      viewExamples: 'Open cheatsheet',
+    },
+    angular: {
+      proTipTitle: 'Pro tip',
+      proTipBody:
+        'Expect questions on DI tokens, `OnPush`, and zone implications — rehearse how you’d unit-test a component.',
+      viewExamples: 'Open cheatsheet',
+    },
+    css: {
+      proTipTitle: 'Pro tip',
+      proTipBody:
+        'Stacking contexts trip people up — connect `z-index` with positioning, opacity, transforms, and overflow.',
+      viewExamples: 'Open first lab',
+    },
   },
   common: {
     show: 'Show',
@@ -405,7 +494,7 @@ const he: Partial<UiStrings> = {
   },
   pages: {
     jsTitle: 'דפוסי JS',
-    reactTitle: 'שאלות React',
+    reactTitle: 'דפוסי React',
     typescriptTitle: 'TypeScript',
     vueTitle: 'Vue.js',
     angularTitle: 'Angular',
@@ -417,6 +506,66 @@ const he: Partial<UiStrings> = {
     questionsTitle: 'שאלות ראיונות חברות',
     sandboxLead:
       'עריכה בעורך בסגנון VS Code (Monaco, תמה כהה), קומפילציית TSX בדפדפן ותצוגה מקדימה ב-iframe מבודד. אפשר להדביק תשובה מלאה של Claude מלשונית שאלות ותשובות, או לכתוב ישירות ב-Preview.tsx.',
+    reactHubLead:
+      'שליטה במבנים ארכיטקטוניים של אפליקציות React בקנה מידה — hooks, הרכבה, והדגמות מוכנות לראיון.',
+    jsHubLead:
+      'למידה בשינוי ערכים וצפייה בהתנהגות זמן ריצה. מעבדה אינטראקטיבית למהנדסות ומהנדסים מודרניים.',
+    cssHubLead:
+      'שאלות CSS קלאסיות עם תצוגה חיה ליד כלל ה-CSS שמייצר אותן. ניתן להשוות טכניקות זו מול זו.',
+  },
+  learningPathStudio: {
+    breadcrumbLibrary: 'ספרייה',
+    breadcrumbSepAria: 'פרורי ניווט',
+    coreConcepts: 'מושגי ליבה',
+    masteryTitle: 'שליטה בקטגוריה',
+    masterySubTemplate: '{mastered} מתוך {total} דפוסים נשלטו',
+    resourcesTitle: 'משאבי קטגוריה',
+    sandboxLinkTitle: 'ארגז חול אינטראקטיבי',
+    sandboxLinkSub: 'הריצו קוד בדפדפן',
+    difficultyEasy: 'קל',
+    difficultyMedium: 'בינוני',
+    difficultyHard: 'קשה',
+    statusMastered: 'נשלט',
+    statusInProgress: 'בתהליך',
+    statusNotStarted: 'לא התחיל',
+  },
+  topicStudios: {
+    react: {
+      proTipTitle: 'טיפ מקצועי',
+      proTipBody:
+        'כדאי לבחור בהרכבה בסגנון compound כשכמה חלקים חייבים לעבוד יחד (תפריטים, טאבים, הרחבות מוסתרות). העדיפו חלקים קטנים וניתנים להרכבה על פני אובייקטי props ענקיים.',
+      viewExamples: 'למדריך המהיר',
+    },
+    js: {
+      proTipTitle: 'טיפ מקצועי',
+      proTipBody:
+        'debounce ו-throttle נשענים על closures — תרגלו להסביר טיימרים, ניקוי, והבדל בין קצה מוביל למוביל.',
+      viewExamples: 'למעבדה הראשונה',
+    },
+    typescript: {
+      proTipTitle: 'טיפ מקצועי',
+      proTipBody:
+        'שימוש בשדה דיסקרימיננטיבי ליטרלי (`kind` / `type`) מאפשר ל-`switch` להצר בלי המרות לא בטוחות.',
+      viewExamples: 'פתחו את המדריך המהיר',
+    },
+    vue: {
+      proTipTitle: 'טיפ מקצועי',
+      proTipBody:
+        'הסתמכו על `ref`/`computed` למצב מקומי; היו מוכנים להשוות Options API מול Composition API.',
+      viewExamples: 'פתחו את המדריך המהיר',
+    },
+    angular: {
+      proTipTitle: 'טיפ מקצועי',
+      proTipBody:
+        'מצפים לשאלות על DI, `OnPush` והשפעת Zone — תרגלו איך לבדוק קומפוננטה בבידוד.',
+      viewExamples: 'פתחו את המדריך המהיר',
+    },
+    css: {
+      proTipTitle: 'טיפ מקצועי',
+      proTipBody:
+        'הקשרי ערימה מפתיעים בראיון — חברו בין `z-index` למיקום, שקיפות, טרנספורמציות ו-overflow.',
+      viewExamples: 'למעבדה הראשונה',
+    },
   },
   common: {
     show: 'הצג',
@@ -1139,6 +1288,15 @@ export function getUiStrings(locale: Locale): UiStrings {
     nav: { ...en.nav, ...(override?.nav ?? {}) },
     theme: { ...en.theme, ...(override?.theme ?? {}) },
     pages: { ...en.pages, ...(override?.pages ?? {}) },
+    learningPathStudio: { ...en.learningPathStudio, ...(override?.learningPathStudio ?? {}) },
+    topicStudios: {
+      react: { ...en.topicStudios.react, ...(override?.topicStudios?.react ?? {}) },
+      js: { ...en.topicStudios.js, ...(override?.topicStudios?.js ?? {}) },
+      typescript: { ...en.topicStudios.typescript, ...(override?.topicStudios?.typescript ?? {}) },
+      vue: { ...en.topicStudios.vue, ...(override?.topicStudios?.vue ?? {}) },
+      angular: { ...en.topicStudios.angular, ...(override?.topicStudios?.angular ?? {}) },
+      css: { ...en.topicStudios.css, ...(override?.topicStudios?.css ?? {}) },
+    },
     common: { ...en.common, ...(override?.common ?? {}) },
     questions: { ...en.questions, ...(override?.questions ?? {}) },
     js: {

@@ -1,7 +1,26 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Moon, Sun } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
+import {
+  Bookmark,
+  Boxes,
+  Code2,
+  FileCode2,
+  FileUser,
+  Hexagon,
+  LayoutDashboard,
+  MessageSquareQuote,
+  Mic,
+  Moon,
+  Palette,
+  Route,
+  Shield,
+  Sun,
+  SwatchBook,
+  Terminal,
+  Triangle,
+} from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { SignInButton, UserButton, useUser } from '@clerk/nextjs'
@@ -36,6 +55,26 @@ const PUBLIC_TAB_IDS: Page[] = [
   'cv',
   'cvThemes',
 ]
+
+/** Header shortcuts between logo and toolbar (tablet only — desktop uses the sidebar). */
+const HEADER_SHORTCUT_PAGES: Page[] = ['home', 'js', 'questions', 'mock']
+
+const PAGE_ICONS: Record<Page, LucideIcon> = {
+  home: LayoutDashboard,
+  js: Code2,
+  react: Boxes,
+  typescript: FileCode2,
+  vue: Triangle,
+  angular: Hexagon,
+  css: Palette,
+  quest: Route,
+  sandbox: Terminal,
+  mock: Mic,
+  questions: MessageSquareQuote,
+  cv: FileUser,
+  cvThemes: SwatchBook,
+}
+
 const LOCALE_LABELS: Record<Locale, string> = {
   en: 'English',
   he: 'עברית',
@@ -52,36 +91,37 @@ const LOCALE_LABELS: Record<Locale, string> = {
   ko: '한국어',
 }
 
+function linkIsActive(pathname: string, id: Page, to: string): boolean {
+  return to === '/'
+    ? pathname === '/'
+    : id === 'cv'
+      ? pathname === '/cv'
+      : pathname === to || pathname.startsWith(`${to}/`)
+}
+
 type NavLinksProps = {
   className?: string
   linkClassName: (args: { isActive: boolean }) => string
   onNavigate?: () => void
   isAdmin: boolean
+  variant?: 'tabs' | 'sidebar'
 }
 
-function NavLinks({ className, linkClassName, onNavigate, isAdmin }: NavLinksProps) {
+function NavLinks({ className, linkClassName, onNavigate, isAdmin, variant = 'tabs' }: NavLinksProps) {
   const { strings } = useLocale()
   const pathname = usePathname()
+  const showIcons = variant === 'sidebar'
+
   return (
     <div className={className}>
       {PUBLIC_TAB_IDS.map(id => {
         const to = PATH_FOR_PAGE[id]
-        // Match exact path or a child segment (`/quest` must not match `/questions`).
-        // `/cv/themes` must not activate the `/cv` tab — only the cvThemes tab.
-        const isActive =
-          to === '/'
-            ? pathname === '/'
-            : id === 'cv'
-              ? pathname === '/cv'
-              : pathname === to || pathname.startsWith(`${to}/`)
+        const isActive = linkIsActive(pathname, id, to)
+        const Icon = PAGE_ICONS[id]
         return (
-          <Link
-            key={id}
-            href={to}
-            className={linkClassName({ isActive })}
-            onClick={onNavigate}
-          >
-            {strings.nav[id]}
+          <Link key={id} href={to} className={linkClassName({ isActive })} onClick={onNavigate}>
+            {showIcons ? <Icon className="stitch-sidebar-icon" size={20} strokeWidth={2} aria-hidden /> : null}
+            <span className={showIcons ? 'stitch-sidebar-link-text' : undefined}>{strings.nav[id]}</span>
           </Link>
         )
       })}
@@ -90,15 +130,19 @@ function NavLinks({ className, linkClassName, onNavigate, isAdmin }: NavLinksPro
         className={linkClassName({ isActive: pathname === '/saved' })}
         onClick={onNavigate}
       >
-        {strings.navSaved}
+        {showIcons ? <Bookmark className="stitch-sidebar-icon" size={20} strokeWidth={2} aria-hidden /> : null}
+        <span className={showIcons ? 'stitch-sidebar-link-text' : undefined}>{strings.navSaved}</span>
       </Link>
       {isAdmin && (
         <Link
           href="/admin"
-          className={linkClassName({ isActive: pathname === '/admin' || pathname.startsWith('/admin/') })}
+          className={linkClassName({
+            isActive: pathname === '/admin' || pathname.startsWith('/admin/'),
+          })}
           onClick={onNavigate}
         >
-          Admin
+          {showIcons ? <Shield className="stitch-sidebar-icon" size={20} strokeWidth={2} aria-hidden /> : null}
+          <span className={showIcons ? 'stitch-sidebar-link-text' : undefined}>Admin</span>
         </Link>
       )}
     </div>
@@ -108,16 +152,18 @@ function NavLinks({ className, linkClassName, onNavigate, isAdmin }: NavLinksPro
 export default function Nav() {
   const { locale, setLocale, strings } = useLocale()
   const ui = getUiStrings(locale)
+  const uiQuestions = ui.questions
   const { theme, setTheme } = useTheme()
   const { isSignedIn } = useUser()
   const [isAdmin, setIsAdmin] = useState(false)
   const rtl = isRtlLocale(locale)
+  const pathname = usePathname()
   const [menuOpen, setMenuOpen] = useState(false)
 
   const closeMenu = () => setMenuOpen(false)
 
   useEffect(() => {
-    const mq = window.matchMedia('(min-width: 721px)')
+    const mq = window.matchMedia('(min-width: 1024px)')
     const onChange = () => {
       if (mq.matches) setMenuOpen(false)
     }
@@ -155,9 +201,12 @@ export default function Nav() {
 
   return (
     <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
-      <div className="nav-shell">
-      <nav className={`nav${rtl ? ' nav--rtl' : ''}`} dir={rtl ? 'rtl' : 'ltr'}>
-        <div className="nav-inner">
+      <header
+        className={`stitch-header${rtl ? ' stitch-header--rtl' : ''}`}
+        dir={rtl ? 'rtl' : 'ltr'}
+      >
+        <div className="stitch-header-inner">
+        <div className="stitch-header-left">
           <SheetTrigger asChild>
             <button
               type="button"
@@ -176,6 +225,22 @@ export default function Nav() {
           <Link href="/" className="nav-logo nav-logo-btn" dir="ltr" translate="no">
             Interview Prep
           </Link>
+        </div>
+          <nav className="stitch-header-shortcuts">
+            {HEADER_SHORTCUT_PAGES.map(pageId => {
+              const to = PATH_FOR_PAGE[pageId]
+              const isActive = linkIsActive(pathname, pageId, to)
+              return (
+                <Link
+                  key={pageId}
+                  href={to}
+                  className={`stitch-header-shortcut${isActive ? ' stitch-header-shortcut--active' : ''}`}
+                >
+                  {strings.nav[pageId]}
+                </Link>
+              )
+            })}
+          </nav>
           <div className="nav-toolbar">
             <div className="nav-theme" role="group" aria-label={ui.theme.label}>
               <button
@@ -218,11 +283,6 @@ export default function Nav() {
                 ))}
               </select>
             </div>
-            <NavLinks
-              className="nav-tabs nav-tabs--inline"
-              linkClassName={({ isActive }) => `nav-tab${isActive ? ' active' : ''}`}
-              isAdmin={isAdmin}
-            />
             <div className="nav-auth">
               {!isSignedIn && (
                 <SignInButton mode="modal">
@@ -235,8 +295,23 @@ export default function Nav() {
             </div>
           </div>
         </div>
-      </nav>
-      </div>
+      </header>
+
+      <aside
+        className={`stitch-sidebar${rtl ? ' stitch-sidebar--rtl' : ''}`}
+        aria-label={uiQuestions.learningPathsTitle}
+      >
+        <div className="stitch-sidebar-head">
+          <h2 className="stitch-sidebar-title">{uiQuestions.learningPathsTitle}</h2>
+        </div>
+        <NavLinks
+          className="stitch-sidebar-nav"
+          linkClassName={({ isActive }) => `stitch-sidebar-link${isActive ? ' stitch-sidebar-link--active' : ''}`}
+          isAdmin={isAdmin}
+          variant="sidebar"
+        />
+      </aside>
+
       <SheetContent
         id="nav-mobile-drawer"
         side={rtl ? 'right' : 'left'}

@@ -80,7 +80,7 @@ function AppShellInner({ children }: { children: ReactNode }) {
   return (
     <div className="app-shell">
       <Nav />
-      <main className="main">{children}</main>
+      <main className="main stitch-main">{children}</main>
       <footer className="site-footer">
         <p className="site-footer-inner">
           {strings.siteCreditPrefix}

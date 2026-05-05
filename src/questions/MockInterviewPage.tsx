@@ -1559,7 +1559,7 @@ export default function MockInterviewPage() {
   }
 
   return (
-    <div className="editorial-page editorial-page--mock mockv2-page">
+    <div className="editorial-page editorial-page--mock mockv2-page mockv2-page--stitch-zip">
       <ScreenHeader title={mi.pageTitle} lead={mi.pageLead} />
 
       <div className="mockv2-layout">

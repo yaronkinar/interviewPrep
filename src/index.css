@@ -10,6 +10,10 @@
 
 :root,
 [data-theme='dark'] {
+  --stitch-header-height: 3.25rem;
+  --stitch-sidebar-w:     16rem;
+  --stitch-shadow-bar:    0 1px 0 color-mix(in srgb, var(--border) 85%, transparent);
+  --stitch-shadow-card:   0 16px 48px rgba(0, 0, 0, 0.35);
   /* Stitch-inspired dark: slate surfaces + mock primary blue */
   --bg:           #0c1222;
   --surface:      #151b2e;
@@ -38,29 +42,37 @@
 
 [data-theme='light'] {
   color-scheme: light;
-  /* Stitch M3 light tokens → existing semantic names */
-  --bg:           #f6fafe;
+  /* Stitch "Learning Path" tokens — STITCH_DESIGN_SYSTEMS.md */
+  --bg:           #f7f9fc;
   --surface:      #ffffff;
-  --surface-deep: #f0f4f8;
-  --surface-hover:#eaeef2;
-  --border:       #c2c6d6;
-  --text:         #171c1f;
-  --text-muted:   #424754;
-  --text-faint:   #727785;
-  --accent:       #0058be;
-  --accent-2:     #2170e4;
-  --btn:          #0058be;
-  --btn-hover:    #004395;
+  --surface-deep: #f2f4f7;
+  --surface-hover:#eceef1;
+  --border:       #dfe3e6;
+  --text:         #191c1e;
+  --text-muted:   #454652;
+  --text-faint:   #757684;
+  --accent:       #24389c;
+  --accent-2:     #3f51b5;
+  --btn:          #3f51b5;
+  --btn-hover:    #24389c;
   --btn-fg:       #ffffff;
   --panel:        #eaeef2;
-  --hit:          #059669;
+  --hit:          #3b6663;
   --miss:         #dc2626;
-  --fire:         #d97706;
-  --kw:           #5b21b6;
-  --fn:           #0058be;
-  --str:          #15803d;
+  --fire:         #cda721;
+  --kw:           #4338ca;
+  --fn:           #24389c;
+  --str:          #047857;
   --num:          #c2410c;
-  --cm:           #64748b;
+  --cm:           #727784;
+  /* Decorative — progress / success echoes */
+  --lp-mint:      #bbe8e4;
+  --lp-mint-fg:   #224e4b;
+  /* Stitch chrome */
+  --stitch-header-height: 3.25rem;
+  --stitch-sidebar-w:     16rem;
+  --stitch-shadow-bar:    0 1px 0 color-mix(in srgb, var(--accent-2) 8%, transparent);
+  --stitch-shadow-card:   0 12px 40px color-mix(in srgb, #3f51b5 8%, transparent);
 }
 
 *,
@@ -204,50 +216,136 @@ h3,
   z-index: 0;
 }
 
-/* â”€â”€ NAV (centered pill — React Questions / Sandbox mocks) â”€â”€ */
-.nav-shell {
+/* â"€â"€ NAV — Stitch chrome: sticky bar + lg sidebar â"€â"€ */
+.stitch-header {
+  background: var(--surface);
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
+  box-shadow: var(--stitch-shadow-bar);
+  position: sticky;
+  top: 0;
+  width: 100%;
+  z-index: 50;
+}
+.stitch-header-inner {
+  align-items: center;
   box-sizing: border-box;
-  margin: 1.75rem auto 0;
-  max-width: 80rem;
-  padding: 0 max(0.75rem, env(safe-area-inset-left)) 0 max(0.75rem, env(safe-area-inset-right));
-  pointer-events: none;
-  position: static;
-  width: min(95%, calc(100vw - 1.25rem));
-}
-.nav-shell .nav {
-  pointer-events: auto;
-}
-.nav {
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  background: color-mix(in srgb, var(--surface) 82%, transparent);
-  border: 1px solid color-mix(in srgb, var(--border) 65%, transparent);
-  border-radius: 1rem;
-  box-shadow: 0 24px 40px rgba(23, 28, 31, 0.06);
+  display: flex;
+  gap: 0.65rem;
+  justify-content: space-between;
   margin: 0 auto;
-  max-width: 80rem;
+  max-width: 100%;
+  min-height: var(--stitch-header-height);
+  padding: 0.3rem max(0.65rem, env(safe-area-inset-left)) 0.3rem max(0.65rem, env(safe-area-inset-right));
   width: 100%;
 }
-[data-theme='light'] .nav {
-  /* Match Stitch mock: frosted white bar on blue-tinted page */
-  background: rgba(255, 255, 255, 0.82);
-  border-color: rgba(194, 198, 214, 0.85);
-  box-shadow: 0 24px 40px rgba(23, 28, 31, 0.08);
-}
-[data-theme='dark'] .nav {
-  background: color-mix(in srgb, var(--surface) 78%, transparent);
-  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.35);
-}
-.nav-inner {
-  margin: 0 auto;
-  padding: 0.45rem clamp(1.75rem, 3vw, 2.75rem);
-  min-height: 52px;
-  height: auto;
-  display: flex;
+.stitch-header-left {
   align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
+  display: flex;
+  flex-shrink: 0;
+  gap: 0.55rem;
+  min-width: 0;
 }
+.stitch-header-shortcuts {
+  align-items: center;
+  display: none;
+  flex: 1;
+  gap: 0.2rem 1.1rem;
+  justify-content: center;
+  min-width: 0;
+}
+.stitch-header-shortcut {
+  border-bottom: 2px solid transparent;
+  color: var(--text-muted);
+  font-family: 'Manrope Variable', Manrope, system-ui, sans-serif;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  padding: 0.35rem 0.1rem;
+  text-decoration: none;
+  transition: border-color 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+.stitch-header-shortcut:hover {
+  color: var(--accent);
+}
+.stitch-header-shortcut--active {
+  border-bottom-color: var(--accent);
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.stitch-sidebar {
+  background: color-mix(in srgb, var(--bg) 82%, var(--surface) 18%);
+  border-inline-end: 1px solid color-mix(in srgb, var(--border) 85%, transparent);
+  display: none;
+  flex-direction: column;
+  gap: 0.35rem;
+  height: calc(100dvh - var(--stitch-header-height));
+  inset-inline-start: 0;
+  overflow: auto;
+  padding: 1rem 0.65rem;
+  position: fixed;
+  top: var(--stitch-header-height);
+  width: var(--stitch-sidebar-w);
+  z-index: 40;
+}
+[data-theme='light'] .stitch-sidebar {
+  background: color-mix(in srgb, var(--bg) 55%, #ffffff 45%);
+}
+.stitch-sidebar-head {
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
+  margin-bottom: 0.35rem;
+  padding: 0 0.35rem 0.85rem;
+}
+.stitch-sidebar-title {
+  color: var(--text);
+  font-family: 'Manrope Variable', Manrope, system-ui, sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+.stitch-sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+.stitch-sidebar-link {
+  align-items: center;
+  border-inline-end: 3px solid transparent;
+  border-radius: 0.5rem;
+  color: var(--text-muted);
+  display: flex;
+  gap: 0.65rem;
+  font-family: 'Manrope Variable', Manrope, system-ui, sans-serif;
+  font-size: 0.875rem;
+  font-weight: 600;
+  padding: 0.52rem 0.55rem;
+  text-decoration: none;
+  transition: background 0.15s, color 0.15s, transform 0.2s;
+}
+.stitch-sidebar-link:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+  transform: translateX(2px);
+}
+.stitch-sidebar--rtl .stitch-sidebar-link:hover {
+  transform: translateX(-2px);
+}
+.stitch-sidebar-link--active {
+  background: color-mix(in srgb, var(--accent) 11%, transparent);
+  border-inline-end-color: var(--accent);
+  color: var(--accent);
+  font-weight: 700;
+}
+.stitch-sidebar-icon {
+  flex-shrink: 0;
+  opacity: 0.92;
+}
+.stitch-sidebar-link-text {
+  min-width: 0;
+}
+
 .nav-toolbar {
   align-items: center;
   display: flex;
@@ -394,10 +492,6 @@ button.nav-menu-toggle:hover {
   width: 100%;
 }
 
-.nav-tabs--inline {
-  display: flex;
-}
-
 .nav-mobile-sheet {
   background: var(--surface) !important;
   border-color: var(--border) !important;
@@ -466,37 +560,39 @@ button.nav-mobile-drawer-close:hover {
   border-inline-start-color: var(--accent);
 }
 
-@media (min-width: 721px) {
-  .nav-mobile-sheet {
-    display: none;
+@media (min-width: 768px) and (max-width: 1023px) {
+  .stitch-header-shortcuts {
+    display: flex;
   }
 }
 
-@media (max-width: 720px) {
-  .nav-shell {
-    margin-top: 0.65rem;
-    width: min(96%, calc(100vw - 0.85rem));
+@media (min-width: 1024px) {
+  .stitch-sidebar {
+    display: flex;
   }
-
-  .nav {
-    border-radius: 0.875rem;
+  .nav-mobile-sheet {
+    display: none;
   }
+  button.nav-menu-toggle {
+    display: none !important;
+  }
+}
 
+@media (max-width: 1023px) {
   button.nav-menu-toggle {
     display: inline-flex;
   }
 
-  .nav-inner {
+  .stitch-header-inner {
     flex-wrap: nowrap;
-    gap: 0.6rem;
-    min-height: 48px;
-    padding: 0.35rem 0.95rem;
+    gap: 0.55rem;
+    min-height: 3rem;
   }
 
   .nav-toolbar {
     flex: 0 0 auto;
     flex-wrap: nowrap;
-    gap: 0.5rem;
+    gap: 0.45rem;
     margin-inline-start: auto;
   }
   .nav-locale-label {
@@ -513,31 +609,974 @@ button.nav-mobile-drawer-close:hover {
     text-overflow: ellipsis;
     white-space: nowrap;
   }
-
-  .nav-tabs--inline {
-    display: none;
-  }
 }
 
-/* â”€â”€ LAYOUT â”€â”€ */
+/* â"€â"€ LAYOUT â"€â"€ */
 .main {
   flex: 1;
   min-width: 0;
   padding: clamp(2rem, 1.5rem + 2vw, 3rem) 1.5rem 2.5rem;
 }
-
-.site-footer {
-  border-top: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
-  flex-shrink: 0;
-  margin-top: auto;
-  padding: 1.25rem 1.5rem 1.75rem;
-  background: color-mix(in srgb, var(--bg) 92%, var(--surface) 8%);
+.main.stitch-main {
+  width: 100%;
 }
-.site-footer-inner {
+@media (min-width: 1024px) {
+  .main.stitch-main {
+    margin-inline-start: var(--stitch-sidebar-w);
+    padding-inline: clamp(1.25rem, 2vw, 2rem);
+  }
+}
+
+/* Topic hub shell — Stitch category-detail (screens 08 / 11) */
+.topic-hub-page {
+  margin: 0 auto;
+  width: 100%;
+}
+.topic-hub-inner {
+  margin: 0 auto;
+  max-width: 1200px;
+  width: 100%;
+}
+.topic-hub-hero {
+  margin-bottom: clamp(1.25rem, 3vw, 1.85rem);
+}
+.topic-hub-hero--split {
+  align-items: flex-start;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 1.5rem;
+  justify-content: space-between;
+}
+.topic-hub-hero-main {
+  flex: 1;
+  min-width: min(100%, 280px);
+}
+.topic-hub-hero-extra {
+  flex-shrink: 0;
+}
+.topic-hub-hero-extra .js-editorial-actions {
+  margin-top: 0.25rem;
+}
+.topic-hub-kicker {
+  color: var(--accent);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  margin: 0 0 0.35rem;
+  text-transform: uppercase;
+}
+.topic-hub-title {
+  color: var(--text);
+  font-family: 'Manrope Variable', Manrope, system-ui, sans-serif;
+  font-size: clamp(1.65rem, 3.2vw, 2rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  margin: 0 0 0.45rem;
+}
+.topic-hub-lead {
+  color: var(--text-muted);
+  font-size: 1rem;
+  line-height: 1.55;
+  margin: 0;
+  max-width: 62ch;
+}
+.topic-hub-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+.topic-hub-page .grid {
+  margin-inline: 0;
+  max-width: none;
+}
+.topic-hub-page .expandable-card-wrap {
+  background: var(--surface);
+  border: 1px solid color-mix(in srgb, var(--border) 92%, transparent);
+  border-radius: 12px;
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--text) 6%, transparent);
+  overflow: hidden;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+[data-theme='light'] .topic-hub-page .expandable-card-wrap {
+  box-shadow: 0 8px 28px color-mix(in srgb, #3f51b5 6%, transparent);
+}
+.topic-hub-page .expandable-card-wrap:hover {
+  box-shadow: 0 14px 36px color-mix(in srgb, var(--text) 8%, transparent);
+  transform: translateY(-2px);
+}
+[data-theme='light'] .topic-hub-page .expandable-card-wrap:hover {
+  box-shadow: 0 16px 44px color-mix(in srgb, #3f51b5 9%, transparent);
+}
+
+.topic-hub-footer-link {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.45rem;
+  margin: 0;
+}
+.topic-hub-footer-copy {
+  display: block;
+}
+
+/* React Patterns — Stitch Learning Path (ZIP: stitch_visual_engagement_studio v2) */
+.react-patterns-studio {
+  padding-inline: clamp(0.75rem, 2vw, 1.25rem);
+}
+.react-patterns-studio-inner {
+  margin: 0 auto;
+  max-width: 1280px;
+  width: 100%;
+}
+.react-patterns-breadcrumb {
+  align-items: center;
+  color: var(--text-muted);
+  display: flex;
+  flex-wrap: wrap;
+  font-size: 0.875rem;
+  gap: 0.35rem;
+  margin-bottom: 0.65rem;
+}
+.react-patterns-breadcrumb a {
+  color: var(--text-muted);
+  text-decoration: none;
+}
+.react-patterns-breadcrumb a:hover {
+  color: var(--accent);
+}
+.react-patterns-breadcrumb-chev {
+  color: var(--text-faint);
+  flex-shrink: 0;
+}
+.react-patterns-breadcrumb-current {
+  color: color-mix(in srgb, var(--accent) 88%, var(--text));
+  font-weight: 600;
+}
+.react-patterns-studio-header {
+  align-items: flex-start;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem 1.75rem;
+  justify-content: space-between;
+  margin-bottom: clamp(1.75rem, 3vw, 2.5rem);
+}
+.react-patterns-studio-header-main {
+  flex: 1;
+  min-width: min(100%, 280px);
+}
+.react-patterns-studio-title {
+  color: color-mix(in srgb, var(--accent) 55%, var(--text));
+  font-family: 'Manrope Variable', Manrope, system-ui, sans-serif;
+  font-size: clamp(1.85rem, 3.5vw, 2.45rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  margin: 0 0 0.5rem;
+}
+.react-patterns-studio-lead {
+  color: var(--text-muted);
+  font-size: 1.05rem;
+  line-height: 1.55;
+  margin: 0;
+  max-width: 62ch;
+}
+.react-patterns-studio-header-aside {
+  align-items: stretch;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+@media (min-width: 640px) {
+  .react-patterns-studio-header-aside {
+    align-items: flex-end;
+  }
+}
+.react-patterns-mastery-card {
+  align-items: center;
+  background: var(--surface);
+  border: 1px solid color-mix(in srgb, var(--accent) 14%, var(--border));
+  border-radius: 1.5rem;
+  box-shadow: 0 12px 36px color-mix(in srgb, var(--text) 6%, transparent);
+  display: flex;
+  gap: 1.25rem;
+  padding: 1.25rem 1.35rem;
+}
+[data-theme='light'] .react-patterns-mastery-card {
+  box-shadow: 0 16px 44px color-mix(in srgb, #3f51b5 8%, transparent);
+}
+.react-patterns-mastery-ring-wrap {
+  flex-shrink: 0;
+  height: 5rem;
+  position: relative;
+  width: 5rem;
+}
+.react-patterns-mastery-svg {
+  height: 100%;
+  transform: rotate(-90deg);
+  width: 100%;
+}
+.react-patterns-mastery-track {
+  stroke: color-mix(in srgb, var(--border) 70%, var(--accent));
+}
+.react-patterns-mastery-fill {
+  stroke: #10b981;
+}
+[data-theme='light'] .react-patterns-mastery-fill {
+  stroke: color-mix(in srgb, #3b6663 85%, #059669);
+}
+.react-patterns-mastery-pct {
+  align-items: center;
+  color: color-mix(in srgb, #059669 75%, var(--text));
+  display: flex;
+  font-size: 1.05rem;
+  font-weight: 700;
+  inset: 0;
+  justify-content: center;
+  position: absolute;
+}
+.react-patterns-mastery-title {
+  color: var(--text);
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0 0 0.25rem;
+}
+.react-patterns-mastery-sub {
   color: var(--text-muted);
   font-size: 0.8125rem;
+  margin: 0;
+}
+.react-patterns-studio-grid {
+  align-items: start;
+  display: grid;
+  gap: clamp(1.75rem, 3vw, 2.25rem);
+  grid-template-columns: 1fr;
+}
+@media (min-width: 1024px) {
+  .react-patterns-studio-grid {
+    gap: 2rem;
+    grid-template-columns: minmax(0, 1.85fr) minmax(260px, 1fr);
+  }
+}
+.react-patterns-studio-section-title {
+  font-size: clamp(1.2rem, 2.2vw, 1.45rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin: 0 0 1.25rem;
+}
+.react-patterns-studio-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.react-pattern-studio-card {
+  background: var(--surface);
+  border: 1px solid transparent;
+  border-radius: 1.5rem;
+  box-shadow: 0 2px 10px color-mix(in srgb, var(--text) 5%, transparent);
+  overflow: hidden;
+  scroll-margin-top: 5rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+[data-theme='light'] .react-pattern-studio-card {
+  box-shadow: 0 4px 18px color-mix(in srgb, #3f51b5 5%, transparent);
+}
+.react-pattern-studio-card:hover {
+  border-color: color-mix(in srgb, var(--accent) 28%, var(--border));
+  box-shadow: 0 10px 32px color-mix(in srgb, var(--text) 8%, transparent);
+}
+[data-theme='light'] .react-pattern-studio-card:hover {
+  box-shadow: 0 14px 40px color-mix(in srgb, #3f51b5 9%, transparent);
+}
+.react-pattern-studio-card-head {
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  padding: 1.35rem 1.35rem 0.85rem;
+}
+.react-pattern-studio-card-copy {
+  flex: 1;
+  min-width: 0;
+}
+.react-pattern-studio-meta-row {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.65rem;
+  margin-bottom: 0.45rem;
+}
+.react-pattern-chip {
+  border-radius: 999px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  padding: 0.2rem 0.65rem;
+  text-transform: uppercase;
+}
+.react-pattern-chip--easy {
+  background: color-mix(in srgb, #3b6663 12%, var(--surface));
+  color: color-mix(in srgb, #3b6663 95%, var(--text));
+}
+.react-pattern-chip--medium {
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+  color: color-mix(in srgb, var(--accent) 90%, var(--text));
+}
+.react-pattern-chip--hard {
+  background: color-mix(in srgb, #ba1a1a 12%, var(--surface));
+  color: color-mix(in srgb, #ba1a1a 95%, #5c1010);
+}
+[data-theme='dark'] .react-pattern-chip--hard {
+  color: color-mix(in srgb, #fca5a5 80%, var(--text));
+}
+.react-pattern-status {
+  align-items: center;
+  display: inline-flex;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  gap: 0.3rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.react-pattern-status-icon--filled {
+  fill: currentColor;
+}
+.react-pattern-status-icon--spin {
+  animation: react-pattern-spin 1.1s linear infinite;
+}
+@keyframes react-pattern-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.react-pattern-status--mastered {
+  color: #10b981;
+}
+.react-pattern-status--progress {
+  color: color-mix(in srgb, #cda721 85%, var(--text));
+}
+.react-pattern-status--todo {
+  color: var(--text-muted);
+}
+.react-pattern-studio-card-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  line-height: 1.35;
+  margin: 0 0 0.35rem;
+}
+.react-pattern-studio-card-desc {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  line-height: 1.55;
+  margin: 0 0 0.85rem;
+}
+.react-pattern-studio-track {
+  background: color-mix(in srgb, var(--border) 55%, var(--surface-deep));
+  border-radius: 999px;
+  height: 0.45rem;
+  overflow: hidden;
+}
+.react-pattern-studio-track.progress-groove {
+  box-shadow: inset 0 2px 4px color-mix(in srgb, var(--accent) 12%, transparent);
+}
+.react-pattern-studio-fill {
+  background: linear-gradient(90deg, #34d399, color-mix(in srgb, #3b6663 70%, #10b981));
+  border-radius: 999px;
+  height: 100%;
+  min-width: 0;
+  transition: width 0.35s ease;
+}
+.react-pattern-studio-thumb {
+  align-items: center;
+  align-self: flex-start;
+  background: color-mix(in srgb, var(--border) 35%, var(--surface-deep));
+  border-radius: 1rem;
+  display: flex;
+  flex-shrink: 0;
+  height: 5.25rem;
+  justify-content: center;
+  padding: 0.65rem;
+  width: 5.25rem;
+}
+.react-pattern-studio-thumb-icon {
+  color: color-mix(in srgb, var(--accent) 75%, var(--text-muted));
+}
+.react-pattern-studio-card .expandable-card-wrap {
+  background: color-mix(in srgb, var(--surface-deep) 40%, var(--surface));
+  border: none;
+  border-radius: 0;
+  border-top: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
+  box-shadow: none;
+}
+.react-pattern-studio-card .expandable-card-wrap:hover {
+  box-shadow: none;
+  transform: none;
+}
+.react-pattern-studio-card .q-expand-btn {
+  right: 0.65rem;
+  top: 0.55rem;
+}
+.react-patterns-studio-aside {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+.react-patterns-pro-tip {
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--accent) 92%, #1e1b4b),
+    color-mix(in srgb, var(--accent) 78%, #312e81)
+  );
+  border-radius: 2rem;
+  box-shadow: 0 18px 48px color-mix(in srgb, var(--accent) 28%, transparent);
+  color: #fff;
+  overflow: hidden;
+  padding: 1.75rem 1.6rem;
+  position: relative;
+}
+.react-patterns-pro-tip-copy {
+  position: relative;
+  z-index: 1;
+}
+.react-patterns-pro-tip-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin: 0 0 0.45rem;
+}
+.react-patterns-pro-tip-body {
+  color: color-mix(in srgb, #fff 82%, #c7d2fe);
+  font-size: 0.8125rem;
+  line-height: 1.55;
+  margin: 0 0 1rem;
+}
+.react-patterns-pro-tip-btn {
+  background: #fff;
+  border: none;
+  border-radius: 999px;
+  color: color-mix(in srgb, var(--accent) 85%, #1e3a8a);
+  cursor: pointer;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  padding: 0.55rem 1.25rem;
+  transition: box-shadow 0.2s ease, transform 0.15s ease;
+}
+.react-patterns-pro-tip-btn:hover {
+  box-shadow: 0 8px 24px color-mix(in srgb, #000 14%, transparent);
+}
+.react-patterns-pro-tip-btn:active {
+  transform: scale(0.98);
+}
+.react-patterns-pro-tip-watermark {
+  bottom: -0.75rem;
+  color: color-mix(in srgb, #fff 14%, transparent);
+  pointer-events: none;
+  position: absolute;
+  right: -0.5rem;
+}
+.react-patterns-resources-card {
+  background: var(--surface);
+  border: 1px solid color-mix(in srgb, var(--accent) 12%, var(--border));
+  border-radius: 1.5rem;
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--text) 4%, transparent);
+  padding: 1.35rem 1.1rem;
+}
+[data-theme='light'] .react-patterns-resources-card {
+  box-shadow: 0 8px 28px color-mix(in srgb, #3f51b5 5%, transparent);
+}
+.react-patterns-resources-heading {
+  align-items: center;
+  display: flex;
+  font-size: 1.02rem;
+  font-weight: 700;
+  gap: 0.45rem;
+  margin: 0 0 1rem 0.15rem;
+}
+.react-patterns-resources-heading-icon {
+  color: var(--accent);
+}
+.react-patterns-resources-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.react-patterns-resources-list li + li {
+  margin-top: 0.35rem;
+}
+.react-patterns-resource-row {
+  align-items: center;
+  border-radius: 0.75rem;
+  color: inherit;
+  display: flex;
+  gap: 0.65rem;
+  padding: 0.55rem 0.45rem;
+  text-decoration: none;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.react-patterns-resource-row:hover {
+  background: color-mix(in srgb, var(--border) 45%, var(--surface-deep));
+}
+.react-patterns-resource-icon-wrap {
+  align-items: center;
+  background: color-mix(in srgb, var(--border) 50%, var(--surface-deep));
+  border-radius: 0.65rem;
+  display: flex;
+  flex-shrink: 0;
+  height: 2.5rem;
+  justify-content: center;
+  width: 2.5rem;
+}
+.react-patterns-resource-lucide {
+  color: var(--text-muted);
+}
+.react-patterns-resource-row:hover .react-patterns-resource-lucide {
+  color: var(--accent);
+}
+.react-patterns-resource-text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+.react-patterns-resource-title {
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+.react-patterns-resource-sub {
+  color: var(--text-muted);
+  font-size: 0.6875rem;
+}
+.react-patterns-resource-arrow {
+  color: var(--text-faint);
+  flex-shrink: 0;
+}
+.react-patterns-resource-row:hover .react-patterns-resource-arrow {
+  color: var(--accent);
+}
+
+.visually-hidden {
+  border: 0;
+  clip: rect(0 0 0 0);
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  padding: 0;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
+}
+
+/* Stitch home dashboard — screen 10 (updated learning dashboard) */
+.stitch-dashboard-page .home-card-grid {
+  gap: 1.25rem;
+}
+.stitch-dashboard-inner {
   margin: 0 auto;
-  max-width: 80rem;
+  max-width: 1200px;
+  width: 100%;
+}
+.stitch-dashboard-row {
+  align-items: flex-start;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem 2rem;
+  justify-content: space-between;
+  margin-bottom: 1.75rem;
+}
+.stitch-dashboard-greet {
+  flex: 1;
+  min-width: min(100%, 260px);
+}
+.stitch-dashboard-title {
+  color: var(--text);
+  font-family: 'Manrope Variable', Manrope, system-ui, sans-serif;
+  font-size: clamp(1.85rem, 4vw, 2.45rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  margin: 0 0 0.5rem;
+}
+.stitch-dashboard-sub {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.65rem;
+}
+.stitch-dashboard-streak-icon {
+  color: var(--fire);
+  flex-shrink: 0;
+}
+.stitch-dashboard-streak {
+  color: var(--accent);
+  font-family: 'Manrope Variable', Manrope, system-ui, sans-serif;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+.stitch-dashboard-sub-muted {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+}
+.stitch-dashboard-lead {
+  color: var(--text-muted);
+  font-size: 1rem;
+  line-height: 1.55;
+  margin: 0;
+  max-width: 52ch;
+}
+.stitch-dashboard-progress-strip {
+  background: color-mix(in srgb, var(--surface) 88%, var(--border) 12%);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  margin-bottom: 2rem;
+  padding: 1rem 1.25rem;
+}
+.stitch-daily-card {
+  align-items: center;
+  background: var(--surface);
+  border: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
+  border-radius: 14px;
+  box-shadow: 0 4px 20px color-mix(in srgb, var(--text) 5%, transparent);
+  display: flex;
+  gap: 1rem;
+  max-width: 22rem;
+  padding: 1rem 1.15rem;
+  width: 100%;
+}
+[data-theme='light'] .stitch-daily-card {
+  box-shadow: 0 8px 28px color-mix(in srgb, #3f51b5 7%, transparent);
+}
+.stitch-daily-icon {
+  align-items: center;
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface-deep));
+  border-radius: 10px;
+  display: flex;
+  flex-shrink: 0;
+  height: 3rem;
+  justify-content: center;
+  width: 3rem;
+}
+.stitch-daily-icon-inner {
+  color: var(--accent);
+  font-size: 1.35rem;
+  font-weight: 700;
+}
+.stitch-daily-label {
+  color: var(--accent);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  margin: 0 0 0.2rem;
+  text-transform: uppercase;
+}
+.stitch-daily-topic {
+  color: var(--text);
+  font-family: 'Manrope Variable', Manrope, system-ui, sans-serif;
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin: 0 0 0.35rem;
+}
+.stitch-daily-cta {
+  color: var(--accent);
+  font-size: 0.875rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+.stitch-daily-cta:hover {
+  text-decoration: underline;
+}
+
+.stitch-bento {
+  margin-bottom: 2rem;
+}
+.stitch-bento-grid {
+  display: grid;
+  gap: 1.25rem;
+  grid-template-columns: 1fr;
+}
+@media (min-width: 1024px) {
+  .stitch-bento-grid {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+    align-items: start;
+  }
+}
+.stitch-surface-card {
+  background: var(--surface);
+  border: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
+  border-radius: 14px;
+  overflow: hidden;
+}
+[data-theme='light'] .stitch-surface-card {
+  box-shadow: 0 8px 28px color-mix(in srgb, #3f51b5 6%, transparent);
+}
+.stitch-bento-large {
+  display: flex;
+  flex-direction: column;
+}
+@media (min-width: 700px) {
+  .stitch-bento-large {
+    flex-direction: row;
+  }
+}
+.stitch-bento-large-media {
+  flex-shrink: 0;
+  min-height: 14rem;
+  position: relative;
+  width: 100%;
+}
+@media (min-width: 700px) {
+  .stitch-bento-large-media {
+    min-height: auto;
+    width: 38%;
+  }
+}
+.stitch-bento-large-img {
+  object-fit: cover;
+}
+.stitch-bento-large-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.65rem;
+  padding: 1.25rem 1.35rem;
+}
+.stitch-bento-large-meta {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+.stitch-chip {
+  background: color-mix(in srgb, var(--accent) 11%, var(--surface-deep));
+  border-radius: 999px;
+  color: var(--accent);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 0.28rem 0.65rem;
+  text-transform: uppercase;
+}
+.stitch-bento-meta-muted {
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+.stitch-bento-large-heading {
+  color: var(--text);
+  font-family: 'Manrope Variable', Manrope, system-ui, sans-serif;
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+.stitch-bento-large-desc {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  line-height: 1.55;
+  margin: 0;
+}
+.stitch-progress-row {
+  align-items: center;
+  display: flex;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  justify-content: space-between;
+}
+.stitch-progress-count {
+  color: var(--accent);
+}
+.stitch-progress-track {
+  background: color-mix(in srgb, var(--surface-deep) 65%, var(--border));
+  border-radius: 999px;
+  height: 8px;
+  overflow: hidden;
+  width: 100%;
+}
+.stitch-progress-track--inset {
+  box-shadow: inset 0 1px 3px color-mix(in srgb, var(--text) 12%, transparent);
+}
+.stitch-progress-track--thin {
+  height: 6px;
+}
+.stitch-progress-fill {
+  background: color-mix(in srgb, var(--accent) 88%, var(--accent-2));
+  border-radius: 999px;
+  height: 100%;
+  transition: width 0.35s ease;
+}
+.stitch-progress-fill--mint {
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--hit) 88%, var(--lp-mint)),
+    color-mix(in srgb, var(--accent) 55%, var(--hit))
+  );
+}
+[data-theme='dark'] .stitch-progress-fill--mint {
+  background: linear-gradient(90deg, var(--hit), var(--accent));
+}
+.stitch-btn-primary {
+  align-items: center;
+  background: var(--btn);
+  border: none;
+  border-radius: 10px;
+  color: var(--btn-fg);
+  cursor: pointer;
+  display: inline-flex;
+  font-family: 'Manrope Variable', Manrope, system-ui, sans-serif;
+  font-size: 0.95rem;
+  font-weight: 700;
+  justify-content: center;
+  margin-top: 0.35rem;
+  padding: 0.85rem 1.25rem;
+  text-decoration: none;
+  transition: background 0.15s ease, transform 0.12s ease;
+}
+.stitch-btn-primary:hover {
+  background: var(--btn-hover);
+}
+.stitch-btn-primary:active {
+  transform: scale(0.98);
+}
+.stitch-bento-primary-btn {
+  width: 100%;
+}
+.stitch-bento-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+.stitch-bento-small {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1.15rem 1.2rem;
+}
+.stitch-bento-small-title {
+  color: var(--text);
+  font-family: 'Manrope Variable', Manrope, system-ui, sans-serif;
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin: 0;
+}
+.stitch-bento-small-meta {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+.stitch-bento-small-desc {
+  color: var(--text-muted);
+  flex: 1;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  margin: 0;
+}
+.stitch-bento-small-link {
+  color: var(--accent);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-decoration: none;
+}
+.stitch-bento-small-link:hover {
+  gap: 0.35rem;
+  text-decoration: underline;
+}
+
+.stitch-mentor-band {
+  background: color-mix(in srgb, var(--accent) 14%, var(--surface-deep));
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, transparent);
+  border-radius: 18px;
+  margin-bottom: 2.5rem;
+  overflow: hidden;
+  padding: clamp(1.35rem, 3vw, 2rem);
+  position: relative;
+}
+[data-theme='light'] .stitch-mentor-band {
+  background: linear-gradient(
+    125deg,
+    color-mix(in srgb, var(--accent) 14%, var(--surface)),
+    color-mix(in srgb, var(--accent-2) 10%, var(--surface))
+  );
+}
+.stitch-mentor-inner {
+  max-width: 48rem;
+  position: relative;
+  z-index: 1;
+}
+.stitch-mentor-badge {
+  background: color-mix(in srgb, var(--accent) 15%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+  border-radius: 999px;
+  color: var(--accent);
+  display: inline-block;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  margin-bottom: 0.65rem;
+  padding: 0.28rem 0.65rem;
+  text-transform: uppercase;
+}
+.stitch-mentor-title {
+  color: var(--text);
+  font-family: 'Manrope Variable', Manrope, system-ui, sans-serif;
+  font-size: clamp(1.25rem, 2.5vw, 1.55rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin: 0 0 0.45rem;
+}
+.stitch-mentor-lead {
+  color: var(--text-muted);
+  font-size: 0.98rem;
+  line-height: 1.55;
+  margin: 0 0 1rem;
+  max-width: 54ch;
+}
+.stitch-mentor-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+.stitch-btn-primary--on-dark {
+  background: var(--btn);
+  color: var(--btn-fg);
+}
+.stitch-btn-outline-light {
+  background: transparent;
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+  border-radius: 10px;
+  color: var(--accent);
+  font-family: 'Manrope Variable', Manrope, system-ui, sans-serif;
+  font-size: 0.92rem;
+  font-weight: 700;
+  padding: 0.75rem 1.1rem;
+  text-decoration: none;
+  transition: background 0.15s ease;
+}
+.stitch-btn-outline-light:hover {
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+
+.stitch-dashboard-about {
+  margin-bottom: 2rem;
+}
+
+.site-footer {
+  background: var(--surface);
+  border-top: 1px solid color-mix(in srgb, var(--border) 85%, transparent);
+  flex-shrink: 0;
+  margin-top: auto;
+  padding: 1.35rem clamp(1rem, 4vw, 2rem) 1.75rem;
+}
+.site-footer-inner {
+  align-items: center;
+  color: var(--text-muted);
+  display: flex;
+  flex-wrap: wrap;
+  font-size: 0.8125rem;
+  gap: 0.75rem 1.25rem;
+  justify-content: center;
+  margin: 0 auto;
+  max-width: 1200px;
   text-align: center;
 }
 .site-footer-link {
@@ -733,6 +1772,140 @@ button.nav-mobile-drawer-close:hover {
   text-align: center;
 }
 
+/* Stitch “Learning Path”: home + chrome alignment (light) */
+[data-theme='light'] .nav-tab,
+[data-theme='light'] .nav-logo-btn {
+  font-family: 'Inter Variable', Inter, system-ui, sans-serif;
+}
+[data-theme='light'] .nav-logo {
+  color: var(--accent);
+}
+[data-theme='light'] .nav {
+  border-color: color-mix(in srgb, #3f51b5 12%, transparent);
+  box-shadow: 0 10px 40px rgba(63, 81, 181, 0.085);
+}
+[data-theme='light'] .home-page .page-title,
+[data-theme='light'] .home-page .home-section-title {
+  font-family: 'Inter Variable', Inter, system-ui, sans-serif;
+}
+[data-theme='light'] .home-page .screen-header .screen-lead {
+  font-family: 'Inter Variable', Inter, system-ui, sans-serif;
+}
+[data-theme='light'] .home-page .screen-header-kicker {
+  background: color-mix(in srgb, var(--lp-mint) 55%, transparent);
+  color: var(--lp-mint-fg);
+  letter-spacing: 0.08em;
+}
+[data-theme='light'] .home-progress-panel {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--surface) 92%, var(--lp-mint)),
+    var(--surface) 72%
+  );
+  border-color: color-mix(in srgb, #3f51b5 14%, transparent);
+  box-shadow: 0 8px 28px rgba(63, 81, 181, 0.07);
+  border-inline-start: 4px solid color-mix(in srgb, var(--hit) 75%, transparent);
+}
+[data-theme='light'] .home-hero-og-image {
+  border-radius: 1rem;
+  border-color: color-mix(in srgb, #3f51b5 11%, transparent);
+  box-shadow: 0 16px 48px rgba(63, 81, 181, 0.12), 0 4px 12px rgba(25, 28, 30, 0.06);
+}
+[data-theme='light'] .home-page .home-card.card {
+  border-radius: 1rem;
+  border-color: color-mix(in srgb, #3f51b5 10%, transparent);
+  box-shadow: 0 12px 32px rgba(63, 81, 181, 0.07);
+}
+[data-theme='light'] .home-page .home-card.card:hover {
+  box-shadow: 0 22px 48px rgba(63, 81, 181, 0.13);
+}
+[data-theme='light'] .home-page .home-card-media {
+  border-bottom-color: color-mix(in srgb, var(--hit) 22%, transparent);
+  background: color-mix(in srgb, var(--lp-mint) 28%, var(--surface-deep));
+}
+[data-theme='light'] .home-page .editorial-panel {
+  border-radius: 1rem;
+}
+[data-theme='light'] .home-page .home-card .card-title {
+  color: var(--accent);
+}
+[data-theme='light'] .home-page .home-card-link {
+  color: var(--accent-2);
+}
+[data-theme='light'] .home-page .home-card-link:hover {
+  color: var(--accent);
+}
+[data-theme='light'] .home-page .home-card-progress {
+  color: var(--hit);
+}
+
+/* Same Stitch polish when the app is in dark theme (many users stay here). */
+[data-theme='dark'] .nav-tab,
+[data-theme='dark'] .nav-logo-btn {
+  font-family: 'Inter Variable', Inter, system-ui, sans-serif;
+}
+[data-theme='dark'] .nav-logo {
+  color: color-mix(in srgb, #c7d2fe 92%, white);
+}
+[data-theme='dark'] .nav {
+  border-color: color-mix(in srgb, #818cf8 28%, transparent);
+  box-shadow:
+    0 12px 40px rgba(0, 0, 0, 0.42),
+    0 0 0 1px color-mix(in srgb, #6366f1 14%, transparent);
+}
+[data-theme='dark'] .home-page .page-title,
+[data-theme='dark'] .home-page .home-section-title {
+  font-family: 'Inter Variable', Inter, system-ui, sans-serif;
+}
+[data-theme='dark'] .home-page .screen-header .screen-lead {
+  font-family: 'Inter Variable', Inter, system-ui, sans-serif;
+}
+[data-theme='dark'] .home-page .screen-header-kicker {
+  background: color-mix(in srgb, #34d399 22%, var(--surface) 78%);
+  color: #d1fae5;
+}
+[data-theme='dark'] .home-progress-panel {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--surface) 82%, rgba(52, 211, 153, 0.12)),
+    var(--surface) 65%
+  );
+  border-color: color-mix(in srgb, #818cf8 30%, transparent);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+  border-inline-start: 4px solid color-mix(in srgb, var(--hit) 65%, transparent);
+}
+[data-theme='dark'] .home-hero-og-image {
+  border-radius: 1rem;
+  border-color: color-mix(in srgb, #818cf8 32%, transparent);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.52), 0 0 0 1px color-mix(in srgb, #6366f1 22%, transparent);
+}
+[data-theme='dark'] .home-page .home-card.card {
+  border-radius: 1rem;
+  border-color: color-mix(in srgb, #818cf8 26%, transparent);
+  box-shadow: 0 14px 38px rgba(0, 0, 0, 0.42), 0 0 0 1px color-mix(in srgb, #4338ca 12%, transparent);
+}
+[data-theme='dark'] .home-page .home-card.card:hover {
+  box-shadow:
+    0 24px 54px rgba(0, 0, 0, 0.5),
+    0 0 0 1px color-mix(in srgb, #818cf8 28%, transparent);
+}
+[data-theme='dark'] .home-page .home-card-media {
+  border-bottom-color: color-mix(in srgb, var(--hit) 32%, transparent);
+  background: color-mix(in srgb, var(--surface-deep) 78%, rgb(6, 78, 59));
+}
+[data-theme='dark'] .home-page .editorial-panel {
+  border-radius: 1rem;
+}
+[data-theme='dark'] .home-page .home-card .card-title {
+  color: var(--accent-2);
+}
+[data-theme='dark'] .home-page .home-card-link {
+  color: var(--accent-2);
+}
+[data-theme='dark'] .home-page .home-card-progress {
+  color: var(--hit);
+}
+
 .page-title {
   color: var(--text);
   font-size: clamp(1.85rem, 4.5vw, 2.85rem);
@@ -824,7 +1997,12 @@ button.nav-mobile-drawer-close:hover {
   padding: 1.1rem;
 }
 [data-theme='dark'] .editorial-panel {
-  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.22);
+  border-color: color-mix(in srgb, #818cf8 16%, transparent);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.22), 0 0 0 1px color-mix(in srgb, #6366f1 08%, transparent);
+}
+[data-theme='light'] .editorial-panel {
+  border-color: color-mix(in srgb, #3f51b5 11%, transparent);
+  box-shadow: 0 8px 26px rgba(63, 81, 181, 0.055);
 }
 
 /* CV analysis */
@@ -1587,8 +2765,9 @@ button.nav-mobile-drawer-close:hover {
   }
 }
 @media (max-width: 720px) {
+  /* Stitch header is sticky flush-top — no floating pill clearance */
   .main {
-    padding: clamp(5.25rem, 4.5rem + 3vw, 6.5rem) 0.85rem 1.25rem;
+    padding: clamp(1rem, 0.5rem + 2vw, 1.35rem) 0.85rem 1.25rem;
   }
   .editorial-page {
     padding-inline: 0;
@@ -2946,7 +4125,7 @@ input:focus { border-color: var(--accent); }
 /* Stitch React Questions — hero, filters, single-column list, rail */
 .editorial-page--questions-stitch {
   margin-inline: auto;
-  max-width: 80rem;
+  max-width: 1200px;
   padding-inline: clamp(1rem, 3vw, 1.5rem);
   position: relative;
 }
@@ -3003,6 +4182,83 @@ input:focus { border-color: var(--accent); }
   margin: 0;
   max-width: 28rem;
   padding-bottom: 0.15rem;
+}
+
+/* Stitch ZIP — interview_question_practice current-module strip */
+.questions-stitch-context-strip {
+  background: var(--surface);
+  border: 1px solid color-mix(in srgb, var(--accent-2) 12%, var(--border));
+  border-radius: 14px;
+  box-shadow: 0 4px 14px color-mix(in srgb, #3f51b5 5%, transparent);
+  margin-bottom: 1.75rem;
+  padding: 1rem 1.15rem 1.1rem;
+}
+[data-theme='dark'] .questions-stitch-context-strip {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+.questions-stitch-context-strip-inner {
+  align-items: flex-end;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+  justify-content: space-between;
+  margin-bottom: 0.65rem;
+}
+.questions-stitch-context-kicker {
+  color: var(--accent);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  margin: 0 0 0.25rem;
+  text-transform: uppercase;
+}
+.questions-stitch-context-title {
+  color: var(--text);
+  font-family: 'Manrope Variable', Manrope, system-ui, sans-serif;
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+.questions-stitch-context-pct-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  text-align: end;
+}
+.questions-stitch-context-pct-label {
+  color: var(--hit);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.questions-stitch-context-pct-sub {
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+.questions-stitch-context-track {
+  background: var(--surface-container-high, color-mix(in srgb, var(--surface-deep) 72%, var(--border)));
+  border-radius: 999px;
+  box-shadow: inset 0 2px 4px color-mix(in srgb, #3f51b5 8%, transparent);
+  height: 10px;
+  overflow: hidden;
+  width: 100%;
+}
+.questions-stitch-context-fill {
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--hit) 88%, var(--lp-mint, #bbe8e4)),
+    color-mix(in srgb, var(--accent) 55%, var(--hit))
+  );
+  border-radius: 999px;
+  box-shadow: 0 0 8px color-mix(in srgb, var(--hit) 35%, transparent);
+  height: 100%;
+  transition: width 0.35s ease;
+}
+[data-theme='dark'] .questions-stitch-context-fill {
+  background: linear-gradient(90deg, var(--hit), var(--accent));
 }
 
 .questions-stitch-filter-band {
@@ -3639,6 +4895,23 @@ input:focus { border-color: var(--accent); }
 [data-theme='dark'] .editorial-page--sandbox .sandbox-code-shell {
   box-shadow: 0 20px 48px rgba(0, 0, 0, 0.32);
 }
+
+/* Stitch ZIP — updated_practice_environment code-grid workspace */
+.editorial-page--sandbox-stitch .sandbox-code-shell {
+  border: 1px solid color-mix(in srgb, var(--border) 78%, transparent);
+}
+.editorial-page--sandbox-stitch .sandbox-page-body {
+  border-radius: 0 0 14px 14px;
+  margin-inline: auto;
+  max-width: none;
+  padding: clamp(0.85rem, 2vw, 1.35rem);
+}
+[data-theme='light'] .editorial-page--sandbox-stitch .sandbox-page-body {
+  background-color: color-mix(in srgb, var(--surface) 94%, var(--bg));
+  background-image: radial-gradient(color-mix(in srgb, var(--border) 65%, transparent) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
 .q-expand-btn {
   background: none;
   border: 1px solid var(--border);
@@ -4244,6 +5517,20 @@ input:focus { border-color: var(--accent); }
   right: 1.25rem;
   width: 440px;
   z-index: 1000;
+}
+.q-finder-chat--floating.q-finder-chat--stitch-zip {
+  backdrop-filter: saturate(140%) blur(10px);
+  border-radius: 1.125rem;
+  border: 1px solid color-mix(in srgb, var(--border) 65%, var(--accent));
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--surface) 45%, transparent),
+    0 22px 56px color-mix(in srgb, #000 34%, transparent);
+}
+[data-theme='light'] .q-finder-chat--floating.q-finder-chat--stitch-zip {
+  backdrop-filter: saturate(160%) blur(12px);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, #fff 55%, transparent),
+    0 20px 52px color-mix(in srgb, var(--accent) 16%, transparent);
 }
 .q-finder-chat-fab {
   align-items: center;
@@ -6088,6 +7375,21 @@ button.mockv2-start-btn:hover {
   border-color: var(--border);
 }
 
+/* Stitch ZIP export — mock interview page chrome */
+.mockv2-page.mockv2-page--stitch-zip {
+  margin-inline: auto;
+  padding-inline: clamp(0.75rem, 2vw, 1.25rem);
+}
+.mockv2-page.mockv2-page--stitch-zip .mockv2-layout {
+  gap: clamp(1rem, 2vw, 1.35rem);
+}
+.mockv2-page.mockv2-page--stitch-zip .mockv2-sidebar {
+  box-shadow: 0 12px 40px color-mix(in srgb, #000 22%, transparent);
+}
+[data-theme='light'] .mockv2-page.mockv2-page--stitch-zip .mockv2-sidebar {
+  box-shadow: 0 14px 44px color-mix(in srgb, var(--accent) 14%, transparent);
+}
+
 @media (max-width: 1040px) {
   .mockv2-layout {
     grid-template-columns: 1fr;
@@ -6962,8 +8264,23 @@ button.mockv2-start-btn:hover {
 
 /* Coding mock + React Questions: subtle dot grid on light */
 html[data-theme='light'] body {
-  background-image: radial-gradient(rgba(226, 232, 240, 0.55) 1px, transparent 1px);
-  background-size: 24px 24px;
+  background-image:
+    radial-gradient(rgba(63, 81, 181, 0.065) 1px, transparent 1px),
+    radial-gradient(rgba(59, 102, 99, 0.04) 1px, transparent 1px);
+  background-size: 28px 28px;
+  background-position:
+    0 0,
+    14px 14px;
+}
+
+html[data-theme='dark'] body {
+  background-image:
+    radial-gradient(rgba(99, 102, 241, 0.065) 1px, transparent 1px),
+    radial-gradient(rgba(52, 211, 153, 0.035) 1px, transparent 1px);
+  background-size: 26px 26px;
+  background-position:
+    0 0,
+    13px 13px;
 }
 
 /* ---------------------------------------------------------------------------

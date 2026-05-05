@@ -832,6 +832,35 @@ export default function QuestionsPage() {
         <p className="questions-stitch-hero-lead">{ui.questions.heroLead}</p>
       </header>
 
+      <section className="questions-stitch-context-strip" aria-label={ui.pages.questionsTitle}>
+        <div className="questions-stitch-context-strip-inner">
+          <div>
+            <p className="questions-stitch-context-kicker">{ui.questions.heroKicker}</p>
+            <h2 className="questions-stitch-context-title">{category ?? railTopic}</h2>
+          </div>
+          <div className="questions-stitch-context-pct-wrap">
+            <span className="questions-stitch-context-pct-label">
+              {ui.questions.displayingQuestions.replace('{count}', String(filtered.length))}
+            </span>
+            <span className="questions-stitch-context-pct-sub">
+              {String(allQuestions.length)}
+            </span>
+          </div>
+        </div>
+        <div
+          className="questions-stitch-context-track"
+          role="presentation"
+          aria-hidden
+        >
+          <div
+            className="questions-stitch-context-fill"
+            style={{
+              width: `${allQuestions.length ? Math.min(100, Math.max(8, Math.round((filtered.length / allQuestions.length) * 100))) : 0}%`,
+            }}
+          />
+        </div>
+      </section>
+
       <section className="questions-stitch-filter-band" aria-label={ui.questions.searchPlaceholder}>
         <div className="questions-stitch-filter-inner">
           <div className="questions-stitch-filter-controls">

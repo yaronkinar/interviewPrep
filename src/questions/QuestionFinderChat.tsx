@@ -845,7 +845,7 @@ export default function QuestionFinderChat({
 
   return (
     <section
-      className={`q-finder-chat${variant === 'floating' ? ' q-finder-chat--floating' : ''}`}
+      className={`q-finder-chat${variant === 'floating' ? ' q-finder-chat--floating q-finder-chat--stitch-zip' : ''}`}
       aria-label="Question finder chatbot"
       dir={rtl ? 'rtl' : 'ltr'}
     >
