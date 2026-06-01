@@ -3,3 +3,8 @@ dist/
 .next/
 design/stitch/
 .env
+
+# Playwright
+tests/.auth/
+playwright-report/
+test-results/
