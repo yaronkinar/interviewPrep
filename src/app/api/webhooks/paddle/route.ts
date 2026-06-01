@@ -1,0 +1,76 @@
+// src/app/api/webhooks/paddle/route.ts
+
+import { NextResponse } from 'next/server'
+import { Paddle, EventName, Environment } from '@paddle/paddle-node-sdk'
+import { upsertSubscription } from '@/lib/repositories/subscriptions'
+
+const paddle = new Paddle(process.env.PADDLE_API_KEY!, {
+  environment:
+    process.env.PADDLE_ENV === 'production'
+      ? Environment.production
+      : Environment.sandbox,
+})
+
+export async function POST(req: Request) {
+  const rawBody = await req.text()
+  const signature = req.headers.get('paddle-signature') ?? ''
+
+  let event: Awaited<ReturnType<typeof paddle.webhooks.unmarshal>>
+  try {
+    event = await paddle.webhooks.unmarshal(
+      rawBody,
+      process.env.PADDLE_WEBHOOK_SECRET!,
+      signature,
+    )
+  } catch {
+    return NextResponse.json({ error: 'Invalid signature' }, { status: 400 })
+  }
+
+  switch (event.eventType) {
+    case EventName.TransactionCompleted: {
+      // Sprint is a one-time purchase — identified by customData.plan === 'sprint'
+      const customData = (event.data as any).customData as
+        | { userId?: string; plan?: string }
+        | null
+      if (customData?.plan === 'sprint' && customData.userId) {
+        await upsertSubscription({
+          userId: customData.userId,
+          plan: 'sprint',
+          paddleCustomerId: (event.data as any).customerId ?? '',
+          sprintExpiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        })
+      }
+      break
+    }
+
+    case EventName.SubscriptionCreated:
+    case EventName.SubscriptionUpdated: {
+      const sub = event.data as any
+      const customData = sub.customData as { userId?: string } | null
+      if (customData?.userId) {
+        await upsertSubscription({
+          userId: customData.userId,
+          plan: 'pro',
+          paddleCustomerId: sub.customerId ?? '',
+          paddleSubscriptionId: sub.id,
+        })
+      }
+      break
+    }
+
+    case EventName.SubscriptionCanceled: {
+      const sub = event.data as any
+      const customData = sub.customData as { userId?: string } | null
+      if (customData?.userId) {
+        await upsertSubscription({
+          userId: customData.userId,
+          plan: 'free',
+          paddleCustomerId: sub.customerId ?? '',
+        })
+      }
+      break
+    }
+  }
+
+  return NextResponse.json({ ok: true })
+}
