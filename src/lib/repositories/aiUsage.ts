@@ -31,20 +31,24 @@ export async function checkAndIncrementMockInterview(
 
   const col = await getCollection()
   const month = getCurrentMonth()
-  const doc = await col.findOne({ userId, month })
-  const used = doc?.mockInterviewCount ?? 0
 
-  if (used >= FREE_MOCK_INTERVIEW_LIMIT) {
-    return { allowed: false, used, limit: FREE_MOCK_INTERVIEW_LIMIT }
-  }
-
-  await col.updateOne(
-    { userId, month },
-    { $inc: { mockInterviewCount: 1 }, $setOnInsert: { cvAnalysisCount: 0 } },
-    { upsert: true },
+  // Atomic: only increment if currently under the limit
+  const result = await col.findOneAndUpdate(
+    { userId, month, mockInterviewCount: { $lt: FREE_MOCK_INTERVIEW_LIMIT } },
+    {
+      $inc: { mockInterviewCount: 1 },
+      $setOnInsert: { cvAnalysisCount: 0 },
+    },
+    { upsert: true, returnDocument: 'after' },
   )
 
-  return { allowed: true, used: used + 1, limit: FREE_MOCK_INTERVIEW_LIMIT }
+  if (!result) {
+    // Document already at or above limit (filter didn't match)
+    const doc = await col.findOne({ userId, month })
+    return { allowed: false, used: doc?.mockInterviewCount ?? FREE_MOCK_INTERVIEW_LIMIT, limit: FREE_MOCK_INTERVIEW_LIMIT }
+  }
+
+  return { allowed: true, used: result.mockInterviewCount, limit: FREE_MOCK_INTERVIEW_LIMIT }
 }
 
 export async function checkAndIncrementCvAnalysis(
@@ -55,20 +59,24 @@ export async function checkAndIncrementCvAnalysis(
 
   const col = await getCollection()
   const month = getCurrentMonth()
-  const doc = await col.findOne({ userId, month })
-  const used = doc?.cvAnalysisCount ?? 0
 
-  if (used >= FREE_CV_ANALYSIS_LIMIT) {
-    return { allowed: false, used, limit: FREE_CV_ANALYSIS_LIMIT }
-  }
-
-  await col.updateOne(
-    { userId, month },
-    { $inc: { cvAnalysisCount: 1 }, $setOnInsert: { mockInterviewCount: 0 } },
-    { upsert: true },
+  // Atomic: only increment if currently under the limit
+  const result = await col.findOneAndUpdate(
+    { userId, month, cvAnalysisCount: { $lt: FREE_CV_ANALYSIS_LIMIT } },
+    {
+      $inc: { cvAnalysisCount: 1 },
+      $setOnInsert: { mockInterviewCount: 0 },
+    },
+    { upsert: true, returnDocument: 'after' },
   )
 
-  return { allowed: true, used: used + 1, limit: FREE_CV_ANALYSIS_LIMIT }
+  if (!result) {
+    // Document already at or above limit (filter didn't match)
+    const doc = await col.findOne({ userId, month })
+    return { allowed: false, used: doc?.cvAnalysisCount ?? FREE_CV_ANALYSIS_LIMIT, limit: FREE_CV_ANALYSIS_LIMIT }
+  }
+
+  return { allowed: true, used: result.cvAnalysisCount, limit: FREE_CV_ANALYSIS_LIMIT }
 }
 
 export async function getAiUsage(

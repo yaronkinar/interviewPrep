@@ -22,17 +22,17 @@ export async function POST(req: Request) {
 
   switch (event.eventType) {
     case EventName.TransactionCompleted: {
-      // Sprint is a one-time purchase — identified by customData.plan === 'sprint'
-      const customData = (event.data as any).customData as
-        | { userId?: string; plan?: string }
-        | null
+      const customData = (event.data as any).customData as { userId?: string; plan?: string } | null
       if (customData?.plan === 'sprint' && customData.userId) {
         await upsertSubscription({
           userId: customData.userId,
           plan: 'sprint',
           paddleCustomerId: (event.data as any).customerId ?? '',
           sprintExpiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-        })
+        }, { paddleSubscriptionId: '' })
+      } else if (customData?.plan) {
+        // Pro annual renewals — subscription events are authoritative, this is informational
+        console.info('[paddle] TransactionCompleted for plan', customData.plan, 'userId', customData.userId)
       }
       break
     }
@@ -47,7 +47,7 @@ export async function POST(req: Request) {
           plan: 'pro',
           paddleCustomerId: sub.customerId ?? '',
           paddleSubscriptionId: sub.id,
-        })
+        }, { sprintExpiresAt: '' })
       }
       break
     }
@@ -60,7 +60,7 @@ export async function POST(req: Request) {
           userId: customData.userId,
           plan: 'free',
           paddleCustomerId: sub.customerId ?? '',
-        })
+        }, { paddleSubscriptionId: '', sprintExpiresAt: '' })
       }
       break
     }

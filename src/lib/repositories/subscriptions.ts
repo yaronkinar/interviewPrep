@@ -32,11 +32,16 @@ export async function getUserPlan(
 
 export async function upsertSubscription(
   data: Omit<UserSubscriptionDoc, 'updatedAt'>,
+  unsetFields?: Partial<Record<keyof UserSubscriptionDoc, ''>>
 ): Promise<void> {
   const col = await getCollection()
+  const update: Record<string, unknown> = { $set: { updatedAt: new Date(), ...data } }
+  if (unsetFields && Object.keys(unsetFields).length > 0) {
+    update.$unset = unsetFields
+  }
   await col.updateOne(
     { userId: data.userId },
-    { $set: { updatedAt: new Date(), ...data } },
+    update,
     { upsert: true },
   )
 }

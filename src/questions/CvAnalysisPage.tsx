@@ -425,14 +425,20 @@ export default function CvAnalysisPage() {
     setLoading(true)
 
     if (plan === 'free') {
-      const res = await fetch('/api/ai-usage/cv-analysis', { method: 'POST' })
-      const data = await res.json() as { allowed: boolean; used: number; limit: number }
-      if (!data.allowed) {
-        setShowPaywall(true)
+      try {
+        const res = await fetch('/api/ai-usage/cv-analysis', { method: 'POST' })
+        const data = await res.json() as { allowed: boolean; used: number; limit: number }
+        if (!data.allowed) {
+          setShowPaywall(true)
+          setLoading(false)
+          return
+        }
+        setCvUsage({ used: data.used, limit: data.limit })
+      } catch {
+        // Network error — allow the analysis to proceed (fail open, not closed)
         setLoading(false)
         return
       }
-      setCvUsage({ used: data.used, limit: data.limit })
     }
 
     const jobUrlBlock = jobUrl.trim().length > 0 ? jobUrl.trim() : cv.promptJobUrlNone
