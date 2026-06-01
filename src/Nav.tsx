@@ -6,6 +6,7 @@ import {
   Bookmark,
   Boxes,
   Code2,
+  CreditCard,
   FileCode2,
   FileUser,
   Hexagon,
@@ -20,6 +21,7 @@ import {
   SwatchBook,
   Terminal,
   Triangle,
+  Workflow,
 } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -48,12 +50,14 @@ const PUBLIC_TAB_IDS: Page[] = [
   'vue',
   'angular',
   'css',
+  'fullstack',
   'quest',
   'sandbox',
   'mock',
   'questions',
   'cv',
   'cvThemes',
+  'pricing',
 ]
 
 /** Header shortcuts between logo and toolbar (tablet only — desktop uses the sidebar). */
@@ -67,12 +71,14 @@ const PAGE_ICONS: Record<Page, LucideIcon> = {
   vue: Triangle,
   angular: Hexagon,
   css: Palette,
+  fullstack: Workflow,
   quest: Route,
   sandbox: Terminal,
   mock: Mic,
   questions: MessageSquareQuote,
   cv: FileUser,
   cvThemes: SwatchBook,
+  pricing: CreditCard,
 }
 
 const LOCALE_LABELS: Record<Locale, string> = {

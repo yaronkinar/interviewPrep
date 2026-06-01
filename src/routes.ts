@@ -9,12 +9,14 @@ export const PATH_FOR_PAGE: Record<Page, string> = {
   vue: '/vue',
   angular: '/angular',
   css: '/css',
+  fullstack: '/fullstack',
   sandbox: '/sandbox',
   mock: '/mock',
   questions: '/questions',
   cv: '/cv',
   cvThemes: '/cv/themes',
   quest: '/quest',
+  pricing: '/pricing',
 }
 
 const PATH_TO_PAGE: Record<string, Page> = {
@@ -25,12 +27,14 @@ const PATH_TO_PAGE: Record<string, Page> = {
   '/vue': 'vue',
   '/angular': 'angular',
   '/css': 'css',
+  '/fullstack': 'fullstack',
   '/sandbox': 'sandbox',
   '/mock': 'mock',
   '/questions': 'questions',
   '/cv': 'cv',
   '/cv/themes': 'cvThemes',
   '/quest': 'quest',
+  '/pricing': 'pricing',
 }
 
 /** Map current pathname to a `Page` (trailing slash normalized). Unknown paths → `null`. */

@@ -109,6 +109,21 @@ export type CvPageStrings = {
   downloadStyledDocx: string
   /** Download résumé as PDF with the same parsed layout (browser-only). */
   downloadStyledPdf: string
+  /** Generate spoken-style “tell me about yourself” from CV (+ optional job). */
+  selfIntroGenerate: string
+  selfIntroWorking: string
+  selfIntroSectionTitle: string
+  selfIntroHint: string
+  selfIntroCopy: string
+  selfIntroCopied: string
+  /** Shown under the intro: local persistence note. */
+  selfIntroPersistHint: string
+  /** Remove persisted script without clearing the whole form. */
+  selfIntroForgetSaved: string
+  /** When signed in — script is copied to Mongo + local browser cache. */
+  selfIntroPersistHintSignedIn: string
+  /** Mongo POST failed — local cache still OK. */
+  selfIntroMongoSyncFailed: string
 }
 
 export type CvThemePageStrings = {
@@ -326,6 +341,20 @@ const CV_PAGE_EN: CvPageStrings = {
   themeGeneratorLink: 'Try CV theme preview — colors & fonts as a shareable image',
   downloadStyledDocx: 'Download résumé (.docx — styled layout)',
   downloadStyledPdf: 'Download résumé (.pdf — styled layout)',
+  selfIntroGenerate: 'Interview self-introduction',
+  selfIntroWorking: 'Drafting…',
+  selfIntroSectionTitle: 'Interview self-introduction',
+  selfIntroHint:
+    'Generates a short spoken opener you can memorize or adapt — typically about one minute — for prompts like “Tell me about yourself,” using your CV and optional role or job posting.',
+  selfIntroCopy: 'Copy script',
+  selfIntroCopied: 'Copied to clipboard',
+  selfIntroPersistHint:
+    'Saved on this browser for the language selected in the site menu — your last script for that language reloads here. Clearing this page’s inputs removes the saved script for this language.',
+  selfIntroForgetSaved: 'Remove saved script',
+  selfIntroPersistHintSignedIn:
+    'Synced to your account for this interface language (and cached in this browser) so it follows you across devices when signed in.',
+  selfIntroMongoSyncFailed:
+    'Could not save to your account; the script is still stored on this device. Try again after checking your connection.',
   ...CV_PAGE_PROMPT_BY_LOCALE.en,
 }
 
@@ -387,6 +416,20 @@ const CV_PAGE_HE: CvPageStrings = {
   themeGeneratorLink: 'תצוגת ערכות צבע וגופנים לקורות חיים (תמונה)',
   downloadStyledDocx: 'הורדת קו״ח (.docx — פריסה מעוצבת)',
   downloadStyledPdf: 'הורדת קו״ח ‎(.pdf — פריסה מעוצבת)',
+  selfIntroGenerate: 'הצגה עצמית לראיון',
+  selfIntroWorking: 'מנסח…',
+  selfIntroSectionTitle: 'הצגה עצמית לראיון עבודה',
+  selfIntroHint:
+    'יוצר קטע דיבור קצר (בערך דקה) שאפשר לשנן או להתאים לשאלות בסגנון "ספר על עצמך", לפי קורות החיים ותפקיד/משרה אופציונליים.',
+  selfIntroCopy: 'העתקת הטקסט',
+  selfIntroCopied: 'הועתק ללוח',
+  selfIntroPersistHint:
+    'נשמר בדפדפן עבור השפה שבחרתם בתפריט האתר — טיוטה אחרונה לשפה הזאת נטענת מחדש. גם ניקוי השדות בעמוד מוחק את מה שנשמר לשפה הזאת.',
+  selfIntroForgetSaved: 'מחיקת ההצגה השמורה',
+  selfIntroPersistHintSignedIn:
+    'מסונכרן לחשבון לפי שפת הממשק הנוכחית (ושמירה מקומית בדפדפן) — כדי לפתוח ממכשיר אחר אחרי ההתחברות.',
+  selfIntroMongoSyncFailed:
+    'לא ניתן לשמור לחשבון; הטקסט עדיין שמור במכשיר הזה. נסו שוב אחרי בדיקת החיבור.',
   ...CV_PAGE_PROMPT_BY_LOCALE.he,
 }
 
@@ -458,19 +501,21 @@ const en: AppStrings = {
     vue: 'Vue.js',
     angular: 'Angular',
     css: 'CSS',
+    fullstack: 'Full stack',
     sandbox: 'React sandbox',
     mock: 'Mock interview',
     questions: 'Company Q&A',
     cv: 'CV analysis',
     cvThemes: 'CV themes',
     quest: 'JS Quest',
+    pricing: 'Pricing',
   },
   navSaved: 'Saved',
   home: {
     metaTitle: 'Interview Prep — practice in the browser',
     heroTitle: 'Interview Prep',
     heroLead:
-      'Practice JavaScript patterns, React, TypeScript, Vue, and Angular topics, company-style questions, and AI mock interviews — all in your browser.',
+      'Practice JavaScript patterns, React, TypeScript, Vue, Angular, full-stack web topics, company-style questions, and AI mock interviews — all in your browser.',
     heroKicker: 'Browser-based interview practice',
     sectionAbout: 'What this site is',
     aboutBody:
@@ -541,12 +586,14 @@ const he: AppStrings = {
     vue: 'Vue.js',
     angular: 'Angular',
     css: 'CSS',
+    fullstack: 'פולסטאק',
     sandbox: 'ארגז חול React',
     mock: 'ראיון דמה',
     questions: 'שאלות ותשובות',
     cv: 'ניתוח קורות חיים',
     cvThemes: 'ערכות קו״ח',
     quest: 'משחק JS',
+    pricing: 'תמחור',
   },
   navSaved: 'שמורים',
   home: {
@@ -621,12 +668,14 @@ const es: AppStrings = {
     vue: 'Vue.js',
     angular: 'Angular',
     css: 'CSS',
+    fullstack: 'Full stack',
     sandbox: 'Sandbox React',
     mock: 'Simulacro',
     questions: 'P&R empresas',
     cv: 'Análisis de CV',
     cvThemes: 'Temas CV',
     quest: 'Aventura JS',
+    pricing: 'Precios',
   },
   navSaved: 'Guardados',
   home: {
@@ -701,12 +750,14 @@ const fr: AppStrings = {
     vue: 'Vue.js',
     angular: 'Angular',
     css: 'CSS',
+    fullstack: 'Full stack',
     sandbox: 'Bac à sable React',
     mock: 'Entretien blanc',
     questions: 'Q&R entreprises',
     cv: 'Analyse CV',
     cvThemes: 'Thèmes CV',
     quest: 'Aventure JS',
+    pricing: 'Tarifs',
   },
   navSaved: 'Enregistrés',
   home: {
@@ -781,12 +832,14 @@ const de: AppStrings = {
     vue: 'Vue.js',
     angular: 'Angular',
     css: 'CSS',
+    fullstack: 'Full stack',
     sandbox: 'React-Sandbox',
     mock: 'Probegespräch',
     questions: 'Firmen-F&A',
     cv: 'Lebenslauf-Analyse',
     cvThemes: 'CV-Themes',
     quest: 'JS-Abenteuer',
+    pricing: 'Preise',
   },
   navSaved: 'Gespeichert',
   home: {
@@ -861,12 +914,14 @@ const pt: AppStrings = {
     vue: 'Vue.js',
     angular: 'Angular',
     css: 'CSS',
+    fullstack: 'Full stack',
     sandbox: 'Sandbox React',
     mock: 'Simulado',
     questions: 'P&R empresas',
     cv: 'Análise de CV',
     cvThemes: 'Temas CV',
     quest: 'Aventura JS',
+    pricing: 'Preços',
   },
   navSaved: 'Salvos',
   home: {
@@ -941,12 +996,14 @@ const ja: AppStrings = {
     vue: 'Vue.js',
     angular: 'Angular',
     css: 'CSS',
+    fullstack: 'Full stack',
     sandbox: 'React サンドボックス',
     mock: '模擬面接',
     questions: '企業 Q&A',
     cv: '履歴書の分析',
     cvThemes: '履歴書のテーマ',
     quest: 'JS クエスト',
+    pricing: '料金プラン',
   },
   navSaved: '保存済み',
   home: {
@@ -1021,12 +1078,14 @@ const zh: AppStrings = {
     vue: 'Vue.js',
     angular: 'Angular',
     css: 'CSS',
+    fullstack: 'Full stack',
     sandbox: 'React 沙箱',
     mock: '模拟面试',
     questions: '公司问答',
     cv: '简历分析',
     cvThemes: '简历主题',
     quest: 'JS 闯关',
+    pricing: '定价',
   },
   navSaved: '已保存',
   home: {
@@ -1101,12 +1160,14 @@ const ar: AppStrings = {
     vue: 'Vue.js',
     angular: 'Angular',
     css: 'CSS',
+    fullstack: 'Full stack',
     sandbox: 'بيئة React',
     mock: 'مقابلة تجريبية',
     questions: 'أسئلة الشركات',
     cv: 'تحليل السيرة الذاتية',
     cvThemes: 'سمات السيرة',
     quest: 'مغامرة JS',
+    pricing: 'الأسعار',
   },
   navSaved: 'المحفوظات',
   home: {
@@ -1181,12 +1242,14 @@ const ru: AppStrings = {
     vue: 'Vue.js',
     angular: 'Angular',
     css: 'CSS',
+    fullstack: 'Full stack',
     sandbox: 'Песочница React',
     mock: 'Пробное интервью',
     questions: 'Вопросы компаний',
     cv: 'Анализ резюме',
     cvThemes: 'Темы резюме',
     quest: 'Квест JS',
+    pricing: 'Цены',
   },
   navSaved: 'Сохранённое',
   home: {
@@ -1261,12 +1324,14 @@ const hi: AppStrings = {
     vue: 'Vue.js',
     angular: 'Angular',
     css: 'CSS',
+    fullstack: 'Full stack',
     sandbox: 'React सैंडबॉक्स',
     mock: 'मॉक इंटरव्यू',
     questions: 'कंपनी Q&A',
     cv: 'CV विश्लेषण',
     cvThemes: 'CV थीम',
     quest: 'JS क्वेस्ट',
+    pricing: 'मूल्य निर्धारण',
   },
   navSaved: 'सहेजे गए',
   home: {
@@ -1341,12 +1406,14 @@ const pl: AppStrings = {
     vue: 'Vue.js',
     angular: 'Angular',
     css: 'CSS',
+    fullstack: 'Full stack',
     sandbox: 'Piaskownica React',
     mock: 'Mock interview',
     questions: 'Pytania firm',
     cv: 'Analiza CV',
     cvThemes: 'Motywy CV',
     quest: 'Misja JS',
+    pricing: 'Cennik',
   },
   navSaved: 'Zapisane',
   home: {
@@ -1421,12 +1488,14 @@ const ko: AppStrings = {
     vue: 'Vue.js',
     angular: 'Angular',
     css: 'CSS',
+    fullstack: 'Full stack',
     sandbox: 'React 샌드박스',
     mock: '모의 면접',
     questions: '기업 Q&A',
     cv: '이력서 분석',
     cvThemes: '이력서 테마',
     quest: 'JS 퀘스트',
+    pricing: '요금제',
   },
   navSaved: '저장됨',
   home: {
