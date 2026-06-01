@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import type { MessageParam } from '@anthropic-ai/sdk/resources/messages'
 import { useLocale } from '../i18n/LocaleContext'
 import type { Question } from './data'
@@ -6,12 +6,14 @@ import type { LlmProvider } from './llmConstants'
 import { formatApiError, streamLlmChat } from './llmStream'
 import { buildCatalogSnippetsForPrompt } from './questionPromptContext'
 import ChatMarkdown from './ChatMarkdown'
+import PaywallModal from '@/components/PaywallModal'
+import UsageCounter from '@/components/UsageCounter'
 
 export type OpenChatMode = 'explain' | 'practice'
 
-const SYSTEM_EXPLAIN = `You are a friendly technical interview coach for frontend and JavaScript interviews. The user is chatting without a fixed question from the list: they may ask about concepts, compare approaches, paste a problem, or walk through code. Respond clearly and practically. If they describe a coding problem, help them reason through requirements, edge cases, and trade-offs.`
+const SYSTEM_EXPLAIN = `You are a friendly technical interview coach for frontend and full-stack web interviews (JavaScript/TypeScript, UI frameworks, browser/platform APIs, APIs and HTTP, persistence, auth, and ops/deployment trade-offs). The user is chatting without a fixed question from the list: they may ask about concepts, compare approaches, paste a problem, or walk through code. Respond clearly and practically. If they describe a coding problem, help them reason through requirements, edge cases, and trade-offs.`
 
-const SYSTEM_PRACTICE = `You are a technical interviewer and coach. The user may share how they would answer a question or explain a topic out loud. Give concise feedback: clarity, gaps, and hints. Prefer Socratic questions over handing them a complete solution unless they explicitly ask for the answer.`
+const SYSTEM_PRACTICE = `You are a technical interviewer and coach for frontend and full-stack web interviews. The user may share how they would answer a question or explain a topic out loud. Give concise feedback: clarity, gaps, and hints. Prefer Socratic questions over handing them a complete solution unless they explicitly ask for the answer.`
 
 const CATALOG_SEARCH_LIMIT = 8
 /** Ignore lexical-search hits below this (scores are weighted sums over matched tokens). */
@@ -20,7 +22,7 @@ const MIN_CATALOG_MATCH_SCORE = 1
 
 const CATALOG_HIT_INSTRUCTION = `Below are excerpts from this app's interview question catalog. Prefer them when answering. Name the catalog question title when you rely on a specific entry (you may mention its id from the excerpt header). Synthesize across entries when helpful.`
 
-const CATALOG_MISS_INSTRUCTION = `Catalog lookup ran but no entries scored strongly enough for this message (keywords may not match stored questions). Say that briefly in one sentence, then answer from general frontend and JavaScript interview knowledge—still practical and concise.`
+const CATALOG_MISS_INSTRUCTION = `Catalog lookup ran but no entries scored strongly enough for this message (keywords may not match stored questions). Say that briefly in one sentence, then answer from general frontend and full-stack web interview knowledge—still practical and concise.`
 
 type QuestionSearchMatchDto = {
   question: Question
@@ -124,6 +126,22 @@ export default function OpenChat({
   const [error, setError] = useState<string | null>(null)
   const [catalogNotice, setCatalogNotice] = useState<string | null>(null)
   const [lastCatalogSources, setLastCatalogSources] = useState<{ id: string; title: string }[]>([])
+  const [plan, setPlan] = useState<'free' | 'sprint' | 'pro'>('free')
+  const [aiUsage, setAiUsage] = useState<{ used: number; limit: number } | null>(null)
+  const [showPaywall, setShowPaywall] = useState(false)
+
+  useEffect(() => {
+    fetch('/api/subscription')
+      .then(r => r.json())
+      .then((data: { plan: string; aiUsage: { mockInterviewCount: number } }) => {
+        const p = data.plan as 'free' | 'sprint' | 'pro'
+        setPlan(p)
+        if (p === 'free') {
+          setAiUsage({ used: data.aiUsage.mockInterviewCount, limit: 3 })
+        }
+      })
+      .catch(() => {})
+  }, [])
 
   const canSend = apiKey.trim().length > 0 && input.trim().length > 0 && !loading
 
@@ -137,6 +155,15 @@ export default function OpenChat({
 
   async function send() {
     if (!canSend) return
+    if (messages.length === 0 && plan === 'free') {
+      const res = await fetch('/api/ai-usage/mock-interview', { method: 'POST' })
+      const data = await res.json()
+      if (!data.allowed) {
+        setShowPaywall(true)
+        return
+      }
+      setAiUsage({ used: data.used, limit: data.limit })
+    }
     const text = input.trim()
     setInput('')
     setError(null)
@@ -324,6 +351,9 @@ export default function OpenChat({
             )}
           </div>
           {error && <div className="q-chat-error">{error}</div>}
+          {aiUsage && plan === 'free' && (
+            <UsageCounter used={aiUsage.used} limit={aiUsage.limit} feature="mockInterview" />
+          )}
           <div className="q-chat-compose">
             <textarea
               className="q-chat-input"
@@ -345,6 +375,11 @@ export default function OpenChat({
           </div>
         </div>
       )}
+      <PaywallModal
+        open={showPaywall}
+        onClose={() => setShowPaywall(false)}
+        feature="mockInterview"
+      />
     </section>
   )
 }
