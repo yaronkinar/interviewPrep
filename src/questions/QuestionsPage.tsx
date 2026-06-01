@@ -9,6 +9,7 @@ import {
   useState,
   type ReactNode,
 } from 'react'
+import { Lock } from 'lucide-react'
 import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import { useSearchParams, useRouter } from 'next/navigation'
@@ -635,6 +636,18 @@ export default function QuestionsPage() {
     [searchParams, router],
   )
 
+  const [plan, setPlan] = useState<'free' | 'sprint' | 'pro'>('free')
+
+  useEffect(() => {
+    fetch('/api/subscription')
+      .then(r => r.json())
+      .then((data: { plan: string }) => {
+        const p = data.plan as 'free' | 'sprint' | 'pro'
+        setPlan(p)
+      })
+      .catch(() => {})
+  }, [])
+
   const [company, setCompany] = useState<string | null>(null)
   const [difficulty, setDifficulty] = useState<Difficulty | null>(null)
   const [category, setCategory] = useState<Category | null>(null)
@@ -906,22 +919,34 @@ export default function QuestionsPage() {
                 </option>
               ))}
             </select>
-            <select
-              className="questions-stitch-select"
-              aria-label={ui.questions.company}
-              value={company ?? ''}
-              onChange={(e) => {
-                const v = e.target.value
-                setCompany(v === '' ? null : v)
-              }}
-            >
-              <option value="">{ui.questions.filterCompanyAll}</option>
-              {companiesSorted.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.id}
-                </option>
-              ))}
-            </select>
+            {plan === 'free' ? (
+              <a
+                href="/pricing"
+                className="questions-stitch-select questions-stitch-select--locked"
+                aria-label="Company filter — Sprint or Pro required"
+                title="Company-tagged questions require Sprint or Pro"
+              >
+                <Lock size={13} strokeWidth={2} aria-hidden style={{ display: 'inline', marginRight: 4, verticalAlign: 'middle' }} />
+                {ui.questions.company}
+              </a>
+            ) : (
+              <select
+                className="questions-stitch-select"
+                aria-label={ui.questions.company}
+                value={company ?? ''}
+                onChange={(e) => {
+                  const v = e.target.value
+                  setCompany(v === '' ? null : v)
+                }}
+              >
+                <option value="">{ui.questions.filterCompanyAll}</option>
+                {companiesSorted.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.id}
+                  </option>
+                ))}
+              </select>
+            )}
             <select
               className="questions-stitch-select"
               aria-label={ui.questions.sortByLabel}

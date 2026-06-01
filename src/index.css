@@ -2109,11 +2109,15 @@ button.nav-mobile-drawer-close:hover {
 .editorial-page--cv .cv-analysis-textarea--job {
   min-height: 4rem;
 }
-.editorial-page--cv .cv-analysis-actions {
+.editorial-page--cv .cv-analysis-intro-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
-  margin-top: 0.25rem;
+  margin-bottom: 0.35rem;
+}
+.editorial-page--cv .cv-analysis-intro-persist-hint {
+  margin-top: 0;
+  margin-bottom: 0.75rem;
 }
 .editorial-page--cv .cv-analysis-result-bubble {
   margin-top: 0.5rem;
@@ -4326,6 +4330,21 @@ input:focus { border-color: var(--accent); }
 .questions-stitch-select:focus {
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 28%, transparent);
   outline: none;
+}
+.questions-stitch-select--locked {
+  align-items: center;
+  background-image: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: inline-flex;
+  gap: 0.25rem;
+  opacity: 0.75;
+  padding-right: 1rem;
+  text-decoration: none;
+}
+.questions-stitch-select--locked:hover {
+  color: var(--accent);
+  opacity: 1;
 }
 
 .questions-stitch-filter-meta {

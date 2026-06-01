@@ -1,3 +1,4 @@
+import { auth } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
 import {
   companyIdsSortedForQueryInference,
@@ -12,6 +13,7 @@ import {
   questionSupportsAutoCompanyFromToken,
   proposeCompanyDisplayIdFromSearchToken,
 } from '@/lib/repositories/questions'
+import { getUserPlan } from '@/lib/repositories/subscriptions'
 import { CATEGORIES, type Category, type Difficulty } from '@/questions/data'
 
 const DIFFICULTIES = ['easy', 'medium', 'hard'] as const
@@ -32,6 +34,20 @@ function parseLimit(value: string | null) {
 
 export async function GET(req: Request) {
   try {
+    const { searchParams } = new URL(req.url)
+
+    const companyFilter = searchParams.get('company')?.trim()
+    if (companyFilter) {
+      const { userId } = await auth()
+      const planInfo = userId ? await getUserPlan(userId) : { plan: 'free' as const }
+      if (planInfo.plan === 'free') {
+        return NextResponse.json(
+          { error: 'Company-tagged questions require Sprint or Pro', upgrade: true },
+          { status: 403 },
+        )
+      }
+    }
+
     const mergedCompanies = await listCompaniesMergedWithSeed()
     const tagsFromQuestions = await distinctCompanyTagsFromQuestions()
 
@@ -43,7 +59,6 @@ export async function GET(req: Request) {
 
     const searchableCompanyIds = companyIdsSortedForQueryInference([...idByLower.values()])
 
-    const { searchParams } = new URL(req.url)
     const query = searchParams.get('q')?.trim() ?? ''
 
     if (!query) {
@@ -53,7 +68,7 @@ export async function GET(req: Request) {
     const difficulty = parseDifficulty(searchParams.get('difficulty'))
     const category = parseCategory(searchParams.get('category'))
 
-    const requestedCompanyRaw = searchParams.get('company')?.trim().toLowerCase()
+    const requestedCompanyRaw = companyFilter?.toLowerCase()
     const companyFromParam = requestedCompanyRaw ? idByLower.get(requestedCompanyRaw) : undefined
 
     const filters: QuestionSearchFilters = {
