@@ -1,4 +1,4 @@
-import { getUserPlan, upsertSubscription } from '../subscriptions'
+import { getUserPlan } from '../subscriptions'
 import { getDb } from '@/lib/mongodb'
 
 jest.mock('@/lib/mongodb')
@@ -18,6 +18,10 @@ beforeEach(() => {
   } as any)
 })
 
+afterEach(() => {
+  jest.resetModules()
+})
+
 describe('getUserPlan', () => {
   it('returns free when no subscription record exists', async () => {
     mockFindOne.mockResolvedValue(null)
@@ -29,6 +33,7 @@ describe('getUserPlan', () => {
     mockFindOne.mockResolvedValue({ plan: 'pro' })
     const result = await getUserPlan('user_abc')
     expect(result.plan).toBe('pro')
+    expect(result.sprintExpiresAt).toBeUndefined()
   })
 
   it('returns sprint and expiry when sprint is active', async () => {

@@ -21,8 +21,9 @@ export async function getUserPlan(
   const doc = await col.findOne({ userId })
   if (!doc) return { plan: 'free' }
 
-  if (doc.plan === 'sprint' && doc.sprintExpiresAt && doc.sprintExpiresAt < new Date()) {
-    await col.updateOne({ userId }, { $set: { plan: 'free', updatedAt: new Date() } })
+  const now = new Date()
+  if (doc.plan === 'sprint' && doc.sprintExpiresAt && doc.sprintExpiresAt < now) {
+    await col.updateOne({ userId }, { $set: { plan: 'free', updatedAt: now } })
     return { plan: 'free' }
   }
 
@@ -35,7 +36,7 @@ export async function upsertSubscription(
   const col = await getCollection()
   await col.updateOne(
     { userId: data.userId },
-    { $set: { ...data, updatedAt: new Date() } },
+    { $set: { updatedAt: new Date(), ...data } },
     { upsert: true },
   )
 }
