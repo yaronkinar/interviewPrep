@@ -12,12 +12,14 @@ interface Props {
 
 export default function PricingCards({ currentPlan, isSignedIn }: Props) {
   const [loading, setLoading] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
   async function handleCheckout(plan: string) {
     if (!isSignedIn) {
       window.location.href = '/sign-in'
       return
     }
+    setError(null)
     setLoading(plan)
     try {
       const res = await fetch('/api/checkout', {
@@ -25,8 +27,15 @@ export default function PricingCards({ currentPlan, isSignedIn }: Props) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ plan }),
       })
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        throw new Error(body.error ?? 'Checkout failed')
+      }
       const { checkoutUrl } = await res.json()
+      if (!checkoutUrl) throw new Error('No checkout URL returned')
       window.location.href = checkoutUrl
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Something went wrong. Please try again.')
     } finally {
       setLoading(null)
     }
@@ -55,7 +64,9 @@ export default function PricingCards({ currentPlan, isSignedIn }: Props) {
           <button disabled className="w-full py-2 rounded-lg border text-sm text-muted-foreground">
             Current plan
           </button>
-        ) : null}
+        ) : (
+          <div className="h-9" />
+        )}
       </div>
 
       {/* Sprint */}
@@ -132,6 +143,9 @@ export default function PricingCards({ currentPlan, isSignedIn }: Props) {
           </div>
         )}
       </div>
+      {error && (
+        <p className="col-span-full text-center text-sm text-red-500 mt-4">{error}</p>
+      )}
     </div>
   )
 }

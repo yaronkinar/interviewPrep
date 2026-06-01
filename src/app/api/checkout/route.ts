@@ -1,13 +1,6 @@
 import { auth } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
-import { Paddle, Environment } from '@paddle/paddle-node-sdk'
-
-const paddle = new Paddle(process.env.PADDLE_API_KEY!, {
-  environment:
-    process.env.PADDLE_ENV === 'production'
-      ? Environment.production
-      : Environment.sandbox,
-})
+import { paddle } from '@/lib/paddle'
 
 const PRICE_IDS: Record<string, string> = {
   sprint: process.env.PADDLE_SPRINT_PRICE_ID!,
@@ -21,14 +14,22 @@ export async function POST(req: Request) {
 
   const { plan } = (await req.json()) as { plan: string }
   const priceId = PRICE_IDS[plan]
-  if (!priceId) {
-    return NextResponse.json({ error: 'Invalid plan' }, { status: 400 })
+  if (!priceId || priceId === 'undefined') {
+    return NextResponse.json({ error: 'Plan not configured' }, { status: 503 })
   }
 
-  const transaction = await paddle.transactions.create({
-    items: [{ priceId, quantity: 1 }],
-    customData: { userId, plan },
-  })
+  let transaction: Awaited<ReturnType<typeof paddle.transactions.create>>
+  try {
+    transaction = await paddle.transactions.create({
+      items: [{ priceId, quantity: 1 }],
+      customData: { userId, plan },
+    })
+  } catch (err) {
+    console.error('[checkout]', err)
+    return NextResponse.json({ error: 'Payment provider error' }, { status: 502 })
+  }
 
-  return NextResponse.json({ checkoutUrl: transaction.checkout?.url })
+  const url = transaction.checkout?.url
+  if (!url) return NextResponse.json({ error: 'Checkout URL unavailable' }, { status: 500 })
+  return NextResponse.json({ checkoutUrl: url })
 }

@@ -1,15 +1,9 @@
 // src/app/api/webhooks/paddle/route.ts
 
 import { NextResponse } from 'next/server'
-import { Paddle, EventName, Environment } from '@paddle/paddle-node-sdk'
+import { EventName } from '@paddle/paddle-node-sdk'
+import { paddle } from '@/lib/paddle'
 import { upsertSubscription } from '@/lib/repositories/subscriptions'
-
-const paddle = new Paddle(process.env.PADDLE_API_KEY!, {
-  environment:
-    process.env.PADDLE_ENV === 'production'
-      ? Environment.production
-      : Environment.sandbox,
-})
 
 export async function POST(req: Request) {
   const rawBody = await req.text()
