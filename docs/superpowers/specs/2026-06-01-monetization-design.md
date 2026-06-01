@@ -51,20 +51,20 @@ Targets developers who want ongoing access for continuous upskilling. Annual pla
 
 ## Payment Infrastructure
 
-**Provider:** LemonSqueezy (Stripe is unavailable in Israel; LemonSqueezy acts as merchant of record, handles international VAT/taxes automatically, and supports Israeli sellers)
+**Provider:** Paddle (available in Israel, merchant of record — handles international VAT/taxes automatically, supports 30+ languages including Hebrew on hosted checkout)
 
-**Checkout flow:** LemonSqueezy hosted checkout (overlay or redirect). Avoids PCI compliance burden, ships fast. LemonSqueezy handles all tax compliance globally.
+**Checkout flow:** Paddle hosted checkout (overlay or redirect). Avoids PCI compliance burden, ships fast. Paddle handles all tax compliance globally and detects user locale automatically.
 
-**LemonSqueezy product setup:**
-- Sprint: one-time variant, $25
-- Pro monthly: subscription variant, $15/month
-- Pro annual: subscription variant, $120/year
+**Paddle product setup:**
+- Sprint: one-time product, $25
+- Pro monthly: subscription plan, $15/month
+- Pro annual: subscription plan, $120/year
 
-**Webhook events handled** at `/api/webhooks/lemonsqueezy`:
-- `order_created` → set Sprint plan + expiry in MongoDB
-- `subscription_created` → set Pro plan in MongoDB
-- `subscription_updated` → sync Pro status
-- `subscription_cancelled` / `subscription_expired` → downgrade to Free
+**Webhook events handled** at `/api/webhooks/paddle`:
+- `transaction.completed` → set Sprint plan + expiry in MongoDB
+- `subscription.created` → set Pro plan in MongoDB
+- `subscription.updated` → sync Pro status
+- `subscription.canceled` → downgrade to Free
 - Sprint sets `sprintExpiresAt = now + 30 days`; no subscription created
 
 ---
@@ -77,8 +77,8 @@ Targets developers who want ongoing access for continuous upskilling. Annual pla
 {
   userId: string,                    // Clerk user ID
   plan: 'free' | 'sprint' | 'pro',
-  lemonSqueezyCustomerId: string,
-  lemonSqueezySubscriptionId?: string, // Pro only
+  paddleCustomerId: string,
+  paddleSubscriptionId?: string, // Pro only
   sprintExpiresAt?: Date,              // Sprint only
   updatedAt: Date
 }
@@ -125,8 +125,8 @@ Tracks monthly AI usage for free-tier enforcement.
 | Route | Purpose |
 |-------|---------|
 | `/pricing` | Public pricing page, always accessible |
-| `/api/webhooks/lemonsqueezy` | LemonSqueezy event handler |
-| `/api/checkout` | POST — creates LemonSqueezy checkout URL for given plan |
+| `/api/webhooks/paddle` | LemonSqueezy event handler |
+| `/api/checkout` | POST — creates Paddle checkout URL for given plan |
 | `/api/subscription` | GET — returns current user's plan (for client components) |
 
 ---
