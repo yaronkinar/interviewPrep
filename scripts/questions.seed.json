@@ -1946,5 +1946,57 @@
     "source": "common React screen interview",
     "answer": "function StarRating({ value, onChange, maxStars = 5 }) {\n  return (\n    <div role=\"group\" aria-label=\"Rating\">\n      {Array.from({ length: maxStars }, (_, i) => {\n        const star = i + 1\n        const filled = star <= value\n        return (\n          <button\n            key={star}\n            type=\"button\"\n            aria-pressed={filled}\n            aria-label={`${star} star${star > 1 ? 's' : ''}`}\n            onClick={() => onChange(star)}\n          >\n            {filled ? '★' : '☆'}\n          </button>\n        )\n      })}\n    </div>\n  )\n}\n\n// Usage\nfunction Demo() {\n  const [rating, setRating] = React.useState(0)\n  return <StarRating value={rating} onChange={setRating} />\n}\n\n// Hover preview pattern: keep committed `value` and local `hover` state;\n// render filled state from hover ?? value; clear hover on mouseLeave.\n\n// Accessibility improvements in a longer interview:\n// - roving tabindex for arrow-key navigation between stars\n// - ensure focus outline is visible",
     "order": 93
+  },
+  {
+    "id": "full-stack-rest-vs-graphql-trade-offs",
+    "companies": ["Stripe", "Netflix", "Uber"],
+    "title": "Compare REST and GraphQL for a product API",
+    "difficulty": "medium",
+    "category": "Full Stack",
+    "description": "Walk through when you would ship REST vs GraphQL for a customer-facing app backed by multiple microservices. Cover versioning, over-fetching, tooling, and operational pitfalls.",
+    "answerType": "text",
+    "tags": ["REST", "GraphQL", "API design", "microservices"],
+    "source": "full-stack interview checklist",
+    "answer": "Interview framing:\nGive a decision lens (team skill, client diversity, performance ops), not a religious verdict.\n\nREST strengths:\n- Simple caching with HTTP semantics (GET + CDN).\n- Broad tooling and predictable endpoints.\n- Easy mental model for external partners.\n\nGraphQL strengths:\n- Client-shaped payloads reduce chatter for nested graphs.\n- Strong typing/schema contracts when enforced.\n- Aggregating backends behind one gateway.\n\nTrade-offs:\n- GraphQL N+1 resolver storms unless batched/DataLoader and careful limits.\n- Persisted queries / complexity limits needed for public APIs.\n- REST can over-fetch unless resources are sliced thoughtfully.\n\nClose with how you’d observe production (latency histograms, field-level metrics, error budgets).",
+    "order": 94
+  },
+  {
+    "id": "full-stack-session-vs-jwt-auth",
+    "companies": ["Google", "Amazon", "Airbnb"],
+    "title": "Sessions vs JWT for browser authentication",
+    "difficulty": "medium",
+    "category": "Full Stack",
+    "description": "Explain cookie-based sessions versus bearer JWTs for a SPA talking to your API. Cover revocation, XSS vs CSRF, mobile clients, and scaling sessions.",
+    "answerType": "mixed",
+    "tags": ["auth", "cookies", "JWT", "security"],
+    "source": "full-stack interview checklist",
+    "answer": "Sessions (opaque ID in HttpOnly cookie):\n- Server stores session state → instant revocation, rotation after privilege change.\n- Pair with CSRF tokens or SameSite=Lax/Strict when using cookies cross-site carefully.\n\nJWT in memory / Authorization header:\n- Stateless verification at edge — watch clock skew and key rotation (JWKS).\n- Cannot trivially revoke short-lived access tokens → rely on refresh token flows + rotation.\n- XSS steals tokens if stored in JS-accessible storage — prefer HttpOnly cookie refresh pattern.\n\nHybrid pattern many teams use:\nShort-lived JWT + refresh cookie, rotation, device binding for sensitive apps.\n\nMention threat modeling explicitly — neither solves XSS alone; CSP + sanitization still matter.",
+    "order": 95
+  },
+  {
+    "id": "full-stack-db-indexing-api-latency",
+    "companies": ["Meta", "Stripe", "DriveNets"],
+    "title": "Speed up a slow hot endpoint backed by SQL",
+    "difficulty": "medium",
+    "category": "Full Stack",
+    "description": "A paginated `/orders?userId=` endpoint takes seconds under load. Outline how you diagnose from API logs through ORM queries to indexes and migrations.",
+    "answerType": "text",
+    "tags": ["SQL", "indexing", "ORM", "performance"],
+    "source": "full-stack interview checklist",
+    "answer": "Process:\n1) Confirm latency split — app vs DB vs network (APM + DB slow query log).\n2) Capture EXPLAIN / ANALYZE for the exact parameterized query the ORM emits.\n3) Check selectivity — full table scans on large tables scream missing composite index.\n4) Add indexes matching filter + sort columns; avoid redundant indexes.\n5) Validate write amplification from new indexes.\n6) Cache only after correctness — stale reads unacceptable for money movement.\n\nORM specifics:\nN+1 detection (request logging), eager loading where appropriate.\n\nOperational:\nOnline migrations (backfill + dual-write patterns) when tables are huge.",
+    "order": 96
+  },
+  {
+    "id": "full-stack-cors-preflight-explained",
+    "companies": ["Apple", "TikTok", "Netflix"],
+    "title": "Explain CORS preflight and how you configure it safely",
+    "difficulty": "easy",
+    "category": "Full Stack",
+    "description": "A browser SPA at `https://app.example.com` calls `POST https://api.example.com/v1/items` with JSON and custom headers. Why might the browser send OPTIONS first? What headers matter?",
+    "answerType": "text",
+    "tags": ["CORS", "HTTP", "browser security"],
+    "source": "full-stack interview checklist",
+    "answer": "Same-origin policy blocks JS from reading cross-origin responses unless server cooperates via CORS.\n\nSimple GET/HEAD/POST with safe content-types may skip preflight.\nJSON POST with custom headers (or Authorization) is non-simple → browser sends OPTIONS preflight.\n\nServer must answer OPTIONS with:\n- Access-Control-Allow-Origin (specific origin or careful wildcard rules)\n- Access-Control-Allow-Methods / Allow-Headers matching the real request\n- Max-Age to cache preflight\n\nCredentials:\nAccess-Control-Allow-Credentials: true forbids `*` origin — must echo exact origin.\n\nMisconfigurations:\nOverly broad Allow-Origin with credentials, reflecting arbitrary Origin headers, disabling needed headers.",
+    "order": 97
   }
 ]

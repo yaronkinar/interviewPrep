@@ -11,7 +11,7 @@ export type TopicHubShellProps = {
 }
 
 /**
- * Shared layout for JS / React / TypeScript / Vue / Angular / CSS topic hubs,
+ * Shared layout for JS / React / TypeScript / Vue / Angular / CSS / Full stack topic hubs,
  * aligned with Stitch category-detail density (screens 08 / 11).
  */
 export default function TopicHubShell({ title, lead, kicker, heroExtra, children }: TopicHubShellProps) {

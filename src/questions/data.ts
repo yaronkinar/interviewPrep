@@ -11,6 +11,7 @@ export type Category =
   | 'Algorithms'
   | 'System Design'
   | 'Performance'
+  | 'Full Stack'
 
 export const CATEGORIES: Category[] = [
   'Closures & Scope',
@@ -24,6 +25,7 @@ export const CATEGORIES: Category[] = [
   'Algorithms',
   'System Design',
   'Performance',
+  'Full Stack',
 ]
 
 export interface Question {

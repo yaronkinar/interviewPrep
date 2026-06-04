@@ -107,7 +107,7 @@ export async function suggestInterviewQuestions(params: {
       {
         role: 'system',
         content:
-          'You generate structured frontend interview questions for a MongoDB-backed question catalog. ' +
+          'You generate structured frontend and full-stack web interview questions for a MongoDB-backed question catalog. ' +
           'Return only valid JSON: a single object with exactly one property "questions" (an array of question objects). ' +
           'Do not add any other top-level keys (no sources, notes, or summaries). Do not include markdown.',
       },
@@ -123,7 +123,7 @@ export async function suggestInterviewQuestions(params: {
           'Use lowercase kebab-case ids. difficulty must be easy, medium, or hard. answerType must be text, code, or mixed.',
           params.company
             ? 'Use the preferred company in the companies array unless the question clearly fits additional known companies.'
-            : 'No preferred company is set. Choose relevant known company tags only when appropriate; otherwise use an empty companies array for general frontend questions.',
+            : 'No preferred company is set. Choose relevant known company tags only when appropriate; otherwise use an empty companies array for general interview questions.',
           'Make answers concise but interview-ready, with practical bullets and trade-offs.',
           'Avoid duplicates or near-duplicates of these existing recent questions:',
           existingContext,
@@ -175,8 +175,8 @@ export async function suggestInterviewQuestionsFromWebContext(params: {
       {
         role: 'system',
         content:
-          'You generate structured frontend interview questions for a MongoDB-backed question catalog, grounded in the provided web search context. ' +
-          'If the context is weak or off-topic, still output plausible, accurate frontend interview content; put the most relevant page URL in each question "source" field when possible. ' +
+          'You generate structured frontend and full-stack web interview questions for a MongoDB-backed question catalog, grounded in the provided web search context. ' +
+          'If the context is weak or off-topic, still output plausible, accurate interview content; put the most relevant page URL in each question "source" field when possible. ' +
           'Return only valid JSON: a single object with exactly one property "questions" (an array of question objects). ' +
           'Do not add any other top-level keys (no sources, notes, or summaries). Do not include markdown.',
       },
@@ -197,7 +197,7 @@ export async function suggestInterviewQuestionsFromWebContext(params: {
           'Use lowercase kebab-case ids. difficulty must be easy, medium, or hard. answerType must be text, code, or mixed.',
           params.company
             ? 'Use the preferred company in the companies array unless the question clearly fits additional known companies.'
-            : 'No preferred company is set. Choose relevant known company tags only when appropriate; otherwise use an empty companies array for general frontend questions.',
+            : 'No preferred company is set. Choose relevant known company tags only when appropriate; otherwise use an empty companies array for general interview questions.',
           'Make answers concise but interview-ready, with practical bullets and trade-offs.',
           'Avoid duplicates or near-duplicates of these existing recent questions:',
           existingContext,

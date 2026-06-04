@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from 'next'
-import Script from 'next/script'
 import { ClerkProvider } from '@clerk/nextjs'
 import ClientProviders from './ClientProviders'
 import '@/index.css'
@@ -45,15 +44,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <ClerkProvider>
       <html lang="en" suppressHydrationWarning>
-        <head />
-        <body suppressHydrationWarning>
-          <Script
-            id="interview-prep-theme-init"
-            strategy="beforeInteractive"
+        <head>
+          <script
             dangerouslySetInnerHTML={{
               __html: `(function(){try{var t=localStorage.getItem('interview-prep-theme');if(t==='light'||t==='dark'){document.documentElement.dataset.theme=t;return}}catch(e){}if(window.matchMedia&&window.matchMedia('(prefers-color-scheme: light)').matches){document.documentElement.dataset.theme='light'}else{document.documentElement.dataset.theme='dark'}})()`,
             }}
           />
+        </head>
+        <body suppressHydrationWarning>
           <ClientProviders>{children}</ClientProviders>
         </body>
       </html>

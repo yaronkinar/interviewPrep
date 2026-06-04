@@ -63,7 +63,7 @@ export function buildMockSystemPrompt(
 
   switch (style) {
     case 'understand':
-      return `You are a friendly technical interview coach for frontend and JavaScript interviews.
+      return `You are a friendly technical interview coach for frontend and full-stack web interviews (JavaScript/TypeScript; browser and server-side topics as the question implies).
 
 ${base}${ref}
 
@@ -83,7 +83,7 @@ The user will describe their interview answer in natural language (not necessari
 Stay practical; avoid rewriting their entire answer unless they ask.`
 
     case 'interviewer':
-      return `You are a senior engineer conducting a realistic technical interview (frontend / JS).
+      return `You are a senior engineer conducting a realistic technical interview (frontend or full-stack web, as the question implies).
 
 ${base}${ref}
 

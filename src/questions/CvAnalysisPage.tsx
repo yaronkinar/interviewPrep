@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import PaywallModal from '@/components/PaywallModal'
 import UsageCounter from '@/components/UsageCounter'
+import { useRequireSignIn } from '../hooks/useRequireSignIn'
 import Link from 'next/link'
 import { useAuth } from '@clerk/nextjs'
 import type { MessageParam } from '@anthropic-ai/sdk/resources/messages'
@@ -170,6 +171,7 @@ export default function CvAnalysisPage() {
   const [plan, setPlan] = useState<'free' | 'sprint' | 'pro'>('free')
   const [cvUsage, setCvUsage] = useState<{ used: number; limit: number } | null>(null)
   const [showPaywall, setShowPaywall] = useState(false)
+  const { requireSignIn } = useRequireSignIn()
 
   const revokeAndSetImageObjectUrl = useCallback((next: string | null) => {
     const prev = cvImageObjectUrlRef.current
@@ -419,6 +421,7 @@ export default function CvAnalysisPage() {
 
   async function analyze() {
     if (!canRunCvRequest) return
+    if (!requireSignIn()) return
     setError(null)
     setResult('')
     setStreaming('')

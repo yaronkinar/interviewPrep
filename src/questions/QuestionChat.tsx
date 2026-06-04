@@ -14,14 +14,14 @@ function buildSystemPrompt(q: Question, mode: ChatMode, includeRefAnswer: boolea
   const ref = includeRefAnswer ? buildReferenceAnswerBlock(q) : ''
 
   if (mode === 'explain') {
-    return `You are a friendly technical interview coach for frontend and JavaScript interviews.
+    return `You are a friendly technical interview coach for frontend and full-stack web interviews (JavaScript/TypeScript, frameworks, browser APIs, HTTP/APIs, databases, auth, and deployment when relevant). Use the question category and tags as the primary focus, but welcome follow-ups across the web stack.
 
 ${base}${ref}
 
 Help the user understand the problem, compare approaches, and clarify trade-offs. If they ask for a full solution, you may provide it.`
   }
 
-  return `You are a technical interviewer and coach. The user is practicing how they would answer in an interview.
+  return `You are a technical interviewer and coach for frontend and full-stack web interviews. The user is practicing how they would answer in an interview.
 
 ${base}${ref}
 

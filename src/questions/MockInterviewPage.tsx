@@ -659,6 +659,7 @@ function MockInterviewSession({
 
   async function send() {
     if (!canSend) return
+    if (!requireSignIn()) return
     let text: string
     if (mockStyleUsesCodeEditor(style)) {
       const parts: string[] = []

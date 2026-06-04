@@ -23,6 +23,8 @@ export type UiStrings = {
     vueHubLead: string
     angularHubLead: string
     cssTitle: string
+    fullstackTitle: string
+    fullstackHubLead: string
     sandboxTitle: string
     questionsTitle: string
     sandboxLead: string
@@ -237,6 +239,9 @@ const en: UiStrings = {
     angularHubLead:
       'Components, dependency injection, change detection, and RxJS — typical Angular interview angles.',
     cssTitle: 'CSS Patterns',
+    fullstackTitle: 'Full stack',
+    fullstackHubLead:
+      'API design, persistence, auth, deployment, and how browser apps talk to servers — typical breadth for full-stack web interviews.',
     sandboxTitle: 'React sandbox',
     questionsTitle: 'Company Interview Questions',
     sandboxLead:
@@ -502,6 +507,9 @@ const he: Partial<UiStrings> = {
     vueHubLead: 'Composition API, ריאקטיביות והתנהגות זמן ריצה — נושאים שכיחים בראיונות על Vue.',
     angularHubLead: 'קומפוננטות, הזרקת תלויות, זיהוי שינויים ו-RxJS — זוויות טיפוסיות לראיונות Angular.',
     cssTitle: 'דפוסי CSS',
+    fullstackTitle: 'פולסטאק',
+    fullstackHubLead:
+      'עיצוב API, שכבת נתונים, אימות, פריסה ואיך אפליקציות בדפדפן מדברות עם שרתים — טיפוסי למשרות פולסטאק.',
     sandboxTitle: 'ארגז חול React',
     questionsTitle: 'שאלות ראיונות חברות',
     sandboxLead:

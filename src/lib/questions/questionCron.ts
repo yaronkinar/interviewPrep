@@ -14,6 +14,9 @@ const DEFAULT_TOPICS = [
   'TypeScript architecture questions for frontend engineers',
   'frontend system design questions for SaaS dashboards',
   'async JavaScript and browser API interview questions',
+  'full stack web interview questions REST APIs databases and deployment',
+  'authentication and authorization in full stack apps sessions JWT OAuth',
+  'SQL indexing query performance and ORM trade-offs for interview prep',
 ]
 
 function parseTopics(value: string | undefined) {

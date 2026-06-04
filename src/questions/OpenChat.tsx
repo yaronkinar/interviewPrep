@@ -8,6 +8,7 @@ import { buildCatalogSnippetsForPrompt } from './questionPromptContext'
 import ChatMarkdown from './ChatMarkdown'
 import PaywallModal from '@/components/PaywallModal'
 import UsageCounter from '@/components/UsageCounter'
+import { useRequireSignIn } from '../hooks/useRequireSignIn'
 
 export type OpenChatMode = 'explain' | 'practice'
 
@@ -129,6 +130,7 @@ export default function OpenChat({
   const [plan, setPlan] = useState<'free' | 'sprint' | 'pro'>('free')
   const [aiUsage, setAiUsage] = useState<{ used: number; limit: number } | null>(null)
   const [showPaywall, setShowPaywall] = useState(false)
+  const { requireSignIn } = useRequireSignIn()
 
   useEffect(() => {
     fetch('/api/subscription')
@@ -155,6 +157,7 @@ export default function OpenChat({
 
   async function send() {
     if (!canSend) return
+    if (!requireSignIn()) return
     if (messages.length === 0 && plan === 'free') {
       const res = await fetch('/api/ai-usage/mock-interview', { method: 'POST' })
       const data = await res.json()

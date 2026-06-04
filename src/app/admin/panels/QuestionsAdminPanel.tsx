@@ -432,7 +432,7 @@ export function QuestionsAdminPanel() {
           Search new questions
         </h3>
         <p style={{ color: 'var(--text-muted)', marginBottom: '1rem' }}>
-          Search for a frontend topic, preview suggested questions, then add selected items to MongoDB.
+          Search for a topic (frontend or full stack), preview suggested questions, then add selected items to MongoDB.
         </p>
         <div style={{ display: 'grid', gap: '0.75rem', gridTemplateColumns: 'minmax(220px, 1fr) minmax(150px, 220px) minmax(160px, 220px) minmax(160px, 220px) minmax(100px, 140px)' }}>
           <input
