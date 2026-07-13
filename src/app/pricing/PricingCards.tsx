@@ -4,6 +4,7 @@
 
 import { useState } from 'react'
 import type { Plan } from '@/lib/models/UserSubscription'
+import { openPaddleCheckout } from '@/lib/paddleClient'
 
 interface Props {
   currentPlan: Plan
@@ -31,9 +32,9 @@ export default function PricingCards({ currentPlan, isSignedIn }: Props) {
         const body = await res.json().catch(() => ({}))
         throw new Error(body.error ?? 'Checkout failed')
       }
-      const { checkoutUrl } = await res.json()
-      if (!checkoutUrl) throw new Error('No checkout URL returned')
-      window.location.href = checkoutUrl
+      const { transactionId } = await res.json()
+      if (!transactionId) throw new Error('No transaction returned')
+      await openPaddleCheckout(transactionId)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Something went wrong. Please try again.')
     } finally {

@@ -3,6 +3,8 @@ dist/
 .next/
 design/stitch/
 .env
+.env.local
+.env*.local
 
 # Playwright
 tests/.auth/

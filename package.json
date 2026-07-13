@@ -53,6 +53,7 @@
     "@fontsource-variable/manrope": "^5.2.8",
     "@google/generative-ai": "^0.24.1",
     "@monaco-editor/react": "^4.7.0",
+    "@paddle/paddle-js": "^1.6.4",
     "@paddle/paddle-node-sdk": "^3.8.0",
     "@tailwindcss/vite": "^4.2.2",
     "@vercel/analytics": "^2.0.1",

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { openPaddleCheckout } from '@/lib/paddleClient'
 
 interface Props {
   open: boolean
@@ -42,9 +43,9 @@ export default function PaywallModal({ open, onClose, feature }: Props) {
         const body = await res.json().catch(() => ({}))
         throw new Error(body.error ?? 'Checkout failed')
       }
-      const { checkoutUrl } = await res.json()
-      if (!checkoutUrl) throw new Error('No checkout URL returned')
-      window.location.href = checkoutUrl
+      const { transactionId } = await res.json()
+      if (!transactionId) throw new Error('No transaction returned')
+      await openPaddleCheckout(transactionId)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Something went wrong. Please try again.')
     } finally {

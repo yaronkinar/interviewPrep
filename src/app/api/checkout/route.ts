@@ -29,7 +29,5 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Payment provider error' }, { status: 502 })
   }
 
-  const url = transaction.checkout?.url
-  if (!url) return NextResponse.json({ error: 'Checkout URL unavailable' }, { status: 500 })
-  return NextResponse.json({ checkoutUrl: url })
+  return NextResponse.json({ transactionId: transaction.id })
 }
