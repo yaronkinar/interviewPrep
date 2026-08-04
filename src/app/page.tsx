@@ -1,5 +1,6 @@
 import HomePage from '@/HomePage'
-import { buildMetadata } from '@/lib/seo'
+import JsonLd from '@/components/JsonLd'
+import { buildMetadata, websiteJsonLd } from '@/lib/seo'
 
 export const metadata = buildMetadata({
   title: 'Interview Prep — JavaScript, React & Front-End Interview Practice',
@@ -9,5 +10,10 @@ export const metadata = buildMetadata({
 })
 
 export default function Page() {
-  return <HomePage />
+  return (
+    <>
+      <JsonLd data={websiteJsonLd()} />
+      <HomePage />
+    </>
+  )
 }

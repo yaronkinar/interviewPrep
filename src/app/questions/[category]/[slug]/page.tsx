@@ -4,9 +4,10 @@ import ReactMarkdown from 'react-markdown'
 import rehypeSanitize from 'rehype-sanitize'
 import remarkGfm from 'remark-gfm'
 import { CodeBlock } from '@/components/CodeBlock'
+import JsonLd from '@/components/JsonLd'
 import { loadQuestionCatalog } from '@/lib/questionCatalog'
 import { buildQuestionRoutes, findQuestionRoute } from '@/lib/questionSlug'
-import { buildMetadata } from '@/lib/seo'
+import { breadcrumbJsonLd, buildMetadata, SITE_URL } from '@/lib/seo'
 
 /**
  * Questions change rarely, but a daily cron adds new ones. Hourly revalidation
@@ -53,8 +54,39 @@ export default async function QuestionPage({ params }: { params: Promise<RoutePa
 
   const { question } = route
 
+  const qaJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'QAPage',
+    mainEntity: {
+      '@type': 'Question',
+      name: question.title,
+      text: question.description || question.title,
+      url: `${SITE_URL}${route.path}`,
+      answerCount: question.answer ? 1 : 0,
+      ...(question.answer
+        ? {
+            acceptedAnswer: {
+              '@type': 'Answer',
+              text: question.answer,
+              url: `${SITE_URL}${route.path}`,
+            },
+          }
+        : {}),
+      ...(question.tags.length ? { keywords: question.tags.join(', ') } : {}),
+    },
+  }
+
   return (
     <div className="editorial-page">
+      <JsonLd data={qaJsonLd} />
+      <JsonLd
+        data={breadcrumbJsonLd([
+          { name: 'Interview Prep', path: '/' },
+          { name: 'Interview questions', path: '/questions' },
+          // No category-level route exists yet, so the trail goes straight to the question.
+          { name: question.title, path: route.path },
+        ])}
+      />
       <article className="editorial-panel">
         <nav className="q-breadcrumb" aria-label="Breadcrumb">
           <Link href="/questions" className="home-card-link">

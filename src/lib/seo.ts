@@ -9,6 +9,40 @@ export const SITE_NAME = 'Interview Prep'
 
 const DEFAULT_OG_IMAGE = '/og-interview-prep-home.webp'
 
+/** Site-level graph for the home page: names the site and exposes site search. */
+export function websiteJsonLd(): Record<string, unknown> {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: SITE_NAME,
+    url: SITE_URL,
+    description:
+      'Practice front-end interview questions in the browser: JavaScript patterns, React hooks, TypeScript, Vue, Angular, CSS, company Q&A and AI mock interviews.',
+    potentialAction: {
+      '@type': 'SearchAction',
+      target: {
+        '@type': 'EntryPoint',
+        urlTemplate: `${SITE_URL}/questions?q={search_term_string}`,
+      },
+      'query-input': 'required name=search_term_string',
+    },
+  }
+}
+
+/** Breadcrumb trail; `items` are ordered root-first and paths are root-relative. */
+export function breadcrumbJsonLd(items: { name: string; path: string }[]): Record<string, unknown> {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: items.map((item, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: item.name,
+      item: `${SITE_URL}${item.path === '/' ? '' : item.path}`,
+    })),
+  }
+}
+
 export type PageSeo = {
   /** Page title without the site-name suffix. */
   title: string
