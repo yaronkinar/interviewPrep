@@ -4626,6 +4626,20 @@ input:focus { border-color: var(--accent); }
 .editorial-page--questions-stitch .q-card--editorial:hover .q-title--stitch {
   color: var(--accent);
 }
+/* Primary heading on a single question's page. */
+.question-page-title {
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: 1.2;
+  margin: 0.75rem 0 1rem;
+}
+@media (max-width: 640px) {
+  .question-page-title {
+    font-size: 1.5rem;
+  }
+}
+
 /* Server-rendered directory of every question, below the interactive list. */
 .question-index {
   border-top: 1px solid var(--border, rgba(127, 127, 127, 0.25));

@@ -103,9 +103,7 @@ export default async function QuestionPage({ params }: { params: Promise<RoutePa
           </span>
         </div>
 
-        <h1 className="screen-header-title" style={{ marginBlock: '0.75rem 1rem' }}>
-          {question.title}
-        </h1>
+        <h1 className="question-page-title">{question.title}</h1>
 
         <p className="q-desc q-desc--stitch">{question.description}</p>
 

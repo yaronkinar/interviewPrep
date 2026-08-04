@@ -1,5 +1,6 @@
 import { Suspense } from 'react'
 import QuestionsPage from '@/questions/QuestionsPage'
+import QuestionsHero from '@/questions/QuestionsHero'
 import QuestionIndex from './QuestionIndex'
 import JsonLd from '@/components/JsonLd'
 import { breadcrumbJsonLd, buildMetadata } from '@/lib/seo'
@@ -23,9 +24,12 @@ export default function Page() {
           { name: 'Interview questions', path: '/questions' },
         ])}
       />
-      <Suspense>
-        <QuestionsPage />
-      </Suspense>
+      <div className="editorial-page editorial-page--questions editorial-page--questions-stitch">
+        <QuestionsHero />
+        <Suspense>
+          <QuestionsPage />
+        </Suspense>
+      </div>
       <QuestionIndex />
     </>
   )

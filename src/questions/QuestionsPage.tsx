@@ -847,22 +847,8 @@ export default function QuestionsPage() {
 
   return (
     <CompaniesUiContext.Provider value={companyColorFor}>
-      <div className="editorial-page editorial-page--questions editorial-page--questions-stitch">
-      <header className="questions-stitch-hero">
-        <div className="questions-stitch-hero-primary">
-          <div className="questions-stitch-kicker">
-            <Terminal className="questions-stitch-kicker-icon" size={16} strokeWidth={2} aria-hidden />
-            {ui.questions.heroKicker}
-          </div>
-          <h1 className="questions-stitch-hero-title">
-            {ui.questions.heroTitleLine1}
-            <br />
-            <span className="questions-stitch-hero-accent">{ui.pages.questionsTitle}</span>
-          </h1>
-        </div>
-        <p className="questions-stitch-hero-lead">{ui.questions.heroLead}</p>
-      </header>
-
+      {/* The page wrapper and hero live in the route so the h1 prerenders. */}
+      <>
       <section className="questions-stitch-context-strip" aria-label={ui.pages.questionsTitle}>
         <div className="questions-stitch-context-strip-inner">
           <div>
@@ -1122,7 +1108,7 @@ export default function QuestionsPage() {
           ))}
         </ol>
       </section>
-    </div>
+      </>
     </CompaniesUiContext.Provider>
   )
 }
