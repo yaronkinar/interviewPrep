@@ -1,3 +1,5 @@
+'use client'
+
 import {
   Fragment,
   createContext,
@@ -31,6 +33,7 @@ import {
   normalizeCatalogSearchText,
   tokenizeCatalogSearchQuery,
 } from '@/lib/questions/catalogSearchTokens'
+import { questionPathById } from '@/lib/questionSlug'
 import { useQuestionCatalog } from './useQuestionCatalog'
 import { useCompaniesCatalog } from './useCompaniesCatalog'
 import { CodeBlock } from '../components/CodeBlock'
@@ -222,6 +225,8 @@ interface QuestionCardBodyProps {
   onShare?: () => void
   /** When set, editorial cards show a contextual excerpt instead of the full description. */
   searchQuery?: string
+  /** Canonical `/questions/[category]/[slug]` URL; absent for locally-created questions. */
+  permalink?: string
 }
 
 function QuestionCardBody({
@@ -232,6 +237,7 @@ function QuestionCardBody({
   onToggleBookmark,
   onShare,
   searchQuery,
+  permalink,
 }: QuestionCardBodyProps) {
   const canShowExample = hasQuestionExample(q.id)
   const editorial = variant === 'editorial'
@@ -255,7 +261,15 @@ function QuestionCardBody({
                 {difficultyStitchLabel(q.difficulty, ui)}
               </span>
             </div>
-            <h3 className="q-title q-title--stitch">{q.title}</h3>
+            <h3 className="q-title q-title--stitch">
+              {permalink ? (
+                <Link href={permalink} className="q-title-link">
+                  {q.title}
+                </Link>
+              ) : (
+                q.title
+              )}
+            </h3>
           </div>
           <div className="q-stitch-company-block">
             <span className="q-stitch-company-label">{ui.questions.companyTagsLabel}</span>
@@ -489,11 +503,12 @@ interface QuestionCardWithEditorialProps extends QuestionCardProps {
   editorial?: boolean
   searchQuery?: string
   section?: string
+  permalink?: string
 }
 
 function QuestionCard({
   q, apiKey, model, llmProvider, isCustom, ui, onDeleteCustom, editorial = false, searchQuery,
-  serverBookmarked, onServerToggleBookmark,
+  serverBookmarked, onServerToggleBookmark, permalink,
 }: QuestionCardWithEditorialProps) {
   const [open, setOpen] = useState(false)
   const [showThinking, setShowThinking] = useState(false)
@@ -551,7 +566,7 @@ function QuestionCard({
   const bodyVariant: 'default' | 'editorial' = expanded ? 'default' : editorial ? 'editorial' : 'default'
   const sharedProps = {
     q, apiKey, model, llmProvider, isCustom, ui, onDeleteCustom, open, setOpen,
-    showThinking, setShowThinking, showExample, setShowExample, variant: bodyVariant,
+    showThinking, setShowThinking, showExample, setShowExample, variant: bodyVariant, permalink,
     ...(editorial && !expanded
       ? { bookmarked, onToggleBookmark: toggleBookmark, onShare: shareQuestion, searchQuery }
       : {}),
@@ -687,6 +702,9 @@ export default function QuestionsPage() {
         : aiSettings.anthropicModel
 
   const customIds = useMemo(() => new Set(customQuestions.map((q) => q.id)), [customQuestions])
+
+  /** Only catalog questions have a server-rendered page; local custom ones do not. */
+  const questionPermalinks = useMemo(() => questionPathById(catalogQuestions), [catalogQuestions])
 
   const reservedCatalogIds = useMemo(
     () => new Set(catalogQuestions.map((q) => q.id)),
@@ -829,22 +847,8 @@ export default function QuestionsPage() {
 
   return (
     <CompaniesUiContext.Provider value={companyColorFor}>
-      <div className="editorial-page editorial-page--questions editorial-page--questions-stitch">
-      <header className="questions-stitch-hero">
-        <div className="questions-stitch-hero-primary">
-          <div className="questions-stitch-kicker">
-            <Terminal className="questions-stitch-kicker-icon" size={16} strokeWidth={2} aria-hidden />
-            {ui.questions.heroKicker}
-          </div>
-          <h1 className="questions-stitch-hero-title">
-            {ui.questions.heroTitleLine1}
-            <br />
-            <span className="questions-stitch-hero-accent">{ui.pages.questionsTitle}</span>
-          </h1>
-        </div>
-        <p className="questions-stitch-hero-lead">{ui.questions.heroLead}</p>
-      </header>
-
+      {/* The page wrapper and hero live in the route so the h1 prerenders. */}
+      <>
       <section className="questions-stitch-context-strip" aria-label={ui.pages.questionsTitle}>
         <div className="questions-stitch-context-strip-inner">
           <div>
@@ -1014,6 +1018,7 @@ export default function QuestionsPage() {
                     isCustom={customIds.has(q.id)}
                     ui={ui}
                     searchQuery={search.trim() ? search : undefined}
+                    permalink={questionPermalinks.get(q.id)}
                     onDeleteCustom={
                       customIds.has(q.id) ? () => removeCustomQuestion(q.id) : undefined
                     }
@@ -1103,7 +1108,7 @@ export default function QuestionsPage() {
           ))}
         </ol>
       </section>
-    </div>
+      </>
     </CompaniesUiContext.Provider>
   )
 }

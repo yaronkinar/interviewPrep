@@ -1,3 +1,5 @@
+'use client'
+
 import type { ComponentType } from 'react'
 import { FileText, PlayCircle, SquareTerminal } from 'lucide-react'
 import ReactCheatsheet from './ReactCheatsheet'

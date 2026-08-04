@@ -3,6 +3,14 @@
 import { auth } from '@clerk/nextjs/server'
 import { getUserPlan } from '@/lib/repositories/subscriptions'
 import PricingCards from './PricingCards'
+import { buildMetadata } from '@/lib/seo'
+
+export const metadata = buildMetadata({
+  title: 'Pricing',
+  description:
+    'Simple, honest pricing for Interview Prep — practise free, or unlock company filters, AI mock interviews and CV analysis.',
+  path: '/pricing',
+})
 
 export default async function PricingPage() {
   const { userId } = await auth()
