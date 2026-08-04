@@ -1,6 +1,13 @@
-'use client'
-import dynamic from 'next/dynamic'
+import TypeScriptHubPage from '@/typescript/index'
+import { buildMetadata } from '@/lib/seo'
 
-const TypeScriptHubPage = dynamic(() => import('@/typescript/index'), { ssr: false })
+export const metadata = buildMetadata({
+  title: 'TypeScript Interview Questions',
+  description:
+    'TypeScript interview practice covering generics, utility types, narrowing and type-level patterns, with runnable examples in the browser.',
+  path: '/typescript',
+})
 
-export default TypeScriptHubPage
+export default function Page() {
+  return <TypeScriptHubPage />
+}

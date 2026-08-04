@@ -1,3 +1,5 @@
+'use client'
+
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Editor, { type BeforeMount } from '@monaco-editor/react'
 import GameBoard from './GameBoard'

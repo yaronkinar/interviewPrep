@@ -60,6 +60,12 @@ export default function DropdownPortalDemo() {
   const [placement, setPlacement] = useState<'top' | 'bottom'>('bottom')
   const [dropStyle, setDropStyle] = useState<React.CSSProperties>({})
   const [portalOn, setPortalOn] = useState(true)
+  /** `document.body` only exists after mount, so the portal waits for the client. */
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   const update = useCallback(() => {
     const rect = triggerRef.current?.getBoundingClientRect()
@@ -161,7 +167,7 @@ export default function DropdownPortalDemo() {
         <div style={{ height: 28 }} />
       </div>
 
-      {portalOn && createPortal(menu, document.body)}
+      {portalOn && mounted && createPortal(menu, document.body)}
 
       <div className="data-field" style={{ marginTop: '0.25rem' }}>
         <span className="field-key">placement:</span>

@@ -1,3 +1,5 @@
+'use client'
+
 import { useCallback, useMemo, useRef, useState, type CSSProperties } from 'react'
 import Link from 'next/link'
 import ScreenHeader from '../components/layout/ScreenHeader'

@@ -1,3 +1,5 @@
+'use client'
+
 import ChatReactPreview from './questions/ChatReactPreview'
 import { useLocale } from './i18n/LocaleContext'
 import { getUiStrings } from './i18n/uiStrings'

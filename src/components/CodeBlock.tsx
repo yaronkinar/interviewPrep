@@ -1,3 +1,5 @@
+'use client'
+
 import { useState, useMemo } from 'react'
 import Prism from 'prismjs'
 import 'prismjs/components/prism-javascript'
