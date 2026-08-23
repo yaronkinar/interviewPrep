@@ -3,9 +3,9 @@ export type Plan = 'free' | 'sprint' | 'pro'
 export interface UserSubscriptionDoc {
   userId: string
   plan: Plan
-  paddleCustomerId?: string
-  paddleSubscriptionId?: string  // Pro only
-  sprintExpiresAt?: Date          // Sprint only
+  lsCustomerId?: string
+  lsSubscriptionId?: string  // Pro only
+  sprintExpiresAt?: Date      // Sprint only
   updatedAt: Date
 }
 
